@@ -1,0 +1,33 @@
+Geliştirmeyi android emulatör ü kallanarak test edelim lütfen.Kullanıcının login olarak açtığı ve harita üzerinden konum işareti yaptığı bu işaretleri gruplandırabildiği ve Kullanıcı belirlediği uzaklık çapındaki tüm işaretli noktalar için yada istediği grup yada gruplar için rota oluşturabildiği bir flutter uygulaması. Kullanıcının oluşturduğu rota duraklarına gelindiğinde o durak ile ilgili vikipedi gibi bilgi içeren sitelerde bilgi varsa ekrana bir uyarı gönderip bu bilgiye ulaşabilsin. seçili konum bilgileri üzerinde o konumda ihtiyaç duyulan şeyleri not alabilsin. Kullanıcı gezi rotası oluştururken not aldığı şeyleri konsolide ederek "bu gezide ihtiyacınız olanlar" şeklinde listelesin. Seçilen noktalar için ayrıca özel notlar varsa, "bu gezi için aldığınız özel notlar" şeklinde gösterilsin. Notlar ile ilgili Örnek olarak: ihtiyaç listesine seçili nokta 1 için terlik 2 için havlu 3 için havlu terlik 4 için güneş kremi 5 için bozuk para olarak ihtiyaç girilmiş olsun. Rota oluşturulduğunda "bu gezi için ihtiyaçlarınız terlik, havlu, güneş kremi ve bozuk para." olarak belirtsin. Özel notlar için ise ayrıca 1. konum için "otopark sorun" 2. "otopark sorun" 3. noktaya "buraya akşam git" 4. noktaya "hafta içi git." şeklinde notları ayrıca gösterelim. Rota oluşturulduğunda toplam yol süresi gösterilsin. Ayrıca her seçili konumda kullanıcı tarafından girilen "konumda geçirilmesi beklen süre(saat,dakika)" olarak giriş yapılabilsin. "Kullanıcıya yolda geçmesi beklenen süre=…", Konumlarda geçirilmesi beklenen süre=…" ve "gezi için toplam beklenen süre=…" şeklinde bilgilendirme gösterelim. Kullanıcı ilgili konumda girdiği konumda geçirilmesi beklenen sürenin sonuna geldiğinde yada istediği bir süre kadar önce uyarı gönderelim.
+
+--------------
+
+Düzeltmeler
+-Uygulama üzerinde şuan ki konum takibi yapılması gerekiyor. Uygulamaya girerken kontrol yapılıp işaret konuyor. Ekrandaki şuan ki konumun canlı olarak güncellenmesi gerekiyor. Rota oluşturulduktan sonra uygulama ekranında da ulaşılan noktalar güncellenmeli.
+
+Topkapı Sarayı konumunu seçtim wikipedia bilgisi bulunamadı şeklinde geldi wikipedia üzerinde topkapı sarayı olarak aratma yaptığımda "https://tr.wikipedia.org/wiki/Topkap%C4%B1_Saray%C4%B1" bilgiye ulaşabiliyorum. Kontrol edilmesinde fayda var. Konuma ulaşıldığında gelen wikipedia bilgilerini uygulama üzerinde bir formda tutalım. Formun butonu yukarıya eklediğimiz butonların yanına eklensin. Bilgi içinde konuma ulaşılan süre ve konum ile ilgili vikipedi üzerinde bulanan bilginin linki olsun. kullanıcı okundu olarak işaretlensin ve form üzerinde okunanları sil butonu olsun. Diğer formlarda olduğu gibi sıralama özelliği bulunsun.
+
+
+-Uygulama bildirimleri uygulama açık değilken, telefon lock durumdayken de çalışması lazım.
+
+-Manuel seçimde birinci konum olarak şuan bulunan konum ikinci konum olarak buradan seçilecek ilk konum olarak belirleyelim. Şuan en az iki konum seçmelisiniz mesajı veriyor.
+
+-Tahmini süre: place holder ve yanına küçük bir i butonu ekleyip tıklandığında "konumda geçirilmesi düşünülen tahmini süre." şeklinde bilgilendirme yapalım.
+
+-Kullanıcı ihtiyaç listesini oluştururken aynı objeyi farklı harfler kullanarak yazarsa onu konsolide edebilir miyiz bi bakalım. Örnek: Müzekart, muzekart, müze kart. Yada Su, su, SU vb.
+
+-Form yazı ve görsellerini animasyonlu ve modern hale getirelim.
+
+
+
+
+cetin.omer@outlook.com.tr
+
+Yeni isim önerileri.
+
+Trip Book
+Map Api
+AIzaSyBx1ZOZa_wd-vb59py3iwF1TATxq9IPUls
+
+SHA1
+9C:20:E4:12:E0:67:01:B3:7D:08:4F:97:E4:2D:5B:36:65:1C:FC:89
