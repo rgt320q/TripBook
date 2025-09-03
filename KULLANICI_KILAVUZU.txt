@@ -1,10 +1,94 @@
-# Travel Log - Kullanıcı Kılavuzu
+📘 Trip Book – User Guide
 
-Bu belge, Travel Log uygulamasının özelliklerini ve nasıl kullanılacağını açıklamaktadır.
+This document explains the features of the Trip Book app and how to use it.
+
+1. Overview
+Trip Book is a mobile app designed to help you plan your travels, save locations, create routes, and track your progress during trips.
+
+2. Map Screen & Basic Operations
+
+The main screen of the app is an interactive map.
+
+2.1. Location Pins
+- Your Current Location: Displayed as a glowing blue dot on the map.
+- Saved Locations: Shown as classic Google Maps-style pins.
+  - Color Coding:
+    - Locations assigned to a group take on the group’s color.
+    - Locations not assigned to any group appear gray.
+    - Locations visited during an active route turn green.
+
+2.2. Adding a New Location
+- Long-press anywhere on the map to add a new location.
+- You can enter a custom name, description, notes, checklist, and estimated stop duration.
+
+2.3. Go to My Location Button
+- Tap the target (my_location) icon at the bottom right to center the map on your current location.
+
+3. Location & Group Management
+
+The app provides dedicated screens to manage your locations and groups efficiently.
+
+3.1. Manage Locations
+- Access via the list (list_alt) icon in the top menu.
+- All saved locations are listed here.
+- You can sort by name or creation date.
+- Tap any location to edit its details (name, description, group, notes, etc.).
+- Map Integration: Tapping a pin on the map opens this screen and scrolls to the relevant location.
+
+3.2. Manage Groups
+- Access via the folder (folder_copy_outlined) icon in the top menu.
+- Create, edit, and delete colored groups to categorize your locations.
+- When editing a location, you can assign it to one of these groups.
+
+4. Route Planning & Usage
+
+The app allows you to create dynamic routes from your saved locations.
+
+4.1. Creating a Route
+- Tap the directions icon in the top menu of the map screen.
+- Select from Group: Creates a route using all locations in a selected group.
+- Manual Selection: Lets you choose specific locations from the list to build a custom route.
+- Once created, the app orders the locations efficiently based on your current position.
+
+4.2. Saving & Loading Routes
+- Saving: Tap the save icon on the route summary screen to name and save the current route.
+- Loading: Tap the route (route_sharp) icon in the top menu to load previously saved routes.
+
+4.3. Route Summary & Checklist
+- Tap the summarize icon in the top menu to view a summary of the current or active route.
+- Includes total distance, estimated travel and stop durations.
+- Checklist:
+  - All items added to locations along the route are combined into a unified checklist.
+  - This list is specific to the current trip. Checked items remain marked until the route is closed.
+  - Reopening or restarting the same route template resets the checklist (unchecked).
+- Special Notes: All notes from locations on the route are displayed together on this screen.
+
+5. Active Route Tracking
+
+When a route is started, the map screen actively tracks your journey.
+
+- Upcoming Path: Untraveled segments are shown in light gray.
+- Traveled Path: Segments you've completed turn bright blue permanently.
+- Reached Stops: When you get within 50 meters of a stop, its pin turns green permanently.
+- Notifications:
+  - When approaching a stop, you receive a notification with a Wikipedia summary (if available).
+  - If you stay longer than planned at a stop, a time reminder notification is sent.
+
+5.1. Reached Locations History
+- Tap the history icon in the top menu to view a list of all locations reached during a route, along with their Wikipedia links.
+
+
+************************************************************************************************
+
+# Türkçe
+
+# Trip Book - Kullanıcı Kılavuzu
+
+Bu belge, Trip Book uygulamasının özelliklerini ve nasıl kullanılacağını açıklamaktadır.
 
 ## 1. Genel Bakış
 
-Travel Log, seyahatlerinizi planlamak, konumları kaydetmek, rotalar oluşturmak ve seyahat esnasında ilerlemenizi takip etmek için tasarlanmış bir mobil uygulamadır.
+Trip Book, seyahatlerinizi planlamak, konumları kaydetmek, rotalar oluşturmak ve seyahat esnasında ilerlemenizi takip etmek için tasarlanmış bir mobil uygulamadır.
 
 ---
 

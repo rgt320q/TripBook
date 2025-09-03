@@ -18,7 +18,7 @@ To run the Trip Book application locally, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/rgt320q/TripBook.git
+    git clone https://github.com/your_username/TripBook.git # Replace with your repo URL
     ```
 2.  **Navigate to the project directory:**
     ```bash
@@ -151,7 +151,7 @@ Trip Book uygulamasını yerel ortamınızda çalıştırmak için aşağıdaki 
 
 1.  **Depoyu Klonlayın:**
     ```bash
-    git clone https://github.com/rgt320q/TripBook.git
+    git clone https://github.com/kullanici_adiniz/TripBook.git # Kendi repo URL'nizi buraya ekleyin
     ```
 2.  **Proje Dizinine Girin:**
     ```bash
