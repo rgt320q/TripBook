@@ -5,6 +5,7 @@
 *.pyc
 *.swp
 .buildlog/
+.person/
 .history
 .env
 .env.*
