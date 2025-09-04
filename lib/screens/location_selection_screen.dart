@@ -70,7 +70,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
       itemCount: _selectedLocations.length,
       itemBuilder: (context, index) {
         final location = _selectedLocations[index];
-        final bool isEndpoint = widget.endLocation != null && index == _selectedLocations.length - 1;
+        final bool isEndpoint = widget.endLocation != null && location.firestoreId == widget.endLocation!.firestoreId;
 
         return Card(
           key: ValueKey(location.firestoreId),
@@ -80,17 +80,31 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
             title: Text(location.name),
             subtitle: Text(location.geoName, maxLines: 1, overflow: TextOverflow.ellipsis),
             tileColor: isEndpoint ? Colors.grey[300] : null,
+            trailing: isEndpoint
+                ? IconButton(
+                    icon: const Icon(Icons.edit_location),
+                    tooltip: 'Bitiş Konumunu Değiştir',
+                    onPressed: () {
+                      Navigator.of(context).pop('change_end_location');
+                    },
+                  )
+                : null,
           ),
         );
       },
       onReorder: (int oldIndex, int newIndex) {
         setState(() {
-          if (widget.endLocation != null && (oldIndex == _selectedLocations.length - 1 || newIndex == _selectedLocations.length)) {
-            return;
+          if (widget.endLocation != null && _selectedLocations[oldIndex].firestoreId == widget.endLocation!.firestoreId) {
+            return; // Do not allow reordering of the end location
           }
+          if (newIndex > _selectedLocations.length - 1) {
+            newIndex = _selectedLocations.length - 1;
+          }
+
           if (newIndex > oldIndex) {
             newIndex -= 1;
           }
+
           final TravelLocation item = _selectedLocations.removeAt(oldIndex);
           _selectedLocations.insert(newIndex, item);
         });

@@ -25,6 +25,17 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
         backgroundColor: Colors.blue[700],
         actions: [
           IconButton(
+            icon: const Icon(Icons.done_all),
+            tooltip: 'Tümünü Okundu İşaretle',
+            onPressed: () async {
+              await _firestoreService.markAllLogsAsRead();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Tüm günlükler okundu olarak işaretlendi.')),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_sweep),
             tooltip: 'Okunanları Sil',
             onPressed: () async {

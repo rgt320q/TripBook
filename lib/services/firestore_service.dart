@@ -197,4 +197,13 @@ class FirestoreService {
     }
     await batch.commit();
   }
+
+  Future<void> markAllLogsAsRead() async {
+    final snapshot = await _reachedLogsCollection.where('isRead', isEqualTo: false).get();
+    WriteBatch batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
 }

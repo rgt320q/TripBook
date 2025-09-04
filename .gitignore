@@ -9,6 +9,8 @@
 .env
 .env.*
 *.env
+Proje.txt
+KULLANICI_KILAVUZU.txt
 
 # IDE & Editor folders
 .idea/

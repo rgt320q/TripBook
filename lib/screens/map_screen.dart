@@ -209,9 +209,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _positionStreamSubscription!.cancel();
     }
     if (_activeRouteLocations == null) {
-      const locationSettings = LocationSettings(
+      final locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 10,
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText:
+          "TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.",
+          notificationTitle: "TripBook Rota Takibi",
+          enableWakeLock: true,
+        ),
       );
       _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
         if (mounted) {
@@ -276,9 +282,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       }
     });
 
-    const locationSettings = LocationSettings(
+    final locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
+      foregroundNotificationConfig: const ForegroundNotificationConfig(
+        notificationText:
+        "TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.",
+        notificationTitle: "TripBook Rota Takibi",
+        enableWakeLock: true,
+      ),
     );
     _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
       if (mounted && !_isRouteCompleted) {
@@ -576,14 +588,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
 
     var routeLocations = [userLocation, ...locations];
-    TravelLocation finalDestination = endLocation ?? TravelLocation(
-      name: 'Bitiş Noktası',
-      geoName: 'Bitiş Noktası',
-      description: 'Rota bitişi',
-      latitude: _currentPosition!.latitude,
-      longitude: _currentPosition!.longitude,
-      firestoreId: 'end',
-    );
+    TravelLocation finalDestination = endLocation ??
+        TravelLocation(
+          name: 'Bitiş Noktası',
+          geoName: await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? 'Bilinmeyen Konum',
+          description: 'Rota bitişi',
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          firestoreId: 'end',
+        );
     routeLocations.add(finalDestination);
 
     final directionsInfo = await _directionsService.getDirections(routeLocations);
@@ -1099,16 +1112,45 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             initialCameraPosition: initialCamPos,
             markers: _markers,
             polylines: _polylines,
-            onLongPress: (pos) {
+            onLongPress: (pos) async {
               if (_isSelectingEndpoint) {
-                final endLocation = TravelLocation(
-                  name: 'Seçilen Bitiş Noktası',
-                  geoName: 'Seçilen Bitiş Noktası',
-                  latitude: pos.latitude,
-                  longitude: pos.longitude,
-                  firestoreId: 'end',
+                final geoName = await _directionsService.getPlaceName(pos) ?? 'Bilinmeyen Konum';
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Bitiş Noktasını Onayla'),
+                    content: Text('"$geoName" burası bitiş noktası olarak ayarlansın mı?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('İptal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Onayla'),
+                      ),
+                    ],
+                  ),
                 );
-                _drawRoute(_locationsForRoute, endLocation: endLocation);
+
+                if (confirmed == true) {
+                  final endLocation = TravelLocation(
+                    name: 'Seçilen Bitiş Noktası',
+                    geoName: geoName,
+                    latitude: pos.latitude,
+                    longitude: pos.longitude,
+                    firestoreId: 'end',
+                  );
+                  final finalRoute = await Navigator.push<List<TravelLocation>>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LocationSelectionScreen(initialLocations: _locationsForRoute, endLocation: endLocation),
+                    ),
+                  );
+                  if (finalRoute != null) {
+                    _drawRoute(finalRoute);
+                  }
+                }
                 setState(() {
                   _isSelectingEndpoint = false;
                 });
@@ -1326,14 +1368,26 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 final locations = await _firestoreService.getLocationsForGroup(selectedGroupId);
                 if (locations.length >= 2) {
                   final optimizedLocations = _optimizeRouteByProximity(locations, _currentPosition!);
-                  final finalRoute = await Navigator.push<List<TravelLocation>>(
+                  final endLocationLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+                  final endLocationGeoName = await _directionsService.getPlaceName(endLocationLatLng) ?? 'Bilinmeyen Konum';
+                  final endLocation = TravelLocation(name: 'Bitiş', geoName: endLocationGeoName, latitude: endLocationLatLng.latitude, longitude: endLocationLatLng.longitude, firestoreId: 'end');
+
+                  final result = await Navigator.push<dynamic>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => LocationSelectionScreen(initialLocations: optimizedLocations, endLocation: TravelLocation(name: 'Bitiş', geoName: 'Bitiş', latitude: _currentPosition!.latitude, longitude: _currentPosition!.longitude, firestoreId: 'end')),
+                      builder: (context) => LocationSelectionScreen(initialLocations: optimizedLocations, endLocation: endLocation),
                     ),
                   );
-                  if (finalRoute != null) {
-                    _drawRoute(finalRoute);
+                  if (result is List<TravelLocation>) {
+                    _drawRoute(result);
+                  } else if (result == 'change_end_location') {
+                    setState(() {
+                      _isSelectingEndpoint = true;
+                      _locationsForRoute = optimizedLocations;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Lütfen haritadan yeni bir bitiş noktası seçin.')),
+                    );
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
