@@ -5,6 +5,7 @@ import 'package:tripbook/models/reached_location_log.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/travel_route.dart';
+import 'package:tripbook/models/user_profile.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -92,7 +93,7 @@ class FirestoreService {
   }
 
   Future<List<TravelLocation>> getLocationsForGroup(String groupId) async {
-    final snapshot = await _locationsCollection.where('groupId', isEqualTo: groupId).get();
+    final snapshot = await _locationsCollection.where('groupId', isEqualTo: groupId).snapshots().first;
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
@@ -205,5 +206,28 @@ class FirestoreService {
       batch.update(doc.reference, {'isRead': true});
     }
     await batch.commit();
+  }
+
+  // USER PROFILE
+
+  DocumentReference<UserProfile> get _userProfileDoc {
+    if (_currentUser == null) {
+      throw Exception('User not logged in');
+    }
+    return _db.collection('users').doc(_currentUser!.uid).withConverter<UserProfile>(
+      fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
+      toFirestore: (profile, _) => profile.toFirestore(),
+    );
+  }
+
+  Stream<UserProfile?> getUserProfile() {
+    if (_currentUser == null) return Stream.value(null);
+    return _userProfileDoc.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  Future<void> updateUserProfile(UserProfile profile) async {
+    final dataToSave = profile.toFirestore();
+    print('Saving user profile data: $dataToSave'); // DEBUG PRINT
+    await _userProfileDoc.set(profile, SetOptions(merge: true));
   }
 }

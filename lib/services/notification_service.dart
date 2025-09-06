@@ -14,7 +14,7 @@ class NotificationService {
     void Function(NotificationResponse)? onDidReceiveBackgroundNotificationResponse,
   }) async {
     const AndroidInitializationSettings initializationSettingsAndroid = 
-        AndroidInitializationSettings('@mipmap/ic_launcher'); // default icon
+        AndroidInitializationSettings('@mipmap/launcher_icon'); // default icon
 
     final DarwinInitializationSettings initializationSettingsIOS = 
         DarwinInitializationSettings();

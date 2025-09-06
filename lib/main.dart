@@ -1,8 +1,11 @@
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:provider/provider.dart';
 import 'package:tripbook/firebase_options.dart';
+import 'package:tripbook/providers/locale_provider.dart';
 import 'package:tripbook/services/navigation_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/widgets/auth_wrapper.dart';
@@ -34,7 +37,12 @@ void main() async {
     onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
   );
   
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LocaleProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -42,16 +50,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      // Use the navigatorKey from our singleton NavigationService.
-      navigatorKey: NavigationService().navigatorKey,
-      title: 'Trip Book',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const AuthWrapper(),
+    return Consumer<LocaleProvider>(
+      builder: (context, provider, child) {
+        return MaterialApp(
+          // Use the navigatorKey from our singleton NavigationService.
+          navigatorKey: NavigationService().navigatorKey,
+          title: 'Trip Book',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
+          ),
+          locale: provider.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AuthWrapper(),
+        );
+      },
     );
   }
 }

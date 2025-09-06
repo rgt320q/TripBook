@@ -1,0 +1,146 @@
+{
+  "helloWorld": "Merhaba Dünya!",
+  "selectGroupColor": "Grup Rengi Seçin:",
+  "cancel": "İptal",
+  "save": "Kaydet",
+  "sortByNameAsc": "Ada Göre (A-Z)",
+  "sortByNameDesc": "Ada Göre (Z-A)",
+  "sortByDateNewest": "Tarihe Göre (Yeni)",
+  "sortByDateOldest": "Tarihe Göre (Eski)",
+  "noGroupsYet": "Henüz bir grup oluşturulmamış.",
+  "deleteGroup": "Grup Sil",
+  "deleteGroupConfirmation": "'{groupName}' grubunu silmek istediğinizden emin misiniz? Bu gruba ait tüm konumlar da silinecektir.",
+  "@deleteGroupConfirmation": {
+    "description": "Confirmation message for deleting a group",
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "Sil",
+  "groupName": "Grup Adı",
+  "newGroup": "Yeni Grup Oluştur",
+  "editGroup": "Grup Düzenle",
+  "selectGroup": "Grup Seç",
+  "travelGroups": "Seyahat Grupları",
+  "error": "Bir hata oluştu: {error}",
+  "@error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noLocationsInGroup": "Bu grupta henüz konum bulunmamaktadır.",
+  "profileScreenTitle": "Kullanıcı Profili",
+  "profileEmailLabel": "E-posta",
+  "profileUsernameLabel": "Kullanıcı Adı",
+  "profileHomeLocationLabel": "Ev Konumu (Enlem,Boylam)",
+  "profileLanguageLabel": "Dil",
+  "profileSaveSuccess": "Profil güncellendi!",
+  "profileLoadError": "Profil yüklenemedi.",
+  "profileUsernameValidation": "Lütfen bir kullanıcı adı girin.",
+  "createRoute": "Rota Oluştur",
+  "savedRoutes": "Kaydedilmiş Rotalar",
+  "reachedLocations": "Ulaşılan Konumlar",
+  "manageLocations": "Konumları Yönet",
+  "manageGroups": "Grupları Yönet",
+  "logout": "Çıkış Yap",
+  "activeRouteSummary": "Aktif Rota Özeti",
+  "clearRoute": "Rotayı Temizle",
+  "appTitle": "Seyahat Defteri",
+  "createRouteDialogTitle": "Rota Oluştur",
+  "createRouteDialogContent": "Rotanızı nasıl oluşturmak istersiniz?",
+  "fromGroup": "Gruptan Seç",
+  "manualSelection": "Manuel Seçim",
+  "endPointDialogTitle": "Bitiş Noktası",
+  "endPointDialogContent": "Başlangıç noktası bitiş noktası olarak ayarlandı. Dilerseniz haritadan farklı bir bitiş noktası seçebilirsiniz.",
+  "selectFromMap": "Haritadan Seç",
+  "continueButton": "Devam Et",
+  "selectNewEndpoint": "Lütfen haritadan yeni bir bitiş noktası seçin.",
+  "minTwoLocationsError": "Bir rota oluşturmak için en az 2 konum seçmelisiniz.",
+  "locationsNotFoundError": "Bu rotadaki konumlar bulunamadı veya yetersiz.",
+  "addLocationDialogTitle": "Yeni Konum Ekle",
+  "realLocationNameLabel": "Gerçek Konum Adı (Değiştirilemez)",
+  "customLocationNameLabel": "Özel Konum Adı",
+  "descriptionLabel": "Açıklama",
+  "notesLabel": "Özel Notlar",
+  "estimatedDurationLabel": "Tahmini Süre (dakika)",
+  "needsLabel": "İhtiyaçlar (virgülle ayırın)",
+  "selectGroupOptionalLabel": "Grup Seç (İsteğe Bağlı)",
+  "confirmEndpointDialogTitle": "Bitiş Noktasını Onayla",
+  "confirmEndpointDialogContent": "'{geoName}' burası bitiş noktası olarak ayarlansın mı?",
+  "@confirmEndpointDialogContent": {
+    "placeholders": {
+      "geoName": {
+        "type": "String"
+      }
+    }
+  },
+  "confirm": "Onayla",
+  "unknownLocation": "Bilinmeyen Konum",
+  "currentLocationError": "Mevcut konumunuz alınamadı. Lütfen konum servislerini kontrol edin.",
+  "drawRouteError": "Rota çizilemedi. API anahtarınızı kontrol edin veya daha sonra tekrar deneyin.",
+  "saveRouteDialogTitle": "Rotayı Kaydet",
+  "routeNameHint": "Rota adı girin",
+  "routeExistsError": "'{routeName}' isminde bir rota zaten var. Üzerine yazılsın mı?",
+  "@routeExistsError": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "yes": "Evet",
+  "no": "Hayır",
+  "routeSavedSuccess": "Rota \"{routeName}\" olarak kaydedildi!",
+  "@routeSavedSuccess": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeCompletionDialogTitle": "Rota Tamamlandı",
+  "plannedDistance": "Planlanan Mesafe",
+  "actualDistance": "Gerçekleşen Mesafe",
+  "plannedTotalDuration": "Planlanan Toplam Süre",
+  "actualDuration": "Gerçekleşen Süre",
+  "exit": "Çık",
+  "routeSummaryTitle": "Rota Özeti",
+  "startNavigation": "Başlat",
+  "estimatedTravelTime": "Tahmini Yol Süresi",
+  "totalTimeAtStops": "Duraklardaki Toplam Süre",
+  "totalTripTime": "Toplam Gezi Süresi",
+  "totalDistance": "Toplam Mesafe",
+  "needsForTrip": "Bu gezi için ihtiyaçlarınız:",
+  "notesForTrip": "Bu gezi için aldığınız özel notlar:",
+  "launchMapsError": "Google Haritalar uygulaması başlatılamadı.",
+  "searchHint": "Ara...",
+  "mapTypeTooltip": "Harita Tipi",
+  "resetBearingTooltip": "Kuzeyi Göster",
+  "myLocationTooltip": "Konumuma Git",
+  "manageLocationsScreenTitle": "Konumları Yönet",
+  "noSavedLocations": "Kaydedilmiş konum bulunamadı.",
+  "groupNone": "Yok",
+  "locationUpdatedSuccess": "Konum güncellendi!",
+  "groupLabel": "Grup",
+  "showOnMap": "Haritada Göster",
+  "copyLocationInfo": "Konum Bilgisini Kopyala",
+  "locationCopiedSuccess": "Konum bilgileri kopyalandı!",
+  "saveChanges": "Değişiklikleri Kaydet",
+  "deleteLocation": "Konumu Sil",
+  "deleteLocationConfirmation": "'{locationName}' konumunu silmek istediğinizden emin misiniz?",
+  "@deleteLocationConfirmation": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "locationDeletedSuccess": "Konum silindi.",
+  "googleMapsNameLabel": "Google Haritalar Adı:",
+  "logoutConfirmationTitle": "Çıkış Yap",
+  "logoutConfirmationContent": "Çıkış yapmak istediğinizden emin misiniz?"
+}

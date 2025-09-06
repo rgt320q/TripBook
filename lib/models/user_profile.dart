@@ -1,0 +1,34 @@
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class UserProfile {
+  final String uid;
+  final String? username;
+  final String? languageCode;
+  final GeoPoint? homeLocation;
+
+  UserProfile({
+    required this.uid,
+    this.username,
+    this.languageCode,
+    this.homeLocation,
+  });
+
+  factory UserProfile.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot) {
+    final data = snapshot.data() ?? {};
+    return UserProfile(
+      uid: snapshot.id,
+      username: data['username'] as String?,
+      languageCode: data['languageCode'] as String?,
+      homeLocation: data['homeLocation'] as GeoPoint?,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      if (username != null) 'username': username,
+      if (languageCode != null) 'languageCode': languageCode,
+      if (homeLocation != null) 'homeLocation': homeLocation,
+    };
+  }
+}

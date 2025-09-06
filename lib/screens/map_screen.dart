@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,11 +10,13 @@ import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/reached_location_log.dart';
 import 'package:tripbook/models/travel_route.dart';
 import 'package:tripbook/screens/reached_locations_screen.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/groups_screen.dart';
 import 'package:tripbook/screens/location_selection_screen.dart';
 import 'package:tripbook/screens/manage_locations_screen.dart';
 import 'package:tripbook/screens/saved_routes_screen.dart';
+import 'package:tripbook/screens/profile_screen.dart';
 import 'package:tripbook/services/database_service.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
@@ -88,6 +91,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   StreamSubscription? _groupsSubscription;
   StreamSubscription<Position>? _positionStreamSubscription;
 
+  bool _isDataSyncInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -95,8 +100,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (widget.initialLocation == null) {
       _determinePosition();
     }
-    _setupDataSync();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isDataSyncInitialized) {
+      _setupDataSync();
+      _isDataSyncInitialized = true;
+    }
   }
 
   @override
@@ -567,9 +580,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _drawRoute(List<TravelLocation> locations, {TravelLocation? endLocation}) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mevcut konumunuz alınamadı. Lütfen konum servislerini kontrol edin.')),
+        SnackBar(content: Text(l10n.currentLocationError)),
       );
       return;
     }
@@ -579,9 +593,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _triggeredWikipediaNotifications.clear();
 
     final userLocation = TravelLocation(
-      name: 'Mevcut Konumunuz',
-      geoName: 'Mevcut Konumunuz',
-      description: 'Rota başlangıcı',
+      name: 'Mevcut Konumunuz', // Internal
+      geoName: 'Mevcut Konumunuz', // Internal
+      description: 'Rota başlangıcı', // Internal
       latitude: _currentPosition!.latitude,
       longitude: _currentPosition!.longitude,
       firestoreId: 'start',
@@ -590,9 +604,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     var routeLocations = [userLocation, ...locations];
     TravelLocation finalDestination = endLocation ??
         TravelLocation(
-          name: 'Bitiş Noktası',
-          geoName: await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? 'Bilinmeyen Konum',
-          description: 'Rota bitişi',
+          name: 'Bitiş Noktası', // Internal
+          geoName: await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? l10n.unknownLocation,
+          description: 'Rota bitişi', // Internal
           latitude: _currentPosition!.latitude,
           longitude: _currentPosition!.longitude,
           firestoreId: 'end',
@@ -617,7 +631,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _startRouteTracking(locations);
     } else {
        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rota çizilemedi. API anahtarınızı kontrol edin veya daha sonra tekrar deneyin.')),
+          SnackBar(content: Text(l10n.drawRouteError)),
        );
     }
   }
@@ -668,21 +682,22 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     List<String>? needs,
     List<Map<String, String>>? notes,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final routeNameController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Rotayı Kaydet'),
+          title: Text(l10n.saveRouteDialogTitle),
           content: TextField(
             controller: routeNameController,
-            decoration: const InputDecoration(hintText: "Rota adı girin"),
+            decoration: InputDecoration(hintText: l10n.routeNameHint),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -700,11 +715,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   shouldProceed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Onay'),
-                          content: Text("'${routeName}' isminde bir rota zaten var. Üzerine yazılsın mı?"),
+                          title: Text(l10n.confirm),
+                          content: Text(l10n.routeExistsError(routeName)),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hayır')),
-                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Evet')),
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.no)),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.yes)),
                           ],
                         ),
                       ) ??
@@ -735,12 +750,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 if (mounted) {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Rota "$routeName" olarak kaydedildi!'), backgroundColor: Colors.green),
+                    SnackBar(content: Text(l10n.routeSavedSuccess(routeName)), backgroundColor: Colors.green),
                   );
                   _clearRoute();
                 }
               },
-              child: const Text('Kaydet'),
+              child: Text(l10n.save),
             ),
           ],
         );
@@ -749,6 +764,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showRouteCompletionSummary(Duration elapsedDuration) {
+    final l10n = AppLocalizations.of(context)!;
     final actualDistanceKm = _actualDistanceMeters / 1000.0;
     final actualDistanceString = '${actualDistanceKm.toStringAsFixed(1)} km';
 
@@ -757,16 +773,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Rota Tamamlandı'),
+          title: Text(l10n.routeCompletionDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Planlanan Mesafe: ${_activeRouteInfo?.totalDistance ?? "N/A"}'),
-              Text('Gerçekleşen Mesafe: $actualDistanceString', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('${l10n.plannedDistance}: ${_activeRouteInfo?.totalDistance ?? "N/A"}'),
+              Text('${l10n.actualDistance}: $actualDistanceString', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Planlanan Toplam Süre: ${_activeRouteTotalTripDuration ?? "N/A"}'),
-              Text('Gerçekleşen Süre: ${_formatElapsedDuration(elapsedDuration)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('${l10n.plannedTotalDuration}: ${_activeRouteTotalTripDuration ?? "N/A"}'),
+              Text('${l10n.actualDuration}: ${_formatElapsedDuration(elapsedDuration)}', style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           actions: [
@@ -775,7 +791,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 Navigator.pop(context);
                 _clearRoute();
               },
-              child: const Text('Çık'),
+              child: Text(l10n.exit),
             ),
             ElevatedButton(
               onPressed: () {
@@ -791,7 +807,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   notes: _activeRouteNotes,
                 );
               },
-              child: const Text('Kaydet'),
+              child: Text(l10n.save),
             ),
           ],
         );
@@ -800,6 +816,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showRouteSummary(DirectionsInfo info, List<TravelLocation> locations) {
+    final l10n = AppLocalizations.of(context)!;
     final List<NeedItem> allNeeds = [];
     for (var loc in locations) {
       if (loc.needsList != null && loc.firestoreId != null) {
@@ -857,12 +874,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Rota Özeti', style: Theme.of(context).textTheme.headlineSmall),
+                      Text(l10n.routeSummaryTitle, style: Theme.of(context).textTheme.headlineSmall),
                       Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.save, color: Colors.blue),
-                            tooltip: 'Rotayı Kaydet',
+                            tooltip: l10n.saveRouteDialogTitle,
                             onPressed: () {
                               Navigator.pop(context);
                               _showSaveRouteDialog(
@@ -881,7 +898,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                               _launchGoogleMaps(locations);
                             },
                             icon: const Icon(Icons.navigation),
-                            label: const Text('Başlat'),
+                            label: Text(l10n.startNavigation),
                           ),
                         ],
                       ),
@@ -892,16 +909,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     child: ListView(
                       shrinkWrap: true,
                       children: [
-                        ListTile(title: Text('Tahmini Yol Süresi: ${info.totalDuration}')),
-                        ListTile(title: Text('Duraklardaki Toplam Süre: ${_formatDuration(totalStopDuration)}')),
-                        ListTile(title: Text('Toplam Gezi Süresi: ${_formatDuration(totalTripDuration)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                        ListTile(title: Text('Toplam Mesafe: ${info.totalDistance}')),
+                        ListTile(title: Text('${l10n.estimatedTravelTime}: ${info.totalDuration}')),
+                        ListTile(title: Text('${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}')),
+                        ListTile(title: Text('${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                        ListTile(title: Text('${l10n.totalDistance}: ${info.totalDistance}')),
                         const Divider(),
                         if (consolidatedNeeds.isNotEmpty)
                           ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: Text('Bu gezi için ihtiyaçlarınız:', style: Theme.of(context).textTheme.titleLarge),
+                              child: Text(l10n.needsForTrip, style: Theme.of(context).textTheme.titleLarge),
                             ),
                             ...consolidatedNeeds.map((needItem) {
                               return CheckboxListTile(
@@ -923,7 +940,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: Text('Bu gezi için aldığınız özel notlar:', style: Theme.of(context).textTheme.titleLarge),
+                              child: Text(l10n.notesForTrip, style: Theme.of(context).textTheme.titleLarge),
                             ),
                             ...privateNotes.map((note) => ListTile(leading: const Icon(Icons.note), title: Text('${note['locationName']}: ${note['note']}'))),
                           ],
@@ -940,9 +957,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _launchGoogleMaps(List<TravelLocation> locations) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mevcut konum alınamadı. Rota başlatılamıyor.')),
+        SnackBar(content: Text(l10n.currentLocationError)),
       );
       return;
     }
@@ -971,13 +989,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       await launchUrl(uri);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google Haritalar uygulaması başlatılamadı.')),
+        SnackBar(content: Text(l10n.launchMapsError)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final initialCamPos = widget.initialLocation != null
         ? CameraPosition(
             target: LatLng(widget.initialLocation!.latitude,
@@ -993,12 +1013,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ? [
             IconButton(
               icon: const Icon(Icons.directions),
-              tooltip: 'Rota Oluştur',
+              tooltip: l10n.createRoute,
               onPressed: _showRouteCreationDialog,
             ),
             IconButton(
               icon: const Icon(Icons.route_sharp),
-              tooltip: 'Kaydedilmiş Rotalar',
+              tooltip: l10n.savedRoutes,
               onPressed: () async {
                 final List<String>? locationIds = await Navigator.push(
                   context,
@@ -1022,7 +1042,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             IconButton(
               icon: const Icon(Icons.history),
-              tooltip: 'Ulaşılan Konumlar',
+              tooltip: l10n.reachedLocations,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -1034,7 +1054,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             IconButton(
               icon: const Icon(Icons.list_alt),
-              tooltip: 'Konumları Yönet',
+              tooltip: l10n.manageLocations,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -1046,7 +1066,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             IconButton(
               icon: const Icon(Icons.folder_copy_outlined),
-              tooltip: 'Grupları Yönet',
+              tooltip: l10n.manageGroups,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -1057,10 +1077,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.logout),
-              tooltip: 'Çıkış Yap',
+              icon: const Icon(Icons.person_outline),
+              tooltip: l10n.profileScreenTitle,
               onPressed: () {
-                FirebaseAuth.instance.signOut();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
               },
             )
           ]
@@ -1068,14 +1093,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             if (_activeRouteInfo != null)
               IconButton(
                 icon: const Icon(Icons.summarize),
-                tooltip: 'Aktif Rota Özeti',
+                tooltip: l10n.activeRouteSummary,
                 onPressed: () {
                   _showRouteSummary(_activeRouteInfo!, _activeRouteLocations!);
                 },
               ),
             IconButton(
               icon: const Icon(Icons.history),
-              tooltip: 'Ulaşılan Konumlar',
+              tooltip: l10n.reachedLocations,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -1087,14 +1112,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             IconButton(
               icon: const Icon(Icons.close),
-              tooltip: 'Rotayı Temizle',
+              tooltip: l10n.clearRoute,
               onPressed: _clearRoute,
             ),
           ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Travel Log'),
+        title: Text(l10n.appTitle),
         actions: appBarActions,
         backgroundColor: Colors.blue[700],
       ),
@@ -1114,20 +1139,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             polylines: _polylines,
             onLongPress: (pos) async {
               if (_isSelectingEndpoint) {
-                final geoName = await _directionsService.getPlaceName(pos) ?? 'Bilinmeyen Konum';
+                final geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Bitiş Noktasını Onayla'),
-                    content: Text('"$geoName" burası bitiş noktası olarak ayarlansın mı?'),
+                    title: Text(l10n.confirmEndpointDialogTitle),
+                    content: Text(l10n.confirmEndpointDialogContent(geoName)),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('İptal'),
+                        child: Text(l10n.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Onayla'),
+                        child: Text(l10n.confirm),
                       ),
                     ],
                   ),
@@ -1135,7 +1160,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
                 if (confirmed == true) {
                   final endLocation = TravelLocation(
-                    name: 'Seçilen Bitiş Noktası',
+                    name: 'Seçilen Bitiş Noktası', // Internal name, no need to translate
                     geoName: geoName,
                     latitude: pos.latitude,
                     longitude: pos.longitude,
@@ -1197,8 +1222,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       Expanded(
                         child: TextField(
                           controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Ara...',
+                          decoration: InputDecoration(
+                            hintText: l10n.searchHint,
                             border: InputBorder.none,
                           ),
                         ),
@@ -1234,7 +1259,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           final prediction = _placePredictions[index];
                           return ListTile(
                             leading: const Icon(Icons.location_on),
-                            title: Text(prediction['description'] ?? 'Bilinmeyen yer'),
+                            title: Text(prediction['description'] ?? l10n.unknownLocation),
                             onTap: () async {
                               final placeId = prediction['place_id'];
                               if (placeId == null) return;
@@ -1278,7 +1303,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             child: FloatingActionButton(
               mini: true,
               onPressed: _toggleMapType,
-              tooltip: 'Harita Tipi',
+              tooltip: l10n.mapTypeTooltip,
               backgroundColor: Colors.white,
               child: const Icon(Icons.layers, color: Colors.black),
             ),
@@ -1290,7 +1315,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               child: FloatingActionButton(
                 mini: true,
                 onPressed: _resetBearing,
-                tooltip: 'Kuzeyi Göster',
+                tooltip: l10n.resetBearingTooltip,
                 backgroundColor: Colors.white,
                 child: const Icon(Icons.explore_outlined, color: Colors.black),
               ),
@@ -1301,7 +1326,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         padding: const EdgeInsets.only(bottom: 90.0),
         child: FloatingActionButton(
           onPressed: () => _goToCurrentLocation(isInitial: false),
-          tooltip: 'Konumuma Git',
+          tooltip: l10n.myLocationTooltip,
           child: const Icon(Icons.my_location),
         ),
       ),
@@ -1345,14 +1370,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showRouteCreationDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Rota Oluştur'),
-        content: const Text('Rotanızı nasıl oluşturmak istersiniz?'),
+        title: Text(l10n.createRouteDialogTitle),
+        content: Text(l10n.createRouteDialogContent),
         actions: [
           TextButton(
-            child: const Text('Gruptan Seç'),
+            child: Text(l10n.fromGroup),
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               final result = await Navigator.push<Map<String, String>>(
@@ -1369,7 +1395,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 if (locations.length >= 2) {
                   final optimizedLocations = _optimizeRouteByProximity(locations, _currentPosition!);
                   final endLocationLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-                  final endLocationGeoName = await _directionsService.getPlaceName(endLocationLatLng) ?? 'Bilinmeyen Konum';
+                  final endLocationGeoName = await _directionsService.getPlaceName(endLocationLatLng) ?? l10n.unknownLocation;
                   final endLocation = TravelLocation(name: 'Bitiş', geoName: endLocationGeoName, latitude: endLocationLatLng.latitude, longitude: endLocationLatLng.longitude, firestoreId: 'end');
 
                   final result = await Navigator.push<dynamic>(
@@ -1386,19 +1412,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       _locationsForRoute = optimizedLocations;
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Lütfen haritadan yeni bir bitiş noktası seçin.')),
+                      SnackBar(content: Text(l10n.selectNewEndpoint)),
                     );
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bir rota oluşturmak için en az 2 konum gereklidir.')),
+                    SnackBar(content: Text(l10n.minTwoLocationsError)),
                   );
                 }
               }
             },
           ),
           TextButton(
-            child: const Text('Manuel Seçim'),
+            child: Text(l10n.manualSelection),
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               final List<TravelLocation>? finalRoute = await Navigator.push(
@@ -1411,14 +1437,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 _promptForEndpoint(finalRoute);
               } else if (finalRoute != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Bir rota oluşturmak için en az 2 konum seçmelisiniz.')),
+                  SnackBar(content: Text(l10n.minTwoLocationsError)),
                 );
               }
             },
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('İptal'),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
@@ -1426,28 +1452,28 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _promptForEndpoint(List<TravelLocation> locations) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Bitiş Noktası'),
-        content: const Text(
-            'Başlangıç noktası bitiş noktası olarak ayarlandı. Dilerseniz haritadan farklı bir bitiş noktası seçebilirsiniz.'),
+        title: Text(l10n.endPointDialogTitle),
+        content: Text(l10n.endPointDialogContent),
         actions: [
           TextButton(
-            child: const Text('Haritadan Seç'),
+            child: Text(l10n.selectFromMap),
             onPressed: () {
               Navigator.of(dialogContext).pop();
               setState(() {
                 _isSelectingEndpoint = true;
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Lütfen haritadan bir bitiş noktası seçin.')),
+                SnackBar(
+                    content: Text(l10n.selectNewEndpoint)),
               );
             },
           ),
           TextButton(
-            child: const Text('Devam Et'),
+            child: Text(l10n.continueButton),
             onPressed: () {
               Navigator.of(dialogContext).pop();
               _drawRoute(locations);
@@ -1459,13 +1485,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showAddLocationDialog(LatLng pos) async {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final String geoName = await _directionsService.getPlaceName(pos) ?? 'Bilinmeyen Konum';
+    final String geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
     
     if (!mounted) return;
     Navigator.of(context).pop();
@@ -1484,42 +1511,42 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Yeni Konum Ekle'),
+              title: Text(l10n.addLocationDialogTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Gerçek Konum Adı (Değiştirilemez)', style: Theme.of(context).textTheme.bodySmall),
+                    Text(l10n.realLocationNameLabel, style: Theme.of(context).textTheme.bodySmall),
                     Text(geoName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: customNameController,
-                      decoration: const InputDecoration(labelText: 'Özel Konum Adı', icon: Icon(Icons.edit_location_alt)),
+                      decoration: InputDecoration(labelText: l10n.customLocationNameLabel, icon: const Icon(Icons.edit_location_alt)),
                       autofocus: true,
                     ),
                     TextField(
                       controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Açıklama', icon: Icon(Icons.description)),
+                      decoration: InputDecoration(labelText: l10n.descriptionLabel, icon: const Icon(Icons.description)),
                     ),
                     TextField(
                       controller: notesController,
-                      decoration: const InputDecoration(labelText: 'Özel Notlar', icon: Icon(Icons.note)),
+                      decoration: InputDecoration(labelText: l10n.notesLabel, icon: const Icon(Icons.note)),
                     ),
                     TextField(
                       controller: durationController,
-                      decoration: const InputDecoration(labelText: 'Tahmini Süre (dakika)', icon: Icon(Icons.timer)),
+                      decoration: InputDecoration(labelText: l10n.estimatedDurationLabel, icon: const Icon(Icons.timer)),
                       keyboardType: TextInputType.number,
                     ),
                     TextField(
                       controller: needsController,
-                      decoration: const InputDecoration(labelText: 'İhtiyaçlar (virgülle ayırın)', icon: Icon(Icons.list)),
+                      decoration: InputDecoration(labelText: l10n.needsLabel, icon: const Icon(Icons.list)),
                     ),
                     const SizedBox(height: 10),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.group),
-                      title: Text(selectedGroupName ?? 'Grup Seç (İsteğe Bağlı)'),
+                      title: Text(selectedGroupName ?? l10n.selectGroupOptionalLabel),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () async {
                         final result = await Navigator.push<Map<String, String>>(
@@ -1542,10 +1569,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('İptal'),
+                  child: Text(l10n.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (customNameController.text.isNotEmpty) {
                       final needsList = needsController.text
                           .split(',')
@@ -1567,11 +1594,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         estimatedDuration: duration,
                       );
 
+                      await _firestoreService.addLocation(newLocation);
+                      if (!mounted) return;
                       Navigator.of(context).pop();
-                      _firestoreService.addLocation(newLocation);
                     }
                   },
-                  child: const Text('Kaydet'),
+                  child: Text(l10n.save),
                 ),
               ],
             );

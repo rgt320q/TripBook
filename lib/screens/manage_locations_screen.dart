@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:tripbook/models/location_group.dart';
-import 'package:tripbook/models/travel_location.dart';
-import 'package:tripbook/screens/map_screen.dart';
-import 'package:tripbook/services/firestore_service.dart';
+import "package:tripbook/l10n/app_localizations.dart";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:tripbook/models/location_group.dart";
+import "package:tripbook/models/travel_location.dart";
+import "package:tripbook/screens/map_screen.dart";
+import "package:tripbook/services/firestore_service.dart";
 
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
@@ -56,9 +57,10 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Konumları Yönet'),
+        title: Text(l10n.manageLocationsScreenTitle),
         actions: [
           PopupMenuButton<SortBy>(
             icon: const Icon(Icons.sort),
@@ -68,21 +70,21 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
               });
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<SortBy>>[
-              const PopupMenuItem<SortBy>(
+              PopupMenuItem<SortBy>(
                 value: SortBy.nameAsc,
-                child: Text('Ada Göre (A-Z)'),
+                child: Text(l10n.sortByNameAsc),
               ),
-              const PopupMenuItem<SortBy>(
+              PopupMenuItem<SortBy>(
                 value: SortBy.nameDesc,
-                child: Text('Ada Göre (Z-A)'),
+                child: Text(l10n.sortByNameDesc),
               ),
-              const PopupMenuItem<SortBy>(
+              PopupMenuItem<SortBy>(
                 value: SortBy.dateNewest,
-                child: Text('Tarihe Göre (Yeni)'),
+                child: Text(l10n.sortByDateNewest),
               ),
-              const PopupMenuItem<SortBy>(
+              PopupMenuItem<SortBy>(
                 value: SortBy.dateOldest,
-                child: Text('Tarihe Göre (Eski)'),
+                child: Text(l10n.sortByDateOldest),
               ),
             ],
           ),
@@ -95,11 +97,11 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!locationSnapshot.hasData || locationSnapshot.data!.isEmpty) {
-            return const Center(child: Text('Kaydedilmiş konum bulunamadı.'));
+            return Center(child: Text(l10n.noSavedLocations));
           }
           if (locationSnapshot.hasError) {
             return Center(
-                child: Text('Bir hata oluştu: ${locationSnapshot.error}'));
+                child: Text(l10n.error(locationSnapshot.error.toString())));
           }
 
           final locations = locationSnapshot.data!;
@@ -131,7 +133,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                   Widget listItem = LocationListItem(
                     key: ValueKey(location.firestoreId ?? location.hashCode),
                     location: location,
-                    groupName: groupMap[location.groupId] ?? 'Yok',
+                    groupName: groupMap[location.groupId] ?? l10n.groupNone,
                     allGroups: groups,
                     firestoreService: _firestoreService,
                     isInitiallyExpanded: isTarget,
@@ -205,6 +207,7 @@ class _LocationListItemState extends State<LocationListItem> {
   }
 
   void _saveChanges() async {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.location.firestoreId == null) return;
 
     final newNames = _needsController.text
@@ -246,8 +249,8 @@ class _LocationListItemState extends State<LocationListItem> {
           .updateLocation(widget.location.firestoreId!, updatedLocation);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Konum güncellendi!'),
+          SnackBar(
+              content: Text(l10n.locationUpdatedSuccess),
               backgroundColor: Colors.green),
         );
         setState(() {
@@ -258,7 +261,8 @@ class _LocationListItemState extends State<LocationListItem> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Hata: $e'), backgroundColor: Colors.red),
+              content: Text(l10n.error(e.toString())),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -266,6 +270,7 @@ class _LocationListItemState extends State<LocationListItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: ExpansionTile(
@@ -283,7 +288,7 @@ class _LocationListItemState extends State<LocationListItem> {
           text: TextSpan(
             style: DefaultTextStyle.of(context).style,
             children: <TextSpan>[
-              TextSpan(text: 'Grup: ${widget.groupName}\n'),
+              TextSpan(text: '${l10n.groupLabel}: ${widget.groupName}\n'),
               TextSpan(text: widget.location.geoName),
             ],
           ),
@@ -302,20 +307,20 @@ class _LocationListItemState extends State<LocationListItem> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTextField(_nameController, 'Kullanıcı Adı'),
+                _buildTextField(_nameController, l10n.customLocationNameLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_descriptionController, 'Açıklama'),
+                _buildTextField(_descriptionController, l10n.descriptionLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_notesController, 'Özel Notlar'),
+                _buildTextField(_notesController, l10n.notesLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_needsController, 'İhtiyaçlar (virgülle ayırın)'),
+                _buildTextField(_needsController, l10n.needsLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_durationController, 'Tahmini Süre (dakika)', inputType: TextInputType.number),
+                _buildTextField(_durationController, l10n.estimatedDurationLabel, inputType: TextInputType.number),
                 const SizedBox(height: 16),
                 _buildGroupDropdown(),
                 const SizedBox(height: 16),
-                const Text('Google Haritalar Adı:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(l10n.googleMapsNameLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(widget.location.geoName),
                 const SizedBox(height: 16),
                 Row(
@@ -323,7 +328,7 @@ class _LocationListItemState extends State<LocationListItem> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.map, color: Colors.blue),
-                      tooltip: 'Haritada Göster',
+                      tooltip: l10n.showOnMap,
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -337,14 +342,14 @@ class _LocationListItemState extends State<LocationListItem> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.copy, color: Colors.orange),
-                      tooltip: 'Konum Bilgisini Kopyala',
+                      tooltip: l10n.copyLocationInfo,
                       onPressed: () {
                         final lat = widget.location.latitude;
                         final lon = widget.location.longitude;
                         Clipboard.setData(ClipboardData(text: '$lat,$lon'));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Konum bilgileri kopyalandı!'),
+                          SnackBar(
+                            content: Text(l10n.locationCopiedSuccess),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -352,12 +357,12 @@ class _LocationListItemState extends State<LocationListItem> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.save, color: Colors.green),
-                      tooltip: 'Değişiklikleri Kaydet',
+                      tooltip: l10n.saveChanges,
                       onPressed: _saveChanges,
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'Konumu Sil',
+                      tooltip: l10n.deleteLocation,
                       onPressed: () => _deleteLocation(context),
                     ),
                   ],
@@ -382,6 +387,7 @@ class _LocationListItemState extends State<LocationListItem> {
   }
 
   Widget _buildGroupDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     final allGroupIds = widget.allGroups.map((g) => g.firestoreId).toSet();
     allGroupIds.add(null);
 
@@ -390,14 +396,14 @@ class _LocationListItemState extends State<LocationListItem> {
 
     return DropdownButtonFormField<String>(
       initialValue: validSelectedGroupId,
-      decoration: const InputDecoration(
-        labelText: 'Grup',
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        labelText: l10n.groupLabel,
+        border: const OutlineInputBorder(),
       ),
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('Yok'),
+          child: Text(l10n.groupNone),
         ),
         ...widget.allGroups.map((group) {
           return DropdownMenuItem<String>(
@@ -415,20 +421,20 @@ class _LocationListItemState extends State<LocationListItem> {
   }
 
   Future<void> _deleteLocation(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final bool? confirmDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Konumu Sil'),
-        content: Text(
-            '${widget.location.name} konumunu silmek istediğinizden emin misiniz?'),
+        title: Text(l10n.deleteLocation),
+        content: Text(l10n.deleteLocationConfirmation(widget.location.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('İptal'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sil'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -437,8 +443,8 @@ class _LocationListItemState extends State<LocationListItem> {
       await widget.firestoreService.deleteLocation(widget.location.firestoreId!);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Konum silindi.'),
+        SnackBar(
+          content: Text(l10n.locationDeletedSuccess),
           backgroundColor: Colors.red,
         ),
       );

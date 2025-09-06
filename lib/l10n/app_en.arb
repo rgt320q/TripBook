@@ -1,0 +1,146 @@
+{
+  "helloWorld": "Hello World!",
+  "selectGroupColor": "Select Group Color:",
+  "cancel": "Cancel",
+  "save": "Save",
+  "sortByNameAsc": "By Name (A-Z)",
+  "sortByNameDesc": "By Name (Z-A)",
+  "sortByDateNewest": "By Date (Newest)",
+  "sortByDateOldest": "By Date (Oldest)",
+  "noGroupsYet": "No groups created yet.",
+  "deleteGroup": "Delete Group",
+  "deleteGroupConfirmation": "Are you sure you want to delete the group '{groupName}'? All locations belonging to this group will also be deleted.",
+  "@deleteGroupConfirmation": {
+    "description": "Confirmation message for deleting a group",
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "Delete",
+  "groupName": "Group Name",
+  "newGroup": "New Group",
+  "editGroup": "Edit Group",
+  "selectGroup": "Select Group",
+  "travelGroups": "TravelGroups",
+  "error": "An error occurred: {error}",
+  "@error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noLocationsInGroup": "No locations in this group yet.",
+  "profileScreenTitle": "User Profile",
+  "profileEmailLabel": "Email",
+  "profileUsernameLabel": "Username",
+  "profileHomeLocationLabel": "Home Location (Lat,Lng)",
+  "profileLanguageLabel": "Language",
+  "profileSaveSuccess": "Profile updated!",
+  "profileLoadError": "Could not load profile.",
+  "profileUsernameValidation": "Please enter a username.",
+  "createRoute": "Create Route",
+  "savedRoutes": "Saved Routes",
+  "reachedLocations": "Reached Locations",
+  "manageLocations": "Manage Locations",
+  "manageGroups": "Manage Groups",
+  "logout": "Logout",
+  "activeRouteSummary": "Active Route Summary",
+  "clearRoute": "Clear Route",
+  "appTitle": "Trip Book",
+  "createRouteDialogTitle": "Create Route",
+  "createRouteDialogContent": "How would you like to create your route?",
+  "fromGroup": "From Group",
+  "manualSelection": "Manual Selection",
+  "endPointDialogTitle": "Endpoint",
+  "endPointDialogContent": "The starting point is set as the endpoint. You can select a different endpoint from the map if you wish.",
+  "selectFromMap": "Select from Map",
+  "continueButton": "Continue",
+  "selectNewEndpoint": "Please select a new endpoint from the map.",
+  "minTwoLocationsError": "You must select at least 2 locations to create a route.",
+  "locationsNotFoundError": "The locations for this route could not be found or are insufficient.",
+  "addLocationDialogTitle": "Add New Location",
+  "realLocationNameLabel": "Real Location Name (Cannot be changed)",
+  "customLocationNameLabel": "Custom Location Name",
+  "descriptionLabel": "Description",
+  "notesLabel": "Private Notes",
+  "estimatedDurationLabel": "Estimated Duration (minutes)",
+  "needsLabel": "Needs (comma-separated)",
+  "selectGroupOptionalLabel": "Select Group (Optional)",
+  "confirmEndpointDialogTitle": "Confirm Endpoint",
+  "confirmEndpointDialogContent": "Set '{geoName}' as the endpoint?",
+  "@confirmEndpointDialogContent": {
+    "placeholders": {
+      "geoName": {
+        "type": "String"
+      }
+    }
+  },
+  "confirm": "Confirm",
+  "unknownLocation": "Unknown Location",
+  "currentLocationError": "Could not get current location. Please check location services.",
+  "drawRouteError": "Could not draw route. Check your API key or try again later.",
+  "saveRouteDialogTitle": "Save Route",
+  "routeNameHint": "Enter route name",
+  "routeExistsError": "A route named '{routeName}' already exists. Overwrite?",
+  "@routeExistsError": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "yes": "Yes",
+  "no": "No",
+  "routeSavedSuccess": "Route saved as \"{routeName}\"",
+  "@routeSavedSuccess": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeCompletionDialogTitle": "Route Completed",
+  "plannedDistance": "Planned Distance",
+  "actualDistance": "Actual Distance",
+  "plannedTotalDuration": "Planned Total Duration",
+  "actualDuration": "Actual Duration",
+  "exit": "Exit",
+  "routeSummaryTitle": "Route Summary",
+  "startNavigation": "Start",
+  "estimatedTravelTime": "Estimated Travel Time",
+  "totalTimeAtStops": "Total Time at Stops",
+  "totalTripTime": "Total Trip Time",
+  "totalDistance": "Total Distance",
+  "needsForTrip": "Your needs for this trip:",
+  "notesForTrip": "Your private notes for this trip:",
+  "launchMapsError": "Could not launch Google Maps.",
+  "searchHint": "Search...",
+  "mapTypeTooltip": "Map Type",
+  "resetBearingTooltip": "Reset Bearing",
+  "myLocationTooltip": "Go to my location",
+  "manageLocationsScreenTitle": "Manage Locations",
+  "noSavedLocations": "No saved locations found.",
+  "groupNone": "None",
+  "locationUpdatedSuccess": "Location updated!",
+  "groupLabel": "Group",
+  "showOnMap": "Show on Map",
+  "copyLocationInfo": "Copy Location Info",
+  "locationCopiedSuccess": "Location info copied!",
+  "saveChanges": "Save Changes",
+  "deleteLocation": "Delete Location",
+  "deleteLocationConfirmation": "Are you sure you want to delete the location '{locationName}'?",
+  "@deleteLocationConfirmation": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "locationDeletedSuccess": "Location deleted.",
+  "googleMapsNameLabel": "Google Maps Name:",
+  "logoutConfirmationTitle": "Logout",
+  "logoutConfirmationContent": "Are you sure you want to logout?"
+}

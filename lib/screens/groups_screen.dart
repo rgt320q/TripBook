@@ -1,3 +1,4 @@
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:tripbook/models/location_group.dart';
@@ -61,18 +62,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(groupToEdit == null ? 'Yeni Grup Oluştur' : 'Grup Düzenle'),
+              title: Text(groupToEdit == null ? AppLocalizations.of(context)!.newGroup : AppLocalizations.of(context)!.editGroup),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: _groupNameController,
-                      decoration: const InputDecoration(hintText: 'Grup Adı'),
+                      decoration: InputDecoration(hintText: AppLocalizations.of(context)!.groupName),
                       autofocus: true,
                     ),
                     const SizedBox(height: 20),
-                    const Text('Grup Rengi Seçin:'),
+                    Text(AppLocalizations.of(context)!.selectGroupColor),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8.0,
@@ -109,7 +110,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     _groupNameController.clear();
                     _selectedColor = null;
                   },
-                  child: const Text('İptal'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -133,7 +134,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       Navigator.of(context).pop();
                     }
                   },
-                  child: const Text('Kaydet'),
+                  child: Text(AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -147,7 +148,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isForSelection ? 'Grup Seç' : 'Seyahat Grupları'),
+        title: Text(widget.isForSelection ? AppLocalizations.of(context)!.selectGroup : AppLocalizations.of(context)!.travelGroups),
         actions: [
           if (!widget.isForSelection)
             PopupMenuButton<GroupSortBy>(
@@ -158,21 +159,21 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 });
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<GroupSortBy>>[
-                const PopupMenuItem<GroupSortBy>(
+                PopupMenuItem<GroupSortBy>(
                   value: GroupSortBy.nameAsc,
-                  child: Text('Ada Göre (A-Z)'),
+                  child: Text(AppLocalizations.of(context)!.sortByNameAsc),
                 ),
-                const PopupMenuItem<GroupSortBy>(
+                PopupMenuItem<GroupSortBy>(
                   value: GroupSortBy.nameDesc,
-                  child: Text('Ada Göre (Z-A)'),
+                  child: Text(AppLocalizations.of(context)!.sortByNameDesc),
                 ),
-                const PopupMenuItem<GroupSortBy>(
+                PopupMenuItem<GroupSortBy>(
                   value: GroupSortBy.dateNewest,
-                  child: Text('Tarihe Göre (Yeni)'),
+                  child: Text(AppLocalizations.of(context)!.sortByDateNewest),
                 ),
-                const PopupMenuItem<GroupSortBy>(
+                PopupMenuItem<GroupSortBy>(
                   value: GroupSortBy.dateOldest,
-                  child: Text('Tarihe Göre (Eski)'),
+                  child: Text(AppLocalizations.of(context)!.sortByDateOldest),
                 ),
               ],
             ),
@@ -185,10 +186,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Henüz bir grup oluşturulmamış.'));
+            return Center(child: Text(AppLocalizations.of(context)!.noGroupsYet));
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+            return Center(child: Text(AppLocalizations.of(context)!.error(snapshot.error.toString())));
           }
 
           final groups = snapshot.data!;
@@ -225,16 +226,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                       final bool? confirmDelete = await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
-                                          title: const Text('Grup Sil'),
-                                          content: Text('\'${group.name}\' grubunu silmek istediğinizden emin misiniz? Bu gruba ait tüm konumlar da silinecektir.'),
+                                          title: Text(AppLocalizations.of(context)!.deleteGroup),
+                                          content: Text(AppLocalizations.of(context)!.deleteGroupConfirmation(group.name)),
                                           actions: [
                                             TextButton(
                                               onPressed: () => Navigator.of(context).pop(false),
-                                              child: const Text('İptal'),
+                                              child: Text(AppLocalizations.of(context)!.cancel),
                                             ),
                                             TextButton(
                                               onPressed: () => Navigator.of(context).pop(true),
-                                              child: const Text('Sil'),
+                                              child: Text(AppLocalizations.of(context)!.delete),
                                             ),
                                           ],
                                         ),

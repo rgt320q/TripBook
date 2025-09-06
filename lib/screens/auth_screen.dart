@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
+import 'package:tripbook/screens/map_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -42,8 +43,12 @@ class _AuthScreenState extends State<AuthScreen> {
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
+      } else {
+        // Login/Signup successful, simply pop AuthScreen
+        if (mounted) {
+          Navigator.of(context).pop(); // Just pop, let AuthWrapper handle the rest
+        }
       }
-      // If authResult is null, the stream will rebuild the UI, so no navigation needed here.
 
       if (mounted) {
         setState(() {
