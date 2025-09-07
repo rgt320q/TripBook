@@ -144,6 +144,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectFromMap => 'Select from Map';
 
   @override
+  String get homeLocationNotSet => 'Home location not set';
+
+  @override
+  String get setHomeLocationTitle => 'Set Home Location';
+
+  @override
+  String get setHomeLocationContent =>
+      'Do you want to set this location as your home?';
+
+  @override
+  String get selectLocation => 'Select Location';
+
+  @override
   String get continueButton => 'Continue';
 
   @override

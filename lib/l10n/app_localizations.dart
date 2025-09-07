@@ -356,6 +356,30 @@ abstract class AppLocalizations {
   /// **'Select from Map'**
   String get selectFromMap;
 
+  /// No description provided for @homeLocationNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Home location not set'**
+  String get homeLocationNotSet;
+
+  /// No description provided for @setHomeLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Home Location'**
+  String get setHomeLocationTitle;
+
+  /// No description provided for @setHomeLocationContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to set this location as your home?'**
+  String get setHomeLocationContent;
+
+  /// No description provided for @selectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Location'**
+  String get selectLocation;
+
   /// No description provided for @continueButton.
   ///
   /// In en, this message translates to:
