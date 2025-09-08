@@ -8,7 +8,8 @@ import "package:tripbook/services/firestore_service.dart";
 
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
-  const ManageLocationsScreen({super.key, this.initiallyExpandedLocationId});
+  final bool isForSelection;
+  const ManageLocationsScreen({super.key, this.initiallyExpandedLocationId, this.isForSelection = false});
 
   @override
   State<ManageLocationsScreen> createState() => _ManageLocationsScreenState();
@@ -18,6 +19,7 @@ enum SortBy { nameAsc, nameDesc, dateNewest, dateOldest }
 
 class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final List<TravelLocation> _selectedLocations = [];
   SortBy _currentSortBy = SortBy.dateNewest;
   GlobalKey? _scrollKey;
 
@@ -62,6 +64,13 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
       appBar: AppBar(
         title: Text(l10n.manageLocationsScreenTitle),
         actions: [
+          if (widget.isForSelection)
+            IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: () {
+                Navigator.of(context).pop(_selectedLocations);
+              },
+            ),
           PopupMenuButton<SortBy>(
             icon: const Icon(Icons.sort),
             onSelected: (SortBy result) {
@@ -137,6 +146,18 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     allGroups: groups,
                     firestoreService: _firestoreService,
                     isInitiallyExpanded: isTarget,
+                    isSelected: _selectedLocations.contains(location),
+                    onSelected: widget.isForSelection
+                        ? (location, selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedLocations.add(location);
+                              } else {
+                                _selectedLocations.remove(location);
+                              }
+                            });
+                          }
+                        : null,
                   );
 
                   if (isTarget) {
@@ -159,6 +180,8 @@ class LocationListItem extends StatefulWidget {
   final List<LocationGroup> allGroups;
   final FirestoreService firestoreService;
   final bool isInitiallyExpanded;
+  final bool isSelected;
+  final Function(TravelLocation, bool)? onSelected;
 
   const LocationListItem({
     super.key,
@@ -167,6 +190,8 @@ class LocationListItem extends StatefulWidget {
     required this.allGroups,
     required this.firestoreService,
     this.isInitiallyExpanded = false,
+    this.isSelected = false,
+    this.onSelected,
   });
 
   @override
@@ -274,6 +299,14 @@ class _LocationListItemState extends State<LocationListItem> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: ExpansionTile(
+        leading: widget.onSelected != null
+            ? Checkbox(
+                value: widget.isSelected,
+                onChanged: (value) {
+                  widget.onSelected!(widget.location, value!);
+                },
+              )
+            : null,
         initiallyExpanded: _isExpanded,
         onExpansionChanged: (expanded) {
           setState(() {

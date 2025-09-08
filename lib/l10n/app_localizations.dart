@@ -419,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @customLocationNameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Custom Location Name'**
+  /// **'Custom Name'**
   String get customLocationNameLabel;
 
   /// No description provided for @descriptionLabel.
@@ -745,6 +745,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Home Location'**
   String get selectHomeLocation;
+
+  /// No description provided for @endLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'End Location'**
+  String get endLocation;
+
+  /// No description provided for @homeLocationAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Location (Auto)'**
+  String get homeLocationAuto;
 }
 
 class _AppLocalizationsDelegate

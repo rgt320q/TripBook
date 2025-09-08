@@ -67,7 +67,7 @@
   "locationsNotFoundError": "The locations for this route could not be found or are insufficient.",
   "addLocationDialogTitle": "Add New Location",
   "realLocationNameLabel": "Real Location Name (Cannot be changed)",
-  "customLocationNameLabel": "Custom Location Name",
+  "customLocationNameLabel": "Custom Name",
   "descriptionLabel": "Description",
   "notesLabel": "Private Notes",
   "estimatedDurationLabel": "Estimated Duration (minutes)",
@@ -149,5 +149,7 @@
   "logoutConfirmationContent": "Are you sure you want to logout?",
   "homeLocation": "Home Location",
   "notSet": "Not Set",
-  "selectHomeLocation": "Select Home Location"
+  "selectHomeLocation": "Select Home Location",
+  "endLocation": "End Location",
+  "homeLocationAuto": "Home Location (Auto)"
 }

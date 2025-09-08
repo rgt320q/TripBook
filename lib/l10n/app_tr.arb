@@ -145,5 +145,7 @@
   "logoutConfirmationContent": "Çıkış yapmak istediğinizden emin misiniz?",
   "homeLocation": "Ev Konumu",
   "notSet": "Ayarlanmadı",
-  "selectHomeLocation": "Ev Konumunu Seç"
+  "selectHomeLocation": "Ev Konumunu Seç",
+  "endLocation": "Bitiş Konumu",
+  "homeLocationAuto": "Ev Konumu (Otomatik)"
 }

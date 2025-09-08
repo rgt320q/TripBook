@@ -352,4 +352,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get selectHomeLocation => 'Ev Konumunu Seç';
+
+  @override
+  String get endLocation => 'Bitiş Konumu';
+
+  @override
+  String get homeLocationAuto => 'Ev Konumu (Otomatik)';
 }

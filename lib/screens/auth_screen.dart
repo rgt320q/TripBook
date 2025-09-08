@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
-import 'package:tripbook/screens/map_screen.dart';
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

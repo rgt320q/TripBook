@@ -1,9 +1,8 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-Future<BitmapDescriptor> getHomeMarkerIcon({double size = 80}) async {
+Future<BitmapDescriptor> getHomeMarkerIcon({double size = 30}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
   final Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset.zero, Offset(size, size)));
   final double radius = size / 2;
@@ -37,7 +36,7 @@ Future<BitmapDescriptor> getHomeMarkerIcon({double size = 80}) async {
   final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
   final data = await img.toByteData(format: ImageByteFormat.png);
 
-  return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+  return BitmapDescriptor.bytes(data!.buffer.asUint8List());
 }
 
 Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, bool isEndpoint = false}) async {

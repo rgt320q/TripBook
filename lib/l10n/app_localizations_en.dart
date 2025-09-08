@@ -177,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get realLocationNameLabel => 'Real Location Name (Cannot be changed)';
 
   @override
-  String get customLocationNameLabel => 'Custom Location Name';
+  String get customLocationNameLabel => 'Custom Name';
 
   @override
   String get descriptionLabel => 'Description';
@@ -350,4 +350,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectHomeLocation => 'Select Home Location';
+
+  @override
+  String get endLocation => 'End Location';
+
+  @override
+  String get homeLocationAuto => 'Home Location (Auto)';
 }

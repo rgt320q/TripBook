@@ -92,7 +92,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _pickHomeLocation() async {
-    final l10n = AppLocalizations.of(context)!;
     final LatLng? pickedLocation = await Navigator.push(
       context,
       MaterialPageRoute(
