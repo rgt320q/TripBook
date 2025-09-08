@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/providers/locale_provider.dart';
+import 'package:tripbook/screens/home_location_picker_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,10 +21,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final _usernameController = TextEditingController();
-  
+
   String? _selectedLanguage;
-  // For simplicity, we'll handle home location as text for now.
-  final _homeLocationController = TextEditingController(); 
+  GeoPoint? _homeLocation;
 
   late Future<UserProfile?> _userProfileFuture;
 
@@ -33,7 +34,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (profile != null && mounted) {
         _usernameController.text = profile.username ?? '';
         _selectedLanguage = profile.languageCode ?? 'tr';
-        _homeLocationController.text = profile.homeLocation?.toString() ?? '';
+        setState(() {
+          _homeLocation = profile.homeLocation;
+        });
       }
       return profile;
     });
@@ -42,14 +45,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<UserProfile?> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
-    // No need to set locale here, it's handled by the AuthWrapper
     return await _firestoreService.getUserProfile().first;
   }
 
   @override
   void dispose() {
     _usernameController.dispose();
-    _homeLocationController.dispose();
     super.dispose();
   }
 
@@ -58,18 +59,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // TODO: Implement GeoPoint conversion for home location
       final userProfile = UserProfile(
         uid: user.uid,
         username: _usernameController.text,
         languageCode: _selectedLanguage,
+        homeLocation: _homeLocation,
       );
 
       try {
         await _firestoreService.updateUserProfile(userProfile);
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
-          // Update the app's locale
           if (_selectedLanguage != null) {
             Provider.of<LocaleProvider>(context, listen: false)
                 .setLocale(Locale(_selectedLanguage!));
@@ -91,6 +91,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _pickHomeLocation() async {
+    final l10n = AppLocalizations.of(context)!;
+    final LatLng? pickedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomeLocationPickerScreen(
+          initialLocation: _homeLocation != null
+              ? LatLng(_homeLocation!.latitude, _homeLocation!.longitude)
+              : null,
+        ),
+      ),
+    );
+
+    if (pickedLocation != null) {
+      setState(() {
+        _homeLocation = GeoPoint(pickedLocation.latitude, pickedLocation.longitude);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -105,7 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-            // If no profile, create a default one to avoid errors
             final user = FirebaseAuth.instance.currentUser;
             if (user != null) {
               return _buildForm(l10n, UserProfile(uid: user.uid, languageCode: 'tr'));
@@ -147,10 +166,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              controller: _homeLocationController,
-              decoration: InputDecoration(labelText: l10n.profileHomeLocationLabel),
-              // TODO: Add a map picker
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: Text(l10n.homeLocation),
+              subtitle: Text(
+                _homeLocation != null
+                    ? 'Lat: ${_homeLocation!.latitude.toStringAsFixed(4)}, Lon: ${_homeLocation!.longitude.toStringAsFixed(4)}'
+                    : l10n.notSet,
+              ),
+              trailing: const Icon(Icons.map),
+              onTap: _pickHomeLocation,
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(

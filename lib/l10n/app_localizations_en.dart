@@ -235,7 +235,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String routeSavedSuccess(String routeName) {
-    return 'Route saved as \"$routeName\"';
+    return 'Route saved as \'$routeName\'';
   }
 
   @override
@@ -341,4 +341,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutConfirmationContent => 'Are you sure you want to logout?';
+
+  @override
+  String get homeLocation => 'Home Location';
+
+  @override
+  String get notSet => 'Not Set';
+
+  @override
+  String get selectHomeLocation => 'Select Home Location';
 }

@@ -236,7 +236,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String routeSavedSuccess(String routeName) {
-    return 'Rota \"$routeName\" olarak kaydedildi!';
+    return 'Rota \'$routeName\' olarak kaydedildi!';
   }
 
   @override
@@ -343,4 +343,13 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get logoutConfirmationContent =>
       'Çıkış yapmak istediğinizden emin misiniz?';
+
+  @override
+  String get homeLocation => 'Ev Konumu';
+
+  @override
+  String get notSet => 'Ayarlanmadı';
+
+  @override
+  String get selectHomeLocation => 'Ev Konumunu Seç';
 }

@@ -132,6 +132,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
             ),
       floatingActionButton: isReorderMode
           ? FloatingActionButton.extended(
+              heroTag: 'confirmRouteFab', // Unique tag for reorder mode FAB
               onPressed: () {
                 if (_selectedLocations.length < 2) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +146,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               icon: const Icon(Icons.check),
             )
           : FloatingActionButton.extended(
+              heroTag: 'selectLocationsFab', // Unique tag for selection mode FAB
               onPressed: () {
                 if (_selectedLocations.length >= 2) {
                   setState(() {

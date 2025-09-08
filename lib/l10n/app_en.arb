@@ -98,7 +98,7 @@
   },
   "yes": "Yes",
   "no": "No",
-  "routeSavedSuccess": "Route saved as \"{routeName}\"",
+  "routeSavedSuccess": "Route saved as '{routeName}'",
   "@routeSavedSuccess": {
     "placeholders": {
       "routeName": {
@@ -146,5 +146,8 @@
   "locationDeletedSuccess": "Location deleted.",
   "googleMapsNameLabel": "Google Maps Name:",
   "logoutConfirmationTitle": "Logout",
-  "logoutConfirmationContent": "Are you sure you want to logout?"
+  "logoutConfirmationContent": "Are you sure you want to logout?",
+  "homeLocation": "Home Location",
+  "notSet": "Not Set",
+  "selectHomeLocation": "Select Home Location"
 }

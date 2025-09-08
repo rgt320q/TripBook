@@ -271,6 +271,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addGroupFab', // Unique tag
         onPressed: () => _showGroupDialog(),
         child: const Icon(Icons.add),
       ),

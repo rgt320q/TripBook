@@ -1,6 +1,5 @@
 
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/reached_location_log.dart';
 import 'package:tripbook/models/travel_route.dart';
+import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/screens/reached_locations_screen.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/travel_location.dart';
@@ -64,6 +64,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   List<TravelLocation> _allLocations = [];
   List<LocationGroup> _allGroups = [];
+  GeoPoint? _homeLocation;
 
   // --- Active Route State ---
   List<TravelLocation>? _activeRouteLocations;
@@ -89,6 +90,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   StreamSubscription? _locationsSubscription;
   StreamSubscription? _groupsSubscription;
+  StreamSubscription? _profileSubscription;
   StreamSubscription<Position>? _positionStreamSubscription;
 
   bool _isDataSyncInitialized = false;
@@ -117,6 +119,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _locationsSubscription?.cancel();
     _groupsSubscription?.cancel();
+    _profileSubscription?.cancel();
     _positionStreamSubscription?.cancel();
     _waypointTimers.forEach((_, timer) => timer.cancel());
     _searchController.removeListener(_onSearchChanged);
@@ -445,10 +448,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         _updateMapElements();
       }
     });
+
+    _profileSubscription = _firestoreService.getUserProfile().listen((profile) {
+      if (mounted && profile != null) {
+        setState(() {
+          _homeLocation = profile.homeLocation;
+        });
+        _updateMapElements();
+      }
+    });
   }
 
   Future<void> _updateMapElements() async {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
 
     final groupsMap = { for (var group in _allGroups) group.firestoreId!: group };
     final Set<Marker> newMarkers = {};
@@ -459,10 +472,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         Marker(
           markerId: const MarkerId('currentLocation'),
           position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          infoWindow: const InfoWindow(title: 'Mevcut Konum'),
+          infoWindow: InfoWindow(title: l10n.myLocationTooltip),
           icon: icon,
           zIndex: 2,
           anchor: const Offset(0.5, 0.5),
+        ),
+      );
+    }
+
+    if (_homeLocation != null) {
+      final icon = await marker_utils.getHomeMarkerIcon();
+      newMarkers.add(
+        Marker(
+          markerId: const MarkerId('homeLocation'),
+          position: LatLng(_homeLocation!.latitude, _homeLocation!.longitude),
+          infoWindow: InfoWindow(title: l10n.homeLocation),
+          icon: icon,
+          zIndex: 1, // Lower zIndex to appear below other markers if they overlap
         ),
       );
     }
@@ -1301,6 +1327,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             top: 70,
             right: 15,
             child: FloatingActionButton(
+              heroTag: 'mapTypeFab', // Unique tag
               mini: true,
               onPressed: _toggleMapType,
               tooltip: l10n.mapTypeTooltip,
@@ -1313,6 +1340,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               top: 125,
               right: 15,
               child: FloatingActionButton(
+                heroTag: 'resetBearingFab', // Unique tag
                 mini: true,
                 onPressed: _resetBearing,
                 tooltip: l10n.resetBearingTooltip,
@@ -1325,6 +1353,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
         child: FloatingActionButton(
+          heroTag: 'myLocationFab', // Unique tag
           onPressed: () => _goToCurrentLocation(isInitial: false),
           tooltip: l10n.myLocationTooltip,
           child: const Icon(Icons.my_location),

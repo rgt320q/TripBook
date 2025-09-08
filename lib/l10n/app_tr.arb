@@ -94,7 +94,7 @@
   },
   "yes": "Evet",
   "no": "Hayır",
-  "routeSavedSuccess": "Rota \"{routeName}\" olarak kaydedildi!",
+  "routeSavedSuccess": "Rota '{routeName}' olarak kaydedildi!",
   "@routeSavedSuccess": {
     "placeholders": {
       "routeName": {
@@ -142,5 +142,8 @@
   "locationDeletedSuccess": "Konum silindi.",
   "googleMapsNameLabel": "Google Haritalar Adı:",
   "logoutConfirmationTitle": "Çıkış Yap",
-  "logoutConfirmationContent": "Çıkış yapmak istediğinizden emin misiniz?"
+  "logoutConfirmationContent": "Çıkış yapmak istediğinizden emin misiniz?",
+  "homeLocation": "Ev Konumu",
+  "notSet": "Ayarlanmadı",
+  "selectHomeLocation": "Ev Konumunu Seç"
 }

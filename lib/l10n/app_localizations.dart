@@ -521,7 +521,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeSavedSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Route saved as \"{routeName}\"'**
+  /// **'Route saved as \'{routeName}\''**
   String routeSavedSuccess(String routeName);
 
   /// No description provided for @routeCompletionDialogTitle.
@@ -727,6 +727,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to logout?'**
   String get logoutConfirmationContent;
+
+  /// No description provided for @homeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Location'**
+  String get homeLocation;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Set'**
+  String get notSet;
+
+  /// No description provided for @selectHomeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Home Location'**
+  String get selectHomeLocation;
 }
 
 class _AppLocalizationsDelegate

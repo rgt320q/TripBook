@@ -3,6 +3,43 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+Future<BitmapDescriptor> getHomeMarkerIcon({double size = 80}) async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset.zero, Offset(size, size)));
+  final double radius = size / 2;
+
+  // Draw a perfect circle as the base
+  final Paint fillPaint = Paint()..color = Colors.indigo; // Home color
+  canvas.drawCircle(Offset(radius, radius), radius, fillPaint);
+
+  // Pin Border
+  final Paint borderPaint = Paint()
+    ..color = Colors.white
+    ..strokeWidth = size * 0.03
+    ..style = PaintingStyle.stroke;
+  canvas.drawCircle(Offset(radius, radius), radius, borderPaint);
+
+  // Draw the home icon inside
+  final iconData = Icons.home_filled;
+  final textPainter = TextPainter(textDirection: TextDirection.ltr);
+  textPainter.text = TextSpan(
+    text: String.fromCharCode(iconData.codePoint),
+    style: TextStyle(
+      fontSize: size * 0.5, // Adjust font size to fit well
+      fontFamily: iconData.fontFamily,
+      color: Colors.white,
+    ),
+  );
+  textPainter.layout();
+  // Center the icon within the circle
+  textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
+
+  final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+  final data = await img.toByteData(format: ImageByteFormat.png);
+
+  return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+}
+
 Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, bool isEndpoint = false}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
   // Gölgenin kırpılmasını önlemek için canvas'ı biraz daha büyük yapalım
