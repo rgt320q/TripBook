@@ -745,7 +745,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       false;
                 }
 
-                if (!shouldProceed) return;
+                if (!shouldProceed || !mounted) return;
 
                 final newRoute = TravelRoute(
                   name: routeName,
@@ -767,13 +767,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   await _firestoreService.addRoute(newRoute);
                 }
 
-                if (mounted) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.routeSavedSuccess(routeName)), backgroundColor: Colors.green),
-                  );
-                  _clearRoute();
-                }
+                if (!mounted) return;
+
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.routeSavedSuccess(routeName)), backgroundColor: Colors.green),
+                );
+                _clearRoute();
               },
               child: Text(l10n.save),
             ),
@@ -1598,13 +1598,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 MaterialPageRoute(builder: (context) => const GroupsScreen(isForSelection: true)),
               );
 
-              if (!mounted || result == null || _currentPosition == null) return;
+              if (!mounted || result == null) return;
 
               final selectedGroupId = result['id'];
 
               if (selectedGroupId != null) {
                 final locations = await _firestoreService.getLocationsForGroup(selectedGroupId);
                 if (locations.length >= 2) {
+                  if (_currentPosition == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.currentLocationError)),
+                    );
+                    return;
+                  }
                   final optimizedLocations = _optimizeRouteByProximity(locations, _currentPosition!);
                   final defaultEndLocationGeoName = await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? l10n.unknownLocation;
                   final defaultEndLocation = TravelLocation(

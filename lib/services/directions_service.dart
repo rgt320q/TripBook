@@ -22,11 +22,17 @@ class DirectionsInfo {
 }
 
 class DirectionsService {
+  static final DirectionsService _instance = DirectionsService._internal();
+
+  factory DirectionsService() {
+    return _instance;
+  }
+
   final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'YOUR_API_KEY_HERE';
   String? _sessionToken;
   final Uuid _uuid = const Uuid();
 
-  DirectionsService() {
+  DirectionsService._internal() {
     _sessionToken = _uuid.v4();
   }
 

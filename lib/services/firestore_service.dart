@@ -8,13 +8,18 @@ import 'package:tripbook/models/travel_route.dart';
 import 'package:tripbook/models/user_profile.dart';
 
 class FirestoreService {
+  static final FirestoreService _instance = FirestoreService._internal();
+
+  factory FirestoreService() {
+    return _instance;
+  }
+
+  FirestoreService._internal();
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   User? get _currentUser => _auth.currentUser;
-
-  // Prevent public instantiation
-  FirestoreService();
 
   // Get user-specific locations collection
   CollectionReference<TravelLocation> get _locationsCollection {
