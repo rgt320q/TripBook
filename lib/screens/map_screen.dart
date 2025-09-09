@@ -39,7 +39,8 @@ class NeedItem {
 
 class MapScreen extends StatefulWidget {
   final TravelLocation? initialLocation;
-  const MapScreen({super.key, this.initialLocation});
+  final bool isChangingEndPoint;
+  const MapScreen({super.key, this.initialLocation, this.isChangingEndPoint = false});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -98,9 +99,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (widget.initialLocation == null) {
-      _determinePosition();
-    }
+    _determinePosition();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -205,7 +204,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     try {
       _currentPosition = await Geolocator.getCurrentPosition();
-      if (_mapController != null) {
+      if (_mapController != null && widget.initialLocation == null) {
         await _goToCurrentLocation(isInitial: true);
       }
       await _updateMapElements();
@@ -1018,6 +1017,175 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
+    if (widget.isChangingEndPoint) {
+      final Set<Marker> endPointMarkers = {};
+      if (widget.initialLocation != null) {
+        endPointMarkers.add(
+          Marker(
+            markerId: const MarkerId('initial-endpoint'),
+            position: LatLng(widget.initialLocation!.latitude, widget.initialLocation!.longitude),
+            infoWindow: const InfoWindow(title: 'Current End Point'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueMagenta),
+          ),
+        );
+      }
+      if (_searchResultMarker != null) {
+        endPointMarkers.add(_searchResultMarker!);
+      }
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Bitiş Noktasını Seç"),
+          leading: IconButton(
+            icon: const Icon(Icons.cancel),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+        body: Stack(
+          children: [
+            GoogleMap(
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller;
+              },
+              initialCameraPosition: CameraPosition(
+                target: LatLng(
+                  widget.initialLocation?.latitude ?? _currentPosition?.latitude ?? 38.9637,
+                  widget.initialLocation?.longitude ?? _currentPosition?.longitude ?? 35.2433,
+                ),
+                zoom: widget.initialLocation != null ? 15 : 5,
+              ),
+              markers: endPointMarkers,
+              onLongPress: (pos) async {
+                final geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
+                final newEndPoint = TravelLocation(
+                  name: geoName,
+                  geoName: geoName,
+                  latitude: pos.latitude,
+                  longitude: pos.longitude,
+                  firestoreId: 'end',
+                );
+                Navigator.of(context).pop(newEndPoint);
+              },
+              myLocationButtonEnabled: false,
+              myLocationEnabled: true,
+            ),
+            Positioned(
+              top: 10,
+              left: 15,
+              right: 15,
+              child: Column(
+                children: [
+                  Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(Icons.search, color: Colors.grey),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: l10n.searchHint,
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            _searchController.clear();
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _placePredictions = [];
+                              _searchResultMarker = null;
+                            });
+                          },
+                        )
+                      ],
+                    ),
+                  ),
+                  if (_placePredictions.isNotEmpty)
+                    Material(
+                      elevation: 4.0,
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.3,
+                        ),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: _placePredictions.length,
+                          itemBuilder: (context, index) {
+                            final prediction = _placePredictions[index];
+                            return ListTile(
+                              leading: const Icon(Icons.location_on),
+                              title: Text(prediction['description'] ?? l10n.unknownLocation),
+                              onTap: () async {
+                                final placeId = prediction['place_id'];
+                                if (placeId == null) return;
+
+                                final details = await _directionsService.getPlaceDetails(placeId);
+                                if (details == null || !mounted) return;
+
+                                final location = details['geometry']?['location'];
+                                if (location == null) return;
+
+                                final lat = location['lat'];
+                                final lng = location['lng'];
+                                final latLng = LatLng(lat, lng);
+
+                                _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+
+                                setState(() {
+                                  _searchResultMarker = Marker(
+                                    markerId: const MarkerId('searchResult'),
+                                    position: latLng,
+                                    infoWindow: InfoWindow(title: prediction['description']),
+                                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                                  );
+                                  _placePredictions = [];
+                                  _searchController.clear();
+                                  FocusScope.of(context).unfocus();
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 90.0),
+          child: FloatingActionButton(
+            heroTag: 'myLocationFabEndPoint',
+            onPressed: () => _goToCurrentLocation(isInitial: false),
+            tooltip: l10n.myLocationTooltip,
+            child: const Icon(Icons.my_location),
+          ),
+        ),
+      );
+    }
 
     final initialCamPos = widget.initialLocation != null
         ? CameraPosition(

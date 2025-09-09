@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_location.dart';
+import 'package:tripbook/screens/map_screen.dart';
 
 class LocationSelectionScreen extends StatefulWidget {
   final List<TravelLocation>? initialLocations;
@@ -59,7 +60,18 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                   ? TextButton(
                       child: const Text("Değiştir"),
                       onPressed: () {
-                        Navigator.of(context).pop('change_end_location');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MapScreen(isChangingEndPoint: true, initialLocation: _selectedLocations.last),
+                          ),
+                        ).then((newEndPoint) {
+                          if (newEndPoint != null) {
+                            setState(() {
+                              _selectedLocations.last = newEndPoint;
+                            });
+                          }
+                        });
                       },
                     )
                   : null,
