@@ -278,10 +278,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _triggeredWikipediaNotifications.clear();
   }
 
-  void _startRouteTracking(List<TravelLocation> locations) {
+  void _startRouteTracking() {
     _positionStreamSubscription?.cancel();
     setState(() {
-      _activeRouteLocations = locations;
       _routeStartTime = DateTime.now();
       _isRouteCompleted = false;
       _userPathHistory.clear();
@@ -356,12 +355,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
 
       final locationId = location.firestoreId!;
-      final isEndpoint = locationId == 'end';
+      final isEndpoint = locationId == 'end' || locationId == 'home_end_location';
 
       if (distance < 50 && !_visitedWaypoints.contains(locationId)) {
         if (isEndpoint) {
           final allOtherWaypointsVisited = _activeRouteLocations!
-              .where((loc) => loc.firestoreId != 'end')
+              .where((loc) => loc.firestoreId != 'end' && loc.firestoreId != 'home_end_location')
               .every((loc) => _visitedWaypoints.contains(loc.firestoreId));
           if (!allOtherWaypointsVisited) {
             continue;
@@ -647,7 +646,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
 
       _showRouteSummary(directionsInfo, locations);
-      _startRouteTracking(locations);
+      _startRouteTracking();
     } else {
        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.drawRouteError)),
