@@ -12,6 +12,40 @@ class SavedRoutesScreen extends StatefulWidget {
 class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
+  Future<void> _shareRoute(TravelRoute route) async {
+    if (route.firestoreId == null) return;
+
+    final String title = route.isShared ? 'Paylaşımı Durdur' : 'Rotayı Paylaş';
+    final String content = route.isShared
+        ? "'${route.name}' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?"
+        : "'${route.name}' rotasını diğer kullanıcılarla paylaşmak istediğinizden emin misiniz? Rota, topluluk ekranında görünecektir.";
+    final String confirmAction = route.isShared ? 'Paylaşımı Durdur' : 'Paylaş';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(confirmAction)),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _firestoreService.shareRoute(route.firestoreId!, !route.isShared);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(route.isShared ? "'${route.name}' rotası artık paylaşılmıyor." : "'${route.name}' rotası başarıyla paylaşıldı!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteRoute(TravelRoute route) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -46,7 +80,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Planlanan Mesafe: ${route.totalDistance}'),
-                if (route.actualDistance != null) 
+                if (route.actualDistance != null)
                   Text('Gerçekleşen Mesafe: ${route.actualDistance}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text('Planlanan Yol Süresi: ${route.totalTravelTime}'),
@@ -87,14 +121,6 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Kapat'),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              tooltip: 'Rotayı Sil',
-              onPressed: () {
-                Navigator.of(context).pop(); // Close details dialog
-                _deleteRoute(route);
-              },
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.directions),
@@ -143,7 +169,24 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                   onTap: () => _showRouteDetailsDialog(route),
                   title: Text(route.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          route.isShared ? Icons.share : Icons.share_outlined,
+                          color: route.isShared ? Colors.green : null,
+                        ),
+                        tooltip: route.isShared ? 'Paylaşımı Durdur' : 'Rotayı Paylaş',
+                        onPressed: () => _shareRoute(route),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        tooltip: 'Rotayı Sil',
+                        onPressed: () => _deleteRoute(route),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

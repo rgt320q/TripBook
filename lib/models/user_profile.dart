@@ -3,13 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserProfile {
   final String uid;
-  final String? username;
+  final String? name; // Renamed from username
   final String? languageCode;
   final GeoPoint? homeLocation;
 
   UserProfile({
     required this.uid,
-    this.username,
+    this.name,
     this.languageCode,
     this.homeLocation,
   });
@@ -18,7 +18,7 @@ class UserProfile {
     final data = snapshot.data() ?? {};
     return UserProfile(
       uid: snapshot.id,
-      username: data['username'] as String?,
+      name: data['name'] as String?,
       languageCode: data['languageCode'] as String?,
       homeLocation: data['homeLocation'] as GeoPoint?,
     );
@@ -26,7 +26,7 @@ class UserProfile {
 
   Map<String, dynamic> toFirestore() {
     return {
-      if (username != null) 'username': username,
+      if (name != null) 'name': name,
       if (languageCode != null) 'languageCode': languageCode,
       if (homeLocation != null) 'homeLocation': homeLocation,
     };

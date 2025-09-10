@@ -15,6 +15,7 @@ import 'package:tripbook/screens/groups_screen.dart';
 import 'package:tripbook/screens/location_selection_screen.dart';
 import 'package:tripbook/screens/manage_locations_screen.dart';
 import 'package:tripbook/screens/saved_routes_screen.dart';
+import 'package:tripbook/screens/community_routes_screen.dart';
 import 'package:tripbook/screens/profile_screen.dart';
 import 'package:tripbook/services/database_service.dart';
 import 'package:tripbook/services/directions_service.dart';
@@ -1229,6 +1230,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               },
             ),
             IconButton(
+              icon: const Icon(Icons.public),
+              tooltip: 'Topluluk Rotaları',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CommunityRoutesScreen(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.history),
               tooltip: l10n.reachedLocations,
               onPressed: () {
@@ -1431,7 +1444,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           setState(() {
                             _placePredictions = [];
                             _searchResultMarker = null;
-                            _updateMapElements();
                           });
                         },
                       )
@@ -1481,7 +1493,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 _placePredictions = [];
                                 _searchController.clear();
                                 FocusScope.of(context).unfocus();
-                                _updateMapElements();
                               });
                             },
                           );

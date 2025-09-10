@@ -32,7 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _userProfileFuture = _loadUserProfile().then((profile) {
       if (profile != null && mounted) {
-        _usernameController.text = profile.username ?? '';
+        _usernameController.text = profile.name ?? '';
         _selectedLanguage = profile.languageCode ?? 'tr';
         setState(() {
           _homeLocation = profile.homeLocation;
@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final userProfile = UserProfile(
         uid: user.uid,
-        username: _usernameController.text,
+        name: _usernameController.text,
         languageCode: _selectedLanguage,
         homeLocation: _homeLocation,
       );

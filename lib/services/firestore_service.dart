@@ -1,7 +1,7 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tripbook/models/reached_location_log.dart';
+import 'package:tripbook/models/route_comment.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/travel_route.dart';
@@ -132,11 +132,48 @@ class FirestoreService {
         );
   }
 
+  CollectionReference<TravelRoute> get _communityRoutesCollection => _db.collection('community_routes').withConverter<TravelRoute>(
+        fromFirestore: (snapshot, _) => TravelRoute.fromFirestore(snapshot.id, snapshot.data()!),
+        toFirestore: (route, _) => route.toFirestore(),
+      );
+
   Stream<List<TravelRoute>> getRoutes() {
     return _routesCollection
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<TravelRoute>> getCommunityRoutes() {
+    return _communityRoutesCollection
+        .where('isShared', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Future<void> shareRoute(String routeId, bool isShared) async {
+    if (_currentUser == null) throw Exception('User not logged in');
+
+    final originalRouteDoc = _routesCollection.doc(routeId);
+
+    if (isShared) {
+      // Share the route
+      final routeSnapshot = await originalRouteDoc.get();
+      final routeData = routeSnapshot.data();
+      if (routeData != null) {
+        final sharedRoute = routeData.copyWith(
+          isShared: true,
+          sharedBy: _currentUser!.uid,
+        );
+        await _communityRoutesCollection.doc(routeId).set(sharedRoute);
+        await originalRouteDoc.update({'isShared': true, 'sharedBy': _currentUser!.uid});
+      }
+    } else {
+      // Unshare the route
+      await _communityRoutesCollection.doc(routeId).delete();
+      await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
+    }
   }
 
   Future<List<TravelRoute>> getRoutesOnce() async {
@@ -153,7 +190,77 @@ class FirestoreService {
   }
 
   Future<void> deleteRoute(String routeId) async {
+    // Also delete from community if it's shared
+    await _communityRoutesCollection.doc(routeId).delete().catchError((_) => {});
     await _routesCollection.doc(routeId).delete();
+  }
+
+  // RATINGS AND COMMENTS
+
+  Future<void> addOrUpdateRating(String routeId, double rating) async {
+    if (_currentUser == null) throw Exception('User not logged in');
+    final userId = _currentUser!.uid;
+
+    final ratingDoc = _communityRoutesCollection.doc(routeId).collection('ratings').doc(userId);
+    await ratingDoc.set({'rating': rating});
+
+    // Update average rating on the main route document
+    final ratingsSnapshot = await _communityRoutesCollection.doc(routeId).collection('ratings').get();
+    final ratings = ratingsSnapshot.docs.map((doc) => doc.data()['rating'] as double).toList();
+    final double averageRating = ratings.isNotEmpty ? ratings.reduce((a, b) => a + b) / ratings.length : 0.0;
+    final int ratingCount = ratings.length;
+
+    await _communityRoutesCollection.doc(routeId).update({
+      'averageRating': averageRating,
+      'ratingCount': ratingCount,
+    });
+  }
+
+  Future<double?> getUserRating(String routeId) async {
+    if (_currentUser == null) return null;
+    try {
+      final ratingDoc = await _communityRoutesCollection
+          .doc(routeId)
+          .collection('ratings')
+          .doc(_currentUser!.uid)
+          .get();
+      if (ratingDoc.exists) {
+        return ratingDoc.data()?['rating'] as double?;
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user rating: $e');
+      return null;
+    }
+  }
+
+  Future<void> addComment(String routeId, String comment) async {
+    if (_currentUser == null) throw Exception('User not logged in');
+    final userProfile = await getUserProfile().first;
+    final userName = userProfile?.name ?? 'Anonymous';
+
+    final routeRef = _communityRoutesCollection.doc(routeId);
+    final commentCollection = routeRef.collection('comments');
+
+    // Add the comment
+    await commentCollection.add({
+      'userId': _currentUser!.uid,
+      'userName': userName,
+      'comment': comment,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    // Atomically increment the comment count
+    await routeRef.update({'commentCount': FieldValue.increment(1)});
+  }
+
+  Stream<List<RouteComment>> getComments(String routeId) {
+    return _communityRoutesCollection
+        .doc(routeId)
+        .collection('comments')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => RouteComment.fromMap(doc.data())).toList());
   }
 
   // REACHED LOCATION LOGS
@@ -234,5 +341,37 @@ class FirestoreService {
     final dataToSave = profile.toFirestore();
     print('Saving user profile data: $dataToSave'); // DEBUG PRINT
     await _userProfileDoc.set(profile, SetOptions(merge: true));
+  }
+
+  Future<UserProfile?> getUserProfileById(String userId) async {
+    try {
+      final docSnapshot = await _db.collection('users').doc(userId).get();
+      if (docSnapshot.exists) {
+        return UserProfile.fromFirestore(docSnapshot);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user profile by ID: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, UserProfile>> getUsersProfilesByIds(List<String> userIds) async {
+    if (userIds.isEmpty) return {};
+    try {
+      final snapshot = await _db
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: userIds)
+          .withConverter<UserProfile>(
+            fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
+            toFirestore: (profile, _) => profile.toFirestore(),
+          )
+          .get();
+      
+      return {for (var doc in snapshot.docs) doc.id: doc.data()};
+    } catch (e) {
+      print('Error getting user profiles by IDs: $e');
+      return {};
+    }
   }
 }
