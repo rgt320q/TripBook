@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_route.dart';
 import 'package:tripbook/screens/community_route_detail_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/widgets/route_mini_map.dart';
 
 // Helper class to hold a route and its author's name
 class CommunityRouteItem {
@@ -83,42 +84,53 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
               return Card(
                 margin:
                     const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: ListTile(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
                   onTap: () => _navigateToRouteDetails(route),
-                  title: Text(route.name),
-                  subtitle: Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                          'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Paylaşan: ${item.authorName}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.star,
-                              color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${route.averageRating.toStringAsFixed(1)} (${route.ratingCount} oy)',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.comment_outlined,
-                              color: Colors.grey, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${route.commentCount} yorum',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                      if (route.locations != null && route.locations!.isNotEmpty)
+                        RouteMiniMap(route: route),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(route.name, style: Theme.of(context).textTheme.titleLarge),
+                            const SizedBox(height: 8),
+                            Text(
+                                'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Paylaşan: ${item.authorName}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.star,
+                                    color: Colors.amber, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${route.averageRating.toStringAsFixed(1)} (${route.ratingCount} oy)',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(width: 12),
+                                const Icon(Icons.comment_outlined,
+                                    color: Colors.grey, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${route.commentCount} yorum',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios),
                 ),
               );
             },
