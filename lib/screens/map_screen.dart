@@ -78,6 +78,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   List<Map<String, String>>? _activeRouteNotes;
   final List<LatLng> _userPathHistory = [];
   double _actualDistanceMeters = 0.0;
+  bool _isNavigationStarted = false;
   // --------------------------
   
   final Map<String, bool> _activeRouteNeedsState = {};
@@ -272,6 +273,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _activeRouteNotes = null;
       _userPathHistory.clear();
       _actualDistanceMeters = 0.0;
+      _isNavigationStarted = false;
     });
     _startLiveLocationTracking();
     _waypointTimers.forEach((key, timer) => timer.cancel());
@@ -895,33 +897,37 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(l10n.routeSummaryTitle, style: Theme.of(context).textTheme.headlineSmall),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.save, color: Colors.blue),
-                            tooltip: l10n.saveRouteDialogTitle,
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _showSaveRouteDialog(
-                                info, 
-                                locations,
-                                totalStopDuration: _activeRouteTotalStopDuration,
-                                totalTripDuration: _activeRouteTotalTripDuration,
-                                needs: _activeRouteNeeds,
-                                notes: _activeRouteNotes,
-                              );
-                            },
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _launchGoogleMaps(locations);
-                            },
-                            icon: const Icon(Icons.navigation),
-                            label: Text(l10n.startNavigation),
-                          ),
-                        ],
-                      ),
+                      if (!_isNavigationStarted)
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.save, color: Colors.blue),
+                              tooltip: l10n.saveRouteDialogTitle,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showSaveRouteDialog(
+                                  info,
+                                  locations,
+                                  totalStopDuration: _activeRouteTotalStopDuration,
+                                  totalTripDuration: _activeRouteTotalTripDuration,
+                                  needs: _activeRouteNeeds,
+                                  notes: _activeRouteNotes,
+                                );
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _isNavigationStarted = true;
+                                });
+                                Navigator.pop(context);
+                                _launchGoogleMaps(locations);
+                              },
+                              icon: const Icon(Icons.navigation),
+                              label: Text(l10n.startNavigation),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                   const Divider(),
