@@ -8,13 +8,20 @@ import 'package:tripbook/screens/location_selection_screen.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/widgets/route_mini_map.dart';
+import 'package:tripbook/models/user_profile.dart';
+import 'dart:async';
 
 // Helper class to hold a route and its author's name
 class CommunityRouteItem {
   final TravelRoute route;
   final String authorName;
+  final bool isDownloaded;
 
-  CommunityRouteItem({required this.route, required this.authorName});
+  CommunityRouteItem({
+    required this.route,
+    required this.authorName,
+    this.isDownloaded = false,
+  });
 }
 
 class CommunityRoutesScreen extends StatefulWidget {
@@ -28,117 +35,211 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late Stream<List<CommunityRouteItem>> _communityRoutesStream;
   bool _isDownloading = false;
+  bool _hideDownloaded = false;
+
+  late StreamController<List<CommunityRouteItem>> _combinedStreamController;
+  StreamSubscription? _communityRoutesSubscription;
+  StreamSubscription? _userRoutesSubscription;
 
   @override
   void initState() {
     super.initState();
-    _communityRoutesStream =
-        _firestoreService.getCommunityRoutes().asyncMap((routes) async {
-      if (routes.isEmpty) return <CommunityRouteItem>[];
+    _combinedStreamController = StreamController<List<CommunityRouteItem>>();
+    _setupCombinedStream();
+  }
 
-      final userIds =
-          routes.map((r) => r.sharedBy).whereType<String>().toSet().toList();
+  void _setupCombinedStream() {
+    List<TravelRoute> _latestCommunityRoutes = [];
+    List<TravelRoute> _latestUserRoutes = [];
 
-      if (userIds.isEmpty) {
-        return routes
-            .map((route) =>
-                CommunityRouteItem(route: route, authorName: 'Bilinmiyor'))
-            .toList();
-      }
+    _communityRoutesSubscription = _firestoreService.getCommunityRoutes().listen((communityRoutes) {
+      _latestCommunityRoutes = communityRoutes;
+      _processCombinedData(_latestCommunityRoutes, _latestUserRoutes);
+    });
 
-      final profiles = await _firestoreService.getUsersProfilesByIds(userIds);
-
-      return routes.map((route) {
-        final authorName = profiles[route.sharedBy]?.name ?? 'Bilinmiyor';
-        return CommunityRouteItem(route: route, authorName: authorName);
-      }).toList();
+    _userRoutesSubscription = _firestoreService.getRoutes().listen((userRoutes) {
+      _latestUserRoutes = userRoutes;
+      _processCombinedData(_latestCommunityRoutes, _latestUserRoutes);
     });
   }
 
+  Future<void> _processCombinedData(List<TravelRoute> communityRoutes, List<TravelRoute> userRoutes) async {
+    final downloadedCommunityIds = userRoutes
+        .map((r) => r.communityRouteId)
+        .whereType<String>()
+        .toSet();
+
+    final userIds = communityRoutes
+        .map((r) => r.sharedBy)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    Map<String, UserProfile> profiles = {};
+    if (userIds.isNotEmpty) {
+      profiles = await _firestoreService.getUsersProfilesByIds(userIds);
+    }
+
+    final List<CommunityRouteItem> items = communityRoutes.map((route) {
+      final authorName = profiles[route.sharedBy]?.name ?? 'Bilinmiyor';
+      return CommunityRouteItem(
+        route: route,
+        authorName: authorName,
+        isDownloaded: downloadedCommunityIds.contains(route.firestoreId),
+      );
+    }).toList();
+
+    _combinedStreamController.add(items);
+  }
+
+  @override
+  void dispose() {
+    _combinedStreamController.close();
+    _communityRoutesSubscription?.cancel();
+    _userRoutesSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> _handleRouteTap(TravelRoute route) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rotayı İndir'),
-        content: Text(
-            "'${route.name}' rotasını ve tüm konumlarını kendi rotalarınıza kaydetmek istiyor musunuz?"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('İptal')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('İndir ve Görüntüle')),
-        ],
-      ),
-    );
+    if (route.firestoreId == null) return;
 
-    if (confirm == true) {
-      setState(() {
-        _isDownloading = true;
-      });
+    final existingRoute = await _firestoreService.getDownloadedCommunityRoute(route.firestoreId!);
 
-      try {
-        List<String> newLocationIds = [];
-        if (route.locations != null && route.locations!.isNotEmpty) {
-          final locationsToImport = route.locations!
-              .map((locMap) => TravelLocation.fromFirestore(
-                  locMap['firestoreId'] ?? '', locMap))
-              .map((loc) => TravelLocation(
-                    name: loc.name,
-                    geoName: loc.geoName,
-                    description: loc.description,
-                    latitude: loc.latitude,
-                    longitude: loc.longitude,
-                    notes: loc.notes,
-                    needsList: loc.needsList,
-                    estimatedDuration: loc.estimatedDuration,
-                    isImported: true, // Mark as imported
-                  ))
-              .toList();
+    bool shouldProceed = false;
 
-          newLocationIds = await _firestoreService.addLocations(locationsToImport);
+    if (existingRoute != null) {
+      final confirmOverwrite = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              SizedBox(width: 10),
+              Expanded(child: Text('Uyarı: Rota Zaten Mevcut')),
+            ],
+          ),
+          content: const Text(
+              'Bu rotayı daha önce indirdiniz. Mevcut sürümün üzerine yazmak istiyor musunuz?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('İptal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Üzerine Yaz')),
+          ],
+        ),
+      );
+      if (confirmOverwrite == true) {
+        shouldProceed = true;
+      }
+    } else {
+      final confirmDownload = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Rotayı İndir'),
+          content: Text(
+              "'${route.name}' rotasını ve tüm konumlarını kendi rotalarınıza kaydetmek istiyor musunuz?"),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('İptal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('İndir ve Görüntüle')),
+          ],
+        ),
+      );
+      if (confirmDownload == true) {
+        shouldProceed = true;
+      }
+    }
+
+    if (!shouldProceed) return;
+
+    setState(() {
+      _isDownloading = true;
+    });
+
+    try {
+      List<String> newLocationIds = [];
+      if (route.locations != null && route.locations!.isNotEmpty) {
+        final locationsToImport = route.locations!
+            .map((locMap) =>
+                TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
+            .map((loc) => TravelLocation(
+                  name: loc.name,
+                  geoName: loc.geoName,
+                  description: loc.description,
+                  latitude: loc.latitude,
+                  longitude: loc.longitude,
+                  notes: loc.notes,
+                  needsList: loc.needsList,
+                  estimatedDuration: loc.estimatedDuration,
+                  isImported: true, // Mark as imported
+                ))
+            .toList();
+        // Note: This adds new locations every time. For a true overwrite,
+        // you might want to delete old locations associated with the existing route.
+        // For now, we just add the new set and link them.
+        newLocationIds = await _firestoreService.addLocations(locationsToImport);
+      }
+
+      final newRouteData = route.copyWith(
+        locationIds:
+            newLocationIds.isNotEmpty ? newLocationIds : route.locationIds,
+        isShared: false,
+        sharedBy: null,
+        averageRating: 0.0,
+        ratingCount: 0,
+        commentCount: 0,
+        locations: [], // Clear locations when saving to user's own routes
+        communityRouteId: route.firestoreId, // Set the original community route ID
+      );
+
+      if (existingRoute != null && existingRoute.firestoreId != null) {
+        // Update existing route
+        await _firestoreService.updateRoute(existingRoute.firestoreId!, newRouteData);
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("'${route.name}' rotası başarıyla güncellendi!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _showRouteDetailsDialog(newRouteData.copyWith(firestoreId: existingRoute.firestoreId));
         }
-
-        final newRoute = route.copyWith(
-          locationIds:
-              newLocationIds.isNotEmpty ? newLocationIds : route.locationIds,
-          isShared: false,
-          sharedBy: null,
-          averageRating: 0.0,
-          ratingCount: 0,
-          commentCount: 0,
-          locations: [], // Clear locations when saving to user's own routes
-        );
-
-        final newRouteRef = await _firestoreService.addRoute(newRoute);
+      } else {
+        // Add as new route
+        final newRouteRef = await _firestoreService.addRoute(newRouteData);
         final newRouteSnapshot = await newRouteRef.get();
-        final newRouteData = newRouteSnapshot.data();
+        final addedRouteData = newRouteSnapshot.data();
 
-        if (mounted && newRouteData != null) {
+        if (mounted && addedRouteData != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("'${route.name}' rotası başarıyla kaydedildi!"),
               backgroundColor: Colors.green,
             ),
           );
-          _showRouteDetailsDialog(newRouteData);
+          _showRouteDetailsDialog(addedRouteData);
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Rota indirilirken bir hata oluştu: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isDownloading = false;
-          });
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rota indirilirken bir hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+        });
       }
     }
   }
@@ -281,11 +382,24 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Topluluk Rotaları'),
+        actions: [
+          IconButton(
+            icon: Icon(_hideDownloaded ? Icons.visibility_off : Icons.visibility),
+            tooltip: _hideDownloaded
+                ? 'İndirilenleri Göster'
+                : 'İndirilenleri Gizle',
+            onPressed: () {
+              setState(() {
+                _hideDownloaded = !_hideDownloaded;
+              });
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
           StreamBuilder<List<CommunityRouteItem>>(
-            stream: _communityRoutesStream,
+            stream: _combinedStreamController.stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -298,17 +412,27 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                     child: Text('Henüz paylaşılmış bir rota bulunmuyor.'));
               }
 
-              final items = snapshot.data!;
+              final allItems = snapshot.data!;
+              final filteredItems = _hideDownloaded
+                  ? allItems.where((item) => !item.isDownloaded).toList()
+                  : allItems;
+
+              if (filteredItems.isEmpty) {
+                return const Center(
+                  child: Text('Tüm rotalar indirilmiş ve gizlenmiş.'),
+                );
+              }
 
               return ListView.builder(
-                itemCount: items.length,
+                itemCount: filteredItems.length,
                 itemBuilder: (context, index) {
-                  final item = items[index];
+                  final item = filteredItems[index];
                   final route = item.route;
                   return Card(
                     margin: const EdgeInsets.symmetric(
                         horizontal: 8.0, vertical: 4.0),
                     clipBehavior: Clip.antiAlias,
+                    color: item.isDownloaded ? Colors.green[50] : null,
                     child: InkWell(
                       onTap: () => _handleRouteTap(route),
                       child: Column(
@@ -322,8 +446,19 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(route.name,
-                                    style: Theme.of(context).textTheme.titleLarge),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(route.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge),
+                                    ),
+                                    if (item.isDownloaded)
+                                      const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                  ],
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                     'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),

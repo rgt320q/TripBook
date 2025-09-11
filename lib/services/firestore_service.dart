@@ -169,6 +169,18 @@ class FirestoreService {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
+  Future<TravelRoute?> getDownloadedCommunityRoute(String communityRouteId) async {
+    if (_currentUser == null) return null;
+    final snapshot = await _routesCollection
+        .where('communityRouteId', isEqualTo: communityRouteId)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first.data();
+    }
+    return null;
+  }
+
   Future<void> shareRoute(String routeId, bool isShared) async {
     if (_currentUser == null) throw Exception('User not logged in');
 
