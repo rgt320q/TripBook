@@ -35,6 +35,7 @@ class _CommunityRouteDetailScreenState
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   bool _isMapLoading = true;
+  bool _polylinesVisible = false;
 
   @override
   void initState() {
@@ -45,7 +46,7 @@ class _CommunityRouteDetailScreenState
   Future<void> _loadInitialData() async {
     _loadSharedByUserProfile();
     _fetchUserRating();
-    _loadRouteData();
+    _loadMapData();
   }
 
   Future<void> _loadSharedByUserProfile() async {
@@ -71,41 +72,102 @@ class _CommunityRouteDetailScreenState
     }
   }
 
-  Future<void> _loadRouteData() async {
-    List<TravelLocation> locations = [];
+  Future<void> _loadMapData() async {
+    if (mounted) {
+      setState(() {
+        _isMapLoading = true;
+      });
+    }
 
+    List<TravelLocation> locations = [];
     if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
-      // If locations are embedded, use them
       locations = widget.route.locations!
           .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
           .toList();
     } else if (widget.route.locationIds.isNotEmpty) {
-      // Fallback for older routes or if locations are not embedded
       locations = await _firestoreService.getLocationsByIds(widget.route.locationIds);
     }
 
-    if (locations.length < 2) {
+    if (locations.isEmpty) {
       if (mounted) setState(() => _isMapLoading = false);
       return;
     }
 
-    final directionsInfo = await _directionsService.getDirections(locations);
-    await _updateMapElements(locations, directionsInfo);
+    await _updateMarkers(locations);
 
     if (mounted) {
       setState(() {
         _isMapLoading = false;
       });
-      if (directionsInfo != null) {
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
-        );
-      }
+      _zoomToFitMarkers(locations);
     }
   }
 
-  Future<void> _updateMapElements(
-      List<TravelLocation> locations, DirectionsInfo? info) async {
+  Future<void> _drawPolylines() async {
+     List<TravelLocation> locations = [];
+    if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
+      locations = widget.route.locations!
+          .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
+          .toList();
+    } else if (widget.route.locationIds.isNotEmpty) {
+      locations = await _firestoreService.getLocationsByIds(widget.route.locationIds);
+    }
+
+    if (locations.length < 2) return;
+
+    final directionsInfo = await _directionsService.getDirections(locations);
+
+    if (directionsInfo != null && mounted) {
+      final Set<Polyline> newPolylines = {};
+      for (int i = 0; i < directionsInfo.legsPoints.length; i++) {
+        newPolylines.add(Polyline(
+          polylineId: PolylineId('route_leg_$i'),
+          color: Colors.blue.withOpacity(0.8),
+          width: 5,
+          points: directionsInfo.legsPoints[i].map((p) => LatLng(p.latitude, p.longitude)).toList(),
+        ));
+      }
+      setState(() {
+        _polylines.addAll(newPolylines);
+        _polylinesVisible = true;
+      });
+    }
+  }
+
+  void _zoomToFitMarkers(List<TravelLocation> locations) {
+    if (_mapController == null || locations.isEmpty) return;
+
+    if (locations.length == 1) {
+      _mapController!.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(locations.first.latitude, locations.first.longitude),
+          zoom: 14,
+        ),
+      ));
+    } else {
+      final latLngList = locations.map((l) => LatLng(l.latitude, l.longitude)).toList();
+      final bounds = _boundsFromLatLngList(latLngList);
+      _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    }
+  }
+
+  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
+    double? x0, x1, y0, y1;
+    for (LatLng latLng in list) {
+      if (x0 == null) {
+        x0 = x1 = latLng.latitude;
+        y0 = y1 = latLng.longitude;
+      } else {
+        if (latLng.latitude > x1!) x1 = latLng.latitude;
+        if (latLng.latitude < x0) x0 = latLng.latitude;
+        if (latLng.longitude > y1!) y1 = latLng.longitude;
+        if (latLng.longitude < y0!) y0 = latLng.longitude;
+      }
+    }
+    return LatLngBounds(northeast: LatLng(x1!, y1!), southwest: LatLng(x0!, y0!));
+  }
+
+  Future<void> _updateMarkers(List<TravelLocation> locations) async {
     final Set<Marker> newMarkers = {};
     for (final loc in locations) {
       final icon = await marker_utils.getCustomMarkerIcon(Colors.blue);
@@ -118,24 +180,9 @@ class _CommunityRouteDetailScreenState
         ),
       );
     }
-
-    final Set<Polyline> newPolylines = {};
-    if (info != null) {
-      for (int i = 0; i < info.legsPoints.length; i++) {
-        newPolylines.add(Polyline(
-          polylineId: PolylineId('route_leg_$i'),
-          color: Colors.blue.withOpacity(0.8),
-          width: 5,
-          points:
-              info.legsPoints[i].map((p) => LatLng(p.latitude, p.longitude)).toList(),
-        ));
-      }
-    }
-
     if (mounted) {
       setState(() {
         _markers.addAll(newMarkers);
-        _polylines.addAll(newPolylines);
       });
     }
   }
@@ -258,7 +305,25 @@ class _CommunityRouteDetailScreenState
                   const SizedBox(height: 8),
                   Text(
                       'Mesafe: ${widget.route.totalDistance} | Süre: ${widget.route.totalTravelTime}'),
+                  if (widget.route.totalStopDuration != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text('Toplam Mola Süresi: ${widget.route.totalStopDuration}'),
+                    ),
+                  if (widget.route.totalTripDuration != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text('Toplam Gezi Süresi: ${widget.route.totalTripDuration}'),
+                    ),
                   const Divider(height: 30),
+
+                  // Needs Section
+                  if (widget.route.needs != null && widget.route.needs!.isNotEmpty)
+                    _buildNeedsSection(),
+
+                  // Notes Section
+                  if (widget.route.notes != null && widget.route.notes!.isNotEmpty)
+                    _buildNotesSection(),
 
                   // Rating Section
                   Text('Puanla', style: Theme.of(context).textTheme.titleLarge),
@@ -300,19 +365,72 @@ class _CommunityRouteDetailScreenState
       color: Colors.grey[300],
       child: _isMapLoading
           ? const Center(child: CircularProgressIndicator())
-          : GoogleMap(
-              onMapCreated: (controller) {
-                _mapController = controller;
-              },
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(39.9334, 32.8597), // Default to Ankara
-                zoom: 5,
-              ),
-              markers: _markers,
-              polylines: _polylines,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
+          : Stack(
+              children: [
+                GoogleMap(
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                    _zoomToFitMarkers(widget.route.locations?.map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap)).toList() ?? []);
+                  },
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(39.9334, 32.8597), // Default to Ankara
+                    zoom: 5,
+                  ),
+                  markers: _markers,
+                  polylines: _polylines,
+                  myLocationButtonEnabled: true,
+                  zoomControlsEnabled: true,
+                ),
+                if (!_polylinesVisible)
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FloatingActionButton(
+                      onPressed: _drawPolylines,
+                      tooltip: 'Rotayı Çiz',
+                      child: const Icon(Icons.timeline),
+                    ),
+                  ),
+              ],
             ),
+    );
+  }
+
+  Widget _buildNeedsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Rota İhtiyaçları', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 4.0,
+          children: widget.route.needs!
+              .map((need) => Chip(label: Text(need)))
+              .toList(),
+        ),
+        const Divider(height: 30),
+      ],
+    );
+  }
+
+  Widget _buildNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Rota Notları', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        ...widget.route.notes!.map((note) {
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8.0),
+            child: ListTile(
+              title: Text(note['title']!),
+              subtitle: Text(note['content']!),
+            ),
+          );
+        }).toList(),
+        const Divider(height: 30),
+      ],
     );
   }
 

@@ -203,8 +203,8 @@ class FirestoreService {
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  Future<void> addRoute(TravelRoute route) async {
-    await _routesCollection.add(route);
+  Future<DocumentReference<TravelRoute>> addRoute(TravelRoute route) async {
+    return await _routesCollection.add(route);
   }
 
   Future<void> updateRoute(String routeId, TravelRoute route) async {
