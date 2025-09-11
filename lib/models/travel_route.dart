@@ -4,6 +4,7 @@ class TravelRoute {
   final String? firestoreId;
   final String name;
   final List<String> locationIds;
+  final List<Map<String, dynamic>>? locations;
   final String totalTravelTime;
   final String totalDistance;
   final DateTime? createdAt;
@@ -26,6 +27,7 @@ class TravelRoute {
     this.firestoreId,
     required this.name,
     required this.locationIds,
+    this.locations,
     required this.totalTravelTime,
     required this.totalDistance,
     this.createdAt,
@@ -46,6 +48,7 @@ class TravelRoute {
     return {
       'name': name,
       'locationIds': locationIds,
+      if (locations != null) 'locations': locations,
       'totalTravelTime': totalTravelTime,
       'totalDistance': totalDistance,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
@@ -67,6 +70,7 @@ class TravelRoute {
     String? firestoreId,
     String? name,
     List<String>? locationIds,
+    List<Map<String, dynamic>>? locations,
     String? totalTravelTime,
     String? totalDistance,
     DateTime? createdAt,
@@ -86,6 +90,7 @@ class TravelRoute {
       firestoreId: firestoreId ?? this.firestoreId,
       name: name ?? this.name,
       locationIds: locationIds ?? this.locationIds,
+      locations: locations ?? this.locations,
       totalTravelTime: totalTravelTime ?? this.totalTravelTime,
       totalDistance: totalDistance ?? this.totalDistance,
       createdAt: createdAt ?? this.createdAt,
@@ -108,6 +113,11 @@ class TravelRoute {
       firestoreId: id,
       name: firestoreMap['name'] as String,
       locationIds: List<String>.from(firestoreMap['locationIds']),
+      locations: firestoreMap['locations'] != null
+          ? List<Map<String, dynamic>>.from(
+        (firestoreMap['locations'] as List).map((item) => Map<String, dynamic>.from(item)),
+      )
+          : null,
       totalTravelTime: firestoreMap['totalTravelTime'] as String,
       totalDistance: firestoreMap['totalDistance'] as String,
       createdAt: (firestoreMap['createdAt'] as Timestamp?)?.toDate(),
@@ -118,8 +128,7 @@ class TravelRoute {
       needs: firestoreMap['needs'] != null ? List<String>.from(firestoreMap['needs']) : null,
       notes: firestoreMap['notes'] != null
           ? List<Map<String, String>>.from(
-              (firestoreMap['notes'] as List).map((item) => Map<String, String>.from(item))
-            )
+              (firestoreMap['notes'] as List).map((item) => Map<String, String>.from(item)))
           : null,
       isShared: firestoreMap['isShared'] as bool? ?? false,
       sharedBy: firestoreMap['sharedBy'] as String?,

@@ -40,6 +40,23 @@ class FirestoreService {
     await _locationsCollection.add(location);
   }
 
+  Future<List<String>> addLocations(List<TravelLocation> locations) async {
+    if (_currentUser == null) {
+      throw Exception('User not logged in');
+    }
+    final WriteBatch batch = _db.batch();
+    final List<String> newIds = [];
+
+    for (final location in locations) {
+      final newDocRef = _locationsCollection.doc();
+      batch.set(newDocRef, location);
+      newIds.add(newDocRef.id);
+    }
+
+    await batch.commit();
+    return newIds;
+  }
+
   Stream<List<TravelLocation>> getLocations() {
     return _locationsCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => doc.data()).toList();
@@ -162,9 +179,14 @@ class FirestoreService {
       final routeSnapshot = await originalRouteDoc.get();
       final routeData = routeSnapshot.data();
       if (routeData != null) {
+        // Fetch the locations for the route
+        final locations = await getLocationsByIds(routeData.locationIds);
+        final locationMaps = locations.map((loc) => loc.toFirestore()).toList();
+
         final sharedRoute = routeData.copyWith(
           isShared: true,
           sharedBy: _currentUser!.uid,
+          locations: locationMaps,
         );
         await _communityRoutesCollection.doc(routeId).set(sharedRoute);
         await originalRouteDoc.update({'isShared': true, 'sharedBy': _currentUser!.uid});

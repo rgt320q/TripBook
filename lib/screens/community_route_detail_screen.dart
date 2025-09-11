@@ -72,13 +72,18 @@ class _CommunityRouteDetailScreenState
   }
 
   Future<void> _loadRouteData() async {
-    if (widget.route.locationIds.isEmpty) {
-      if (mounted) setState(() => _isMapLoading = false);
-      return;
+    List<TravelLocation> locations = [];
+
+    if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
+      // If locations are embedded, use them
+      locations = widget.route.locations!
+          .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
+          .toList();
+    } else if (widget.route.locationIds.isNotEmpty) {
+      // Fallback for older routes or if locations are not embedded
+      locations = await _firestoreService.getLocationsByIds(widget.route.locationIds);
     }
 
-    final locations =
-        await _firestoreService.getLocationsByIds(widget.route.locationIds);
     if (locations.length < 2) {
       if (mounted) setState(() => _isMapLoading = false);
       return;
@@ -179,12 +184,34 @@ class _CommunityRouteDetailScreenState
     );
 
     if (confirm == true) {
+      List<String> newLocationIds = [];
+      if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
+        final locationsToImport = widget.route.locations!
+            .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
+            .map((loc) => TravelLocation(
+                  name: loc.name,
+                  geoName: loc.geoName,
+                  description: loc.description,
+                  latitude: loc.latitude,
+                  longitude: loc.longitude,
+                  notes: loc.notes,
+                  needsList: loc.needsList,
+                  estimatedDuration: loc.estimatedDuration,
+                  isImported: true, // Mark as imported
+                ))
+            .toList();
+
+        newLocationIds = await _firestoreService.addLocations(locationsToImport);
+      }
+
       final newRoute = widget.route.copyWith(
+        locationIds: newLocationIds.isNotEmpty ? newLocationIds : widget.route.locationIds,
         isShared: false,
         sharedBy: null,
         averageRating: 0.0,
         ratingCount: 0,
         commentCount: 0,
+        locations: [], // Clear locations when saving to user's own routes
       );
 
       await _firestoreService.addRoute(newRoute);
