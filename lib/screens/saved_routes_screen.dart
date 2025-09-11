@@ -78,7 +78,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   void _showRouteDetailsDialog(TravelRoute route) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text(route.name),
           content: SingleChildScrollView(
@@ -126,14 +126,14 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Kapat'),
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.directions),
               label: const Text('Başlat'),
               onPressed: () async {
-                Navigator.of(context).pop(); // Close details dialog
+                Navigator.of(dialogContext).pop(); // Close details dialog
 
                 final l10n = AppLocalizations.of(context)!;
                 final userProfile = await _firestoreService.getUserProfile().first;

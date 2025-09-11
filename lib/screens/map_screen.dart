@@ -1209,17 +1209,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               icon: const Icon(Icons.route_sharp),
               tooltip: l10n.savedRoutes,
               onPressed: () async {
-                final List<String>? locationIds = await Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SavedRoutesScreen(),
                   ),
                 );
                 if (!mounted) return;
-                if (locationIds != null && locationIds.isNotEmpty) {
-                  final locations = await _firestoreService.getLocationsByIds(locationIds);
-                  if (locations.length >= 2) {
-                    _drawRoute(locations);
+                if (result is List<TravelLocation> && result.isNotEmpty) {
+                  if (result.length >= 2) {
+                    _drawRoute(result);
                   } else {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
