@@ -1231,13 +1231,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             IconButton(
               icon: const Icon(Icons.public),
               tooltip: 'Topluluk Rotaları',
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const CommunityRoutesScreen(),
                   ),
                 );
+                if (result is List<TravelLocation>) {
+                  _drawRoute(result);
+                }
               },
             ),
             IconButton(
