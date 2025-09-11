@@ -14,6 +14,7 @@ class LocationSelectionScreen extends StatefulWidget {
 
 class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
   List<TravelLocation> _selectedLocations = [];
+  TravelLocation? _currentEndLocation; // New state variable
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
     }
     if (widget.endLocation != null) {
       _selectedLocations.add(widget.endLocation!);
+      _currentEndLocation = widget.endLocation; // Initialize new state variable
     }
   }
 
@@ -44,41 +46,60 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         children: <Widget>[
           for (int index = 0; index < _selectedLocations.length; index++)
-            ListTile(
-              key: Key('$index'),
-              title: Text(_selectedLocations[index].name),
-              subtitle: index == _selectedLocations.length - 1
-                  ? const Text("Bitiş Konumu")
-                  : null,
-              leading: index == _selectedLocations.length - 1
-                  ? const Icon(Icons.location_pin)
-                  : ReorderableDragStartListener(
-                      index: index,
-                      child: const Icon(Icons.drag_handle),
-                    ),
-              trailing: index == _selectedLocations.length - 1
-                  ? TextButton(
-                      child: const Text("Değiştir"),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MapScreen(isChangingEndPoint: true, initialLocation: _selectedLocations.last),
-                          ),
-                        ).then((newEndPoint) {
-                          if (newEndPoint != null) {
-                            setState(() {
-                              _selectedLocations.last = newEndPoint;
-                            });
+            // Check if this is the end location
+            if (_selectedLocations[index].firestoreId == _currentEndLocation?.firestoreId)
+              ListTile( // Regular ListTile for the non-reorderable end location
+                key: Key(_selectedLocations[index].firestoreId ?? index.toString()),
+                title: Text(_selectedLocations[index].name),
+                subtitle: const Text("Bitiş Konumu"),
+                leading: const Icon(Icons.location_pin),
+                trailing: TextButton(
+                  child: const Text("Değiştir"),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapScreen(isChangingEndPoint: true, initialLocation: _selectedLocations[index]),
+                      ),
+                    ).then((newEndPoint) {
+                      if (newEndPoint != null) {
+                        setState(() {
+                          final oldEndIndex = _selectedLocations.indexWhere((loc) => loc.firestoreId == _currentEndLocation?.firestoreId);
+                          if (oldEndIndex != -1) {
+                            _selectedLocations[oldEndIndex] = newEndPoint;
+                            _currentEndLocation = newEndPoint;
                           }
                         });
-                      },
-                    )
-                  : null,
-            ),
+                      }
+                    });
+                  },
+                ),
+              )
+            else
+              ListTile( // Reorderable ListTile for intermediate locations
+                key: Key(_selectedLocations[index].firestoreId ?? index.toString()),
+                title: Text(_selectedLocations[index].name),
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: const Icon(Icons.drag_handle),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () {
+                    setState(() {
+                      _selectedLocations.removeAt(index);
+                    });
+                  },
+                ),
+              ),
         ],
         onReorder: (int oldIndex, int newIndex) {
           setState(() {
+            // If the item being moved is the end location, do nothing.
+            if (_selectedLocations[oldIndex].firestoreId == _currentEndLocation?.firestoreId) {
+              return;
+            }
+
             if (newIndex == _selectedLocations.length) {
               newIndex--;
             }

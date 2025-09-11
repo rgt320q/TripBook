@@ -11,6 +11,7 @@
 .env.*
 *.env
 Proje.txt
+flutter_filtered.txt
 KULLANICI_KILAVUZU.txt
 
 # IDE & Editor folders

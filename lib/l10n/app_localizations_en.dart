@@ -356,4 +356,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeLocationAuto => 'Home Location (Auto)';
+
+  @override
+  String get currentLocation => 'Current Location';
 }

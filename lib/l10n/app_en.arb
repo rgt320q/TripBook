@@ -151,5 +151,6 @@
   "notSet": "Not Set",
   "selectHomeLocation": "Select Home Location",
   "endLocation": "End Location",
-  "homeLocationAuto": "Home Location (Auto)"
+  "homeLocationAuto": "Home Location (Auto)",
+  "currentLocation": "Current Location"
 }

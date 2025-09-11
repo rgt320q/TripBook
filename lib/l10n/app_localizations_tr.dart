@@ -144,17 +144,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get selectFromMap => 'Haritadan Seç';
 
   @override
-  String get homeLocationNotSet => 'Home location not set';
+  String get homeLocationNotSet => 'Ev konumu ayarlanmadı';
 
   @override
-  String get setHomeLocationTitle => 'Set Home Location';
+  String get setHomeLocationTitle => 'Ev Konumunu Ayarla';
 
   @override
   String get setHomeLocationContent =>
-      'Do you want to set this location as your home?';
+      'Bu konumu eviniz olarak ayarlamak ister misiniz?';
 
   @override
-  String get selectLocation => 'Select Location';
+  String get selectLocation => 'Konum Seç';
 
   @override
   String get continueButton => 'Devam Et';
@@ -358,4 +358,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get homeLocationAuto => 'Ev Konumu (Otomatik)';
+
+  @override
+  String get currentLocation => 'Mevcut Konum';
 }

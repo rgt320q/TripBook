@@ -1,5 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/travel_route.dart';
+import 'package:tripbook/screens/location_selection_screen.dart';
+import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 
 class SavedRoutesScreen extends StatefulWidget {
@@ -125,9 +132,64 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
             ElevatedButton.icon(
               icon: const Icon(Icons.directions),
               label: const Text('Başlat'),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop(); // Close details dialog
-                Navigator.of(context).pop(route.locationIds); // Go back to map
+
+                final l10n = AppLocalizations.of(context)!;
+                final userProfile = await _firestoreService.getUserProfile().first;
+                TravelLocation? endLocation;
+
+                if (userProfile?.homeLocation != null) {
+                  endLocation = TravelLocation(
+                    name: l10n.homeLocation,
+                    geoName:
+                        '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
+                    latitude: userProfile.homeLocation!.latitude,
+                    longitude: userProfile.homeLocation!.longitude,
+                    firestoreId: 'home_end_location',
+                  );
+                } else {
+                  try {
+                    final position = await Geolocator.getCurrentPosition();
+                    final geoName = await DirectionsService().getPlaceName(LatLng(position.latitude, position.longitude)) ?? l10n.unknownLocation;
+                    endLocation = TravelLocation(
+                      name: l10n.currentLocation,
+                      geoName: geoName,
+                      latitude: position.latitude,
+                      longitude: position.longitude,
+                      firestoreId: 'end',
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.currentLocationError)),
+                    );
+                    return;
+                  }
+                }
+
+                final allLocations = await _firestoreService.getLocationsByIds(route.locationIds);
+                if (!mounted) return;
+
+                if (allLocations.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bu rotada konum bulunamadı.')),
+                  );
+                  return;
+                }
+
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => LocationSelectionScreen(
+                      initialLocations: allLocations,
+                      endLocation: endLocation,
+                    ),
+                  ),
+                );
+
+                if (result != null && mounted) {
+                  Navigator.of(context).pop(result); // Go back to map
+                }
               },
             ),
           ],

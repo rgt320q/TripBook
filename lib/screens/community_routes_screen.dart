@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_route.dart';
-import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/screens/community_route_detail_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 

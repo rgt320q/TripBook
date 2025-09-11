@@ -57,6 +57,10 @@
   "endPointDialogTitle": "Bitiş Noktası",
   "endPointDialogContent": "Başlangıç noktası bitiş noktası olarak ayarlandı. Dilerseniz haritadan farklı bir bitiş noktası seçebilirsiniz.",
   "selectFromMap": "Haritadan Seç",
+  "homeLocationNotSet": "Ev konumu ayarlanmadı",
+  "setHomeLocationTitle": "Ev Konumunu Ayarla",
+  "setHomeLocationContent": "Bu konumu eviniz olarak ayarlamak ister misiniz?",
+  "selectLocation": "Konum Seç",
   "continueButton": "Devam Et",
   "selectNewEndpoint": "Lütfen haritadan yeni bir bitiş noktası seçin.",
   "minTwoLocationsError": "Bir rota oluşturmak için en az 2 konum seçmelisiniz.",
@@ -147,5 +151,6 @@
   "notSet": "Ayarlanmadı",
   "selectHomeLocation": "Ev Konumunu Seç",
   "endLocation": "Bitiş Konumu",
-  "homeLocationAuto": "Ev Konumu (Otomatik)"
+  "homeLocationAuto": "Ev Konumu (Otomatik)",
+  "currentLocation": "Mevcut Konum"
 }
