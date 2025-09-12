@@ -518,6 +518,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           position: LatLng(loc.latitude, loc.longitude),
           infoWindow: InfoWindow(title: loc.name, snippet: loc.description),
           icon: icon,
+          zIndex: isEndpoint ? 4 : (isVisited ? 1 : 2),
           onTap: () {
             if (loc.firestoreId != 'end') {
               Navigator.push(
@@ -622,24 +623,45 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       firestoreId: 'start',
     );
 
-    var routeLocations = [userLocation, ...locations];
-    TravelLocation finalDestination = endLocation ??
-        TravelLocation(
-          name: 'Bitiş Noktası', // Internal
-          geoName: await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? l10n.unknownLocation,
-          description: 'Rota bitişi', // Internal
-          latitude: _currentPosition!.latitude,
-          longitude: _currentPosition!.longitude,
-          firestoreId: 'end',
-        );
-    routeLocations.add(finalDestination);
+    TravelLocation finalDestination;
+    List<TravelLocation> waypoints = List.from(locations);
 
-    final directionsInfo = await _directionsService.getDirections(routeLocations);
+    if (endLocation != null) {
+      finalDestination = endLocation;
+      waypoints.removeWhere((loc) => loc.firestoreId == endLocation.firestoreId);
+    } else if (waypoints.isNotEmpty) {
+      finalDestination = waypoints.removeLast();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Rota için en az bir konum seçmelisiniz.")),
+      );
+      return;
+    }
+
+    finalDestination = TravelLocation(
+      name: finalDestination.name,
+      geoName: finalDestination.geoName,
+      description: finalDestination.description,
+      latitude: finalDestination.latitude,
+      longitude: finalDestination.longitude,
+      firestoreId: 'end', // Mark as endpoint
+      id: finalDestination.id,
+      groupId: finalDestination.groupId,
+      notes: finalDestination.notes,
+      needsList: finalDestination.needsList,
+      estimatedDuration: finalDestination.estimatedDuration,
+      createdAt: finalDestination.createdAt,
+      isImported: finalDestination.isImported,
+    );
+
+    var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
+    final directionsInfo = await _directionsService.getDirections(routeLocationsForApi);
 
     if (directionsInfo != null) {
+      final activeRouteLocations = [...waypoints, finalDestination];
       setState(() {
         _activeRouteInfo = directionsInfo;
-        _activeRouteLocations = [...locations, finalDestination];
+        _activeRouteLocations = activeRouteLocations;
       });
 
       _updateMapElements();
@@ -648,7 +670,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
       );
 
-      _showRouteSummary(directionsInfo, locations);
+      _showRouteSummary(directionsInfo, activeRouteLocations);
       _startRouteTracking();
     } else {
        ScaffoldMessenger.of(context).showSnackBar(
