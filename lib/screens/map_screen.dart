@@ -1622,7 +1622,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
               if (selectedGroupId != null) {
                 final locations = await _firestoreService.getLocationsForGroup(selectedGroupId);
-                if (locations.length >= 2) {
+                if (locations.isNotEmpty) {
                   if (_currentPosition == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(l10n.currentLocationError)),
@@ -1674,7 +1674,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 MaterialPageRoute(builder: (context) => const ManageLocationsScreen(isForSelection: true)),
               );
 
-              if (selectedLocations != null && selectedLocations.length >= 2) {
+              if (selectedLocations != null && selectedLocations.isNotEmpty) {
                 final result = await Navigator.push<dynamic>(
                   context,
                   MaterialPageRoute(builder: (context) => LocationSelectionScreen(initialLocations: selectedLocations, endLocation: homeEndLocation)),

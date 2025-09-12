@@ -196,7 +196,9 @@ class _CommunityRouteDetailScreenState
 
   void _submitComment() {
     if (_commentController.text.trim().isEmpty ||
-        widget.route.firestoreId == null) return;
+        widget.route.firestoreId == null) {
+      return;
+    }
     _firestoreService.addComment(
         widget.route.firestoreId!, _commentController.text.trim());
     _commentController.clear();
@@ -428,7 +430,7 @@ class _CommunityRouteDetailScreenState
               subtitle: Text(note['content']!),
             ),
           );
-        }).toList(),
+        }),
         const Divider(height: 30),
       ],
     );

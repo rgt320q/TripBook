@@ -1,28 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/travel_route.dart';
+import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/screens/location_selection_screen.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/widgets/route_mini_map.dart';
-import 'package:tripbook/models/user_profile.dart';
-import 'dart:async';
-
-// Helper class to hold a route and its author's name
-class CommunityRouteItem {
-  final TravelRoute route;
-  final String authorName;
-  final bool isDownloaded;
-
-  CommunityRouteItem({
-    required this.route,
-    required this.authorName,
-    this.isDownloaded = false,
-  });
-}
 
 class CommunityRoutesScreen extends StatefulWidget {
   const CommunityRoutesScreen({super.key});
@@ -33,77 +20,27 @@ class CommunityRoutesScreen extends StatefulWidget {
 
 class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  late Stream<List<CommunityRouteItem>> _communityRoutesStream;
   bool _isDownloading = false;
   bool _hideDownloaded = false;
-
-  late StreamController<List<CommunityRouteItem>> _combinedStreamController;
-  StreamSubscription? _communityRoutesSubscription;
-  StreamSubscription? _userRoutesSubscription;
 
   @override
   void initState() {
     super.initState();
-    _combinedStreamController = StreamController<List<CommunityRouteItem>>();
-    _setupCombinedStream();
-  }
-
-  void _setupCombinedStream() {
-    List<TravelRoute> _latestCommunityRoutes = [];
-    List<TravelRoute> _latestUserRoutes = [];
-
-    _communityRoutesSubscription = _firestoreService.getCommunityRoutes().listen((communityRoutes) {
-      _latestCommunityRoutes = communityRoutes;
-      _processCombinedData(_latestCommunityRoutes, _latestUserRoutes);
-    });
-
-    _userRoutesSubscription = _firestoreService.getRoutes().listen((userRoutes) {
-      _latestUserRoutes = userRoutes;
-      _processCombinedData(_latestCommunityRoutes, _latestUserRoutes);
+    // Use a post-frame callback to fetch the data after the first frame is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // We set listen to false because we don't need to rebuild this widget
+      // when the provider notifies listeners, that's handled by the Consumer.
+      Provider.of<CommunityRoutesProvider>(context, listen: false)
+          .fetchRoutes();
     });
   }
 
-  Future<void> _processCombinedData(List<TravelRoute> communityRoutes, List<TravelRoute> userRoutes) async {
-    final downloadedCommunityIds = userRoutes
-        .map((r) => r.communityRouteId)
-        .whereType<String>()
-        .toSet();
-
-    final userIds = communityRoutes
-        .map((r) => r.sharedBy)
-        .whereType<String>()
-        .toSet()
-        .toList();
-
-    Map<String, UserProfile> profiles = {};
-    if (userIds.isNotEmpty) {
-      profiles = await _firestoreService.getUsersProfilesByIds(userIds);
-    }
-
-    final List<CommunityRouteItem> items = communityRoutes.map((route) {
-      final authorName = profiles[route.sharedBy]?.name ?? 'Bilinmiyor';
-      return CommunityRouteItem(
-        route: route,
-        authorName: authorName,
-        isDownloaded: downloadedCommunityIds.contains(route.firestoreId),
-      );
-    }).toList();
-
-    _combinedStreamController.add(items);
-  }
-
-  @override
-  void dispose() {
-    _combinedStreamController.close();
-    _communityRoutesSubscription?.cancel();
-    _userRoutesSubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _handleRouteTap(TravelRoute route) async {
+  Future<void> _handleRouteTap(
+      TravelRoute route, CommunityRoutesProvider provider) async {
     if (route.firestoreId == null) return;
 
-    final existingRoute = await _firestoreService.getDownloadedCommunityRoute(route.firestoreId!);
+    final existingRoute =
+        await _firestoreService.getDownloadedCommunityRoute(route.firestoreId!);
 
     bool shouldProceed = false;
 
@@ -180,9 +117,6 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                   isImported: true, // Mark as imported
                 ))
             .toList();
-        // Note: This adds new locations every time. For a true overwrite,
-        // you might want to delete old locations associated with the existing route.
-        // For now, we just add the new set and link them.
         newLocationIds = await _firestoreService.addLocations(locationsToImport);
       }
 
@@ -200,15 +134,17 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
 
       if (existingRoute != null && existingRoute.firestoreId != null) {
         // Update existing route
-        await _firestoreService.updateRoute(existingRoute.firestoreId!, newRouteData);
+        await _firestoreService.updateRoute(
+            existingRoute.firestoreId!, newRouteData);
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("'${route.name}' rotası başarıyla güncellendi!"),
               backgroundColor: Colors.green,
             ),
           );
-          _showRouteDetailsDialog(newRouteData.copyWith(firestoreId: existingRoute.firestoreId));
+          _showRouteDetailsDialog(
+              newRouteData.copyWith(firestoreId: existingRoute.firestoreId));
         }
       } else {
         // Add as new route
@@ -226,6 +162,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
           _showRouteDetailsDialog(addedRouteData);
         }
       }
+      // After download/update, refresh the list in the provider
+      await provider.fetchRoutes();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -283,7 +221,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                   Text('İhtiyaç Listesi:',
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  ...route.needs!.map((need) => Text('  • $need')).toList(),
+                  ...route.needs!.map((need) => Text('  • $need')),
                 ],
                 if (route.notes != null && route.notes!.isNotEmpty) ...[
                   const Divider(height: 20),
@@ -296,7 +234,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                             child: Text(
                                 '  • ${note['locationName']}: ${note['note']}'),
                           ))
-                      .toList(),
+                      ,
                 ],
               ],
             ),
@@ -319,7 +257,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                 if (userProfile?.homeLocation != null) {
                   endLocation = TravelLocation(
                     name: l10n.homeLocation,
-                    geoName: '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
+                    geoName:
+                        '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
                     latitude: userProfile.homeLocation!.latitude,
                     longitude: userProfile.homeLocation!.longitude,
                     firestoreId: 'home_end_location',
@@ -398,21 +337,17 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
       ),
       body: Stack(
         children: [
-          StreamBuilder<List<CommunityRouteItem>>(
-            stream: _combinedStreamController.stream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+          Consumer<CommunityRoutesProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading && provider.items.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (snapshot.hasError) {
-                return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              if (provider.items.isEmpty) {
                 return const Center(
                     child: Text('Henüz paylaşılmış bir rota bulunmuyor.'));
               }
 
-              final allItems = snapshot.data!;
+              final allItems = provider.items;
               final filteredItems = _hideDownloaded
                   ? allItems.where((item) => !item.isDownloaded).toList()
                   : allItems;
@@ -423,81 +358,89 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                 );
               }
 
-              return ListView.builder(
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  final route = item.route;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 8.0, vertical: 4.0),
-                    clipBehavior: Clip.antiAlias,
-                    color: item.isDownloaded ? Colors.green[50] : null,
-                    child: InkWell(
-                      onTap: () => _handleRouteTap(route),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (route.locations != null &&
-                              route.locations!.isNotEmpty)
-                            RouteMiniMap(route: route),
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(route.name,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleLarge),
-                                    ),
-                                    if (item.isDownloaded)
-                                      const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                    'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Paylaşan: ${item.authorName}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(fontStyle: FontStyle.italic),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.star,
-                                        color: Colors.amber, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${route.averageRating.toStringAsFixed(1)} (${route.ratingCount} oy)',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Icon(Icons.comment_outlined,
-                                        color: Colors.grey, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${route.commentCount} yorum',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ],
+              return RefreshIndicator(
+                onRefresh: () => provider.fetchRoutes(),
+                child: ListView.builder(
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    final route = item.route;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 4.0),
+                      clipBehavior: Clip.antiAlias,
+                      color: item.isDownloaded ? Colors.green[50] : null,
+                      child: InkWell(
+                        onTap: () => _handleRouteTap(route, provider),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (route.locations != null &&
+                                route.locations!.isNotEmpty)
+                              RouteMiniMap(route: route),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(route.name,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleLarge),
+                                      ),
+                                      if (item.isDownloaded)
+                                        const Icon(Icons.check_circle,
+                                            color: Colors.green, size: 20),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                      'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Paylaşan: ${item.authorName}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            fontStyle: FontStyle.italic),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star,
+                                          color: Colors.amber, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${route.averageRating.toStringAsFixed(1)} (${route.ratingCount} oy)',
+                                        style:
+                                            Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.comment_outlined,
+                                          color: Colors.grey, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${route.commentCount} yorum',
+                                        style:
+                                            Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -510,7 +453,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Rota indiriliyor...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text('Rota indiriliyor...',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),

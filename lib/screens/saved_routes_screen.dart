@@ -110,7 +110,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                   const Divider(height: 20),
                   Text('İhtiyaç Listesi:', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  ...route.needs!.map((need) => Text('  • $need')).toList(),
+                  ...route.needs!.map((need) => Text('  • $need')),
                 ],
                 if (route.notes != null && route.notes!.isNotEmpty) ...[
                   const Divider(height: 20),
@@ -119,7 +119,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                   ...route.notes!.map((note) => Padding(
                     padding: const EdgeInsets.only(top: 4.0),
                     child: Text('  • ${note['locationName']}: ${note['note']}'),
-                  )).toList(),
+                  )),
                 ],
               ],
             ),

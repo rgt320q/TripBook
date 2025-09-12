@@ -1,3 +1,4 @@
+import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -38,8 +39,11 @@ void main() async {
   );
   
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => LocaleProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => LocaleProvider()),
+        ChangeNotifierProvider(create: (context) => CommunityRoutesProvider()),
+      ],
       child: const MyApp(),
     ),
   );

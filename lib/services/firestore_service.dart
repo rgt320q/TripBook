@@ -161,12 +161,28 @@ class FirestoreService {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
+  // This method is added to allow manual refreshing of the user routes stream
+  // by triggering a new snapshot event.
+  Future<void> forceRefreshUserRoutesStream() async {
+    if (_currentUser == null) return;
+    // Perform a simple query to trigger a new snapshot event for listeners
+    await _routesCollection.limit(1).get();
+  }
+
   Stream<List<TravelRoute>> getCommunityRoutes() {
     return _communityRoutesCollection
         .where('isShared', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Future<List<TravelRoute>> getCommunityRoutesOnce() async {
+    final snapshot = await _communityRoutesCollection
+        .where('isShared', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   Future<TravelRoute?> getDownloadedCommunityRoute(String communityRouteId) async {
