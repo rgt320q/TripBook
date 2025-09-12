@@ -29,7 +29,10 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
   }
 
   Future<void> _requestLocationPermission() async {
-    await Geolocator.requestPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
   }
 
   @override
@@ -72,6 +75,13 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
     } catch (e) {
       // Handle exceptions
     }
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
     @override
