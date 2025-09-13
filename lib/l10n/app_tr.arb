@@ -152,5 +152,307 @@
   "selectHomeLocation": "Ev Konumunu Seç",
   "endLocation": "Bitiş Konumu",
   "homeLocationAuto": "Ev Konumu (Otomatik)",
-  "currentLocation": "Mevcut Konum"
+  "currentLocation": "Mevcut Konum",
+  "notificationSoundLabel": "Zaman Aşımı Bildirim Sesi",
+  "soundDefault": "Varsayılan",
+  "soundChime": "Çan Sesi",
+  "soundAlert": "Uyarı",
+  "soundNone": "Sessiz",
+  "backgroundLocationNotificationText": "TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.",
+  "backgroundLocationNotificationTitle": "TripBook Rota Takibi",
+  "routeCompleted": "Rota tamamlandı!",
+  "nearbyLocationNotificationTitle": "Yakınlardasınız: {locationName}",
+  "@nearbyLocationNotificationTitle": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyLocationNotificationBody": "Konum için Google araması yapmak için tıklayın!",
+  "timeExpiredNotificationTitle": "Süreniz Doldu!",
+  "timeExpiredNotificationBody": "{locationName} konumunda planladığınız süre doldu.",
+  "@timeExpiredNotificationBody": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "minOneLocationError": "Rota için en az bir konum seçmelisiniz.",
+  "notAvailable": "Mevcut Değil",
+  "distanceKm": "{distance} km",
+  "@distanceKm": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "selectEndpointTitle": "Bitiş Noktasını Seç",
+  "currentEndpoint": "Mevcut Bitiş Noktası",
+  "communityRoutes": "Topluluk Rotaları",
+  "locationsNotFoundOrInsufficient": "Bu rotadaki konumlar bulunamadı veya yetersiz.",
+  "selectedEndpoint": "Seçilen Bitiş Noktası",
+  "routeStart": "Rota başlangıcı",
+  "endPoint": "Bitiş Noktası",
+  "routeEnd": "Rota bitişi",
+  "routeExistsWarningTitle": "Uyarı: Rota Zaten Mevcut",
+  "routeExistsWarningContent": "Bu rotayı daha önce indirdiniz. Mevcut sürümün üzerine yazmak istiyor musunuz?",
+  "overwrite": "Üzerine Yaz",
+  "downloadRouteTitle": "Rotayı İndir",
+  "downloadRouteContent": "'{routeName}' rotasını ve tüm konumlarını kendi rotalarınıza kaydetmek istiyor musunuz?",
+  "@downloadRouteContent": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadAndView": "İndir ve Görüntüle",
+  "routeUpdateSuccess": "'{routeName}' rotası başarıyla güncellendi!",
+  "@routeUpdateSuccess": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDownloadError": "Rota indirilirken bir hata oluştu: {error}",
+  "@routeDownloadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedDistance": "Planlanan Mesafe: {distance}",
+  "@routeDetailsPlannedDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsActualDistance": "Gerçekleşen Mesafe: {distance}",
+  "@routeDetailsActualDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedTravelTime": "Planlanan Yol Süresi: {time}",
+  "@routeDetailsPlannedTravelTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedStopTime": "Planlanan Mola Süresi: {time}",
+  "@routeDetailsPlannedStopTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedTotalTime": "Planlanan Toplam Süre: {time}",
+  "@routeDetailsPlannedTotalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsActualTotalTime": "Gerçekleşen Toplam Süre: {time}",
+  "@routeDetailsActualTotalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "needsListTitle": "İhtiyaç Listesi:",
+  "privateNotesTitle": "Özel Notlar:",
+  "close": "Kapat",
+  "noLocationsInThisRoute": "Bu rotada konum bulunamadı.",
+  "showDownloaded": "İndirilenleri Göster",
+  "hideDownloaded": "İndirilenleri Gizle",
+  "noSharedRoutes": "Henüz paylaşılmış bir rota bulunmuyor.",
+  "allRoutesDownloaded": "Tüm rotalar indirilmiş ve gizlenmiş.",
+  "routeDistanceAndDuration": "Mesafe: {distance} | Süre: {duration}",
+  "@routeDistanceAndDuration": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedBy": "Paylaşan: {author}",
+  "@sharedBy": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "rating": "{rating} ({count} oy)",
+  "@rating": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comments": "{count} yorum",
+  "@comments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadingRoute": "Rota indiriliyor...",
+  "saveRoute": "Rotayı Kaydet",
+  "saveRouteConfirmation": "'{routeName}' rotasını kendi kayıtlı rotalarınıza eklemek istediğinizden emin misiniz?",
+  "@saveRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSavedSuccessfully": "'{routeName}' rotası başarıyla kaydedildi!",
+  "@routeSavedSuccessfully": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownUser": "Bilinmiyor",
+  "distance": "Mesafe",
+  "duration": "Süre",
+  "totalBreakTime": "Toplam Mola Süresi",
+  "rate": "Puanla",
+  "commentsTitle": "Yorumlar",
+  "drawRoute": "Rotayı Çiz",
+  "routeNeeds": "Rota İhtiyaçları",
+  "routeNotes": "Rota Notları",
+  "addCommentHint": "Yorum ekle...",
+  "commentsLoadingError": "Yorumlar yüklenemiyor.",
+  "commentsLoadingErrorDescription": "Yorumlar yüklenirken bir hata oluştu: {error}",
+  "@commentsLoadingErrorDescription": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noCommentsYet": "Henüz yorum yapılmamış.",
+  "votes": "oy",
+  "plannedTravelTime": "Planlanan Yol Süresi",
+  "plannedBreakTime": "Planlanan Mola Süresi",
+  "plannedTotalTime": "Planlanan Toplam Süre",
+  "actualTotalTime": "Gerçekleşen Toplam Süre",
+  "needsList": "İhtiyaç Listesi",
+  "privateNotes": "Özel Notlar",
+  "start": "Başlat",
+  "noLocationsInRoute": "Bu rotada konum bulunamadı.",
+  "privateNotesLabel": "Özel Notlar",
+  "estimatedStayTimeLabel": "Tahmini Kalma Süresi (dakika)",
+  "enterValidNumberError": "Lütfen geçerli bir sayı girin.",
+  "needsListLabel": "İhtiyaç Listesi",
+  "addNewNeedHint": "Yeni ihtiyaç ekle",
+  "sortAndEdit": "Sırala ve Düzenle",
+  "endLocationLabel": "Bitiş Konumu",
+  "change": "Değiştir",
+  "latitude": "Enlem",
+  "longitude": "Boylam",
+  "reachedLocationsLog": "Ulaşılan Konumlar Günlüğü",
+  "markAllAsRead": "Tümünü Okundu İşaretle",
+  "allLogsMarkedAsRead": "Tüm günlükler okundu olarak işaretlendi.",
+  "deleteRead": "Okunanları Sil",
+  "readLogsDeleted": "Okunan tüm kayıtlar silindi.",
+  "sortByDateNew": "Tarihe Göre (Yeni)",
+  "sortByDateOld": "Tarihe Göre (Eski)",
+  "noReachedLocations": "Henüz bir konuma ulaşmadınız.\nBir rota başlatıp hedeflere yaklaştığınızda buraya eklenecektir.",
+  "reachedAt": "Ulaşılma",
+  "moreInfo": "Daha Fazla Bilgi",
+  "stopSharing": "Paylaşımı Durdur",
+  "shareRoute": "Rotayı Paylaş",
+  "stopSharingConfirmation": "'{routeName}' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?",
+  "@stopSharingConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "shareRouteConfirmation": "'{routeName}' rotasını diğer kullanıcılarla paylaşmak istediğinizden emin misiniz? Rota, topluluk ekranında görünecektir.",
+  "@shareRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoLongerShared": "'{routeName}' rotası artık paylaşılmıyor.",
+  "routeSharedSuccessfully": "'{routeName}' rotası başarıyla paylaşıldı!",
+  "@routeSharedSuccessfully": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRoute": "Rotayı Sil",
+  "deleteRouteConfirmation": "'{routeName}' adlı rotayı silmek istediğinizden emin misiniz?",
+  "@deleteRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteLabel": "Sil",
+  "routeDeleted": "'{routeName}' rotası silindi.",
+  "@routeDeleted": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "noSavedRoutes": "Kaydedilmiş rota bulunamadı.",
+  "errorOccurred": "Bir hata oluştu: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceLabel": "Mesafe",
+  "durationLabel": "Süre",
+  "languageEnglish": "İngilizce",
+  "languageTurkish": "Türkçe",
+  "languageCode": "tr",
+  "language": "Dil",
+  "login": "Giriş Yap",
+  "signUp": "Kayıt Ol",
+  "emailAddress": "E-posta Adresi",
+  "password": "Şifre",
+  "createNewAccount": "Yeni hesap oluştur",
+  "alreadyHaveAccount": "Zaten bir hesabım var",
+  "enterValidEmail": "Lütfen geçerli bir e-posta adresi girin.",
+  "passwordTooShort": "Şifre en az 7 karakter uzunluğunda olmalıdır."
 }

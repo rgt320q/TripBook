@@ -152,5 +152,307 @@
   "selectHomeLocation": "Select Home Location",
   "endLocation": "End Location",
   "homeLocationAuto": "Home Location (Auto)",
-  "currentLocation": "Current Location"
+  "currentLocation": "Current Location",
+  "notificationSoundLabel": "Timeout Notification Sound",
+  "soundDefault": "Default",
+  "soundChime": "Chime",
+  "soundAlert": "Alert",
+  "soundNone": "None",
+  "backgroundLocationNotificationText": "TripBook is tracking your location in the background.",
+  "backgroundLocationNotificationTitle": "TripBook Route Tracking",
+  "routeCompleted": "Route completed!",
+  "nearbyLocationNotificationTitle": "You are near: {locationName}",
+  "@nearbyLocationNotificationTitle": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyLocationNotificationBody": "Click to search for this location on Google!",
+  "timeExpiredNotificationTitle": "Time's Up!",
+  "timeExpiredNotificationBody": "Your planned time at {locationName} has expired.",
+  "@timeExpiredNotificationBody": {
+    "placeholders": {
+      "locationName": {
+        "type": "String"
+      }
+    }
+  },
+  "minOneLocationError": "You must select at least one location for the route.",
+  "notAvailable": "N/A",
+  "distanceKm": "{distance} km",
+  "@distanceKm": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "selectEndpointTitle": "Select End Point",
+  "currentEndpoint": "Current End Point",
+  "communityRoutes": "Community Routes",
+  "locationsNotFoundOrInsufficient": "The locations for this route could not be found or are insufficient.",
+  "selectedEndpoint": "Selected End Point",
+  "routeStart": "Route start",
+  "endPoint": "End Point",
+  "routeEnd": "Route end",
+  "routeExistsWarningTitle": "Warning: Route Already Exists",
+  "routeExistsWarningContent": "You have already downloaded this route. Do you want to overwrite the existing version?",
+  "overwrite": "Overwrite",
+  "downloadRouteTitle": "Download Route",
+  "downloadRouteContent": "Do you want to save the route '{routeName}' and all its locations to your own routes?",
+  "@downloadRouteContent": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadAndView": "Download and View",
+  "routeUpdateSuccess": "Route '{routeName}' was updated successfully!",
+  "@routeUpdateSuccess": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDownloadError": "An error occurred while downloading the route: {error}",
+  "@routeDownloadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedDistance": "Planned Distance: {distance}",
+  "@routeDetailsPlannedDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsActualDistance": "Actual Distance: {distance}",
+  "@routeDetailsActualDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedTravelTime": "Planned Travel Time: {time}",
+  "@routeDetailsPlannedTravelTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedStopTime": "Planned Stop Time: {time}",
+  "@routeDetailsPlannedStopTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsPlannedTotalTime": "Planned Total Time: {time}",
+  "@routeDetailsPlannedTotalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDetailsActualTotalTime": "Actual Total Time: {time}",
+  "@routeDetailsActualTotalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "needsListTitle": "Needs List:",
+  "privateNotesTitle": "Private Notes:",
+  "close": "Close",
+  "noLocationsInThisRoute": "No locations found in this route.",
+  "showDownloaded": "Show Downloaded",
+  "hideDownloaded": "Hide Downloaded",
+  "noSharedRoutes": "No shared routes yet.",
+  "allRoutesDownloaded": "All routes are downloaded and hidden.",
+  "routeDistanceAndDuration": "Distance: {distance} | Duration: {duration}",
+  "@routeDistanceAndDuration": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedBy": "Shared by: {author}",
+  "@sharedBy": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "rating": "{rating} ({count} votes)",
+  "@rating": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comments": "{count} comments",
+  "@comments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadingRoute": "Downloading route...",
+  "saveRoute": "Save Route",
+  "saveRouteConfirmation": "Are you sure you want to add the '{routeName}' route to your saved routes?",
+  "@saveRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSavedSuccessfully": "'{routeName}' route saved successfully!",
+  "@routeSavedSuccessfully": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownUser": "Unknown",
+  "distance": "Distance",
+  "duration": "Duration",
+  "totalBreakTime": "Total Break Time",
+  "rate": "Rate",
+  "commentsTitle": "Comments",
+  "drawRoute": "Draw Route",
+  "routeNeeds": "Route Needs",
+  "routeNotes": "Route Notes",
+  "addCommentHint": "Add a comment...",
+  "commentsLoadingError": "Comments can't be loaded.",
+  "commentsLoadingErrorDescription": "An error occurred while loading comments: {error}",
+  "@commentsLoadingErrorDescription": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noCommentsYet": "No comments yet.",
+  "votes": "votes",
+  "plannedTravelTime": "Planned Travel Time",
+  "plannedBreakTime": "Planned Break Time",
+  "plannedTotalTime": "Planned Total Time",
+  "actualTotalTime": "Actual Total Time",
+  "needsList": "Needs List",
+  "privateNotes": "Private Notes",
+  "start": "Start",
+  "noLocationsInRoute": "No locations in this route.",
+  "privateNotesLabel": "Private Notes",
+  "estimatedStayTimeLabel": "Estimated Stay Time (minutes)",
+  "enterValidNumberError": "Please enter a valid number.",
+  "needsListLabel": "Needs List",
+  "addNewNeedHint": "Add new need",
+  "sortAndEdit": "Sort and Edit",
+  "endLocationLabel": "End Location",
+  "change": "Change",
+  "latitude": "Lat",
+  "longitude": "Lon",
+  "reachedLocationsLog": "Reached Locations Log",
+  "markAllAsRead": "Mark All as Read",
+  "allLogsMarkedAsRead": "All logs marked as read.",
+  "deleteRead": "Delete Read",
+  "readLogsDeleted": "All read logs have been deleted.",
+  "sortByDateNew": "By Date (Newest)",
+  "sortByDateOld": "By Date (Oldest)",
+  "noReachedLocations": "You haven't reached any locations yet.\nThey will be added here as you approach them on a route.",
+  "reachedAt": "Reached At",
+  "moreInfo": "More Info",
+  "stopSharing": "Stop Sharing",
+  "shareRoute": "Share Route",
+  "stopSharingConfirmation": "Are you sure you want to stop sharing the route '{routeName}' with the community?",
+  "@stopSharingConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "shareRouteConfirmation": "Are you sure you want to share the route '{routeName}' with other users? The route will appear on the community screen.",
+  "@shareRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoLongerShared": "'{routeName}' route is no longer shared.",
+  "routeSharedSuccessfully": "'{routeName}' route shared successfully!",
+  "@routeSharedSuccessfully": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRoute": "Delete Route",
+  "deleteRouteConfirmation": "Are you sure you want to delete the route named '{routeName}'?",
+  "@deleteRouteConfirmation": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteLabel": "Delete",
+  "routeDeleted": "'{routeName}' route has been deleted.",
+  "@routeDeleted": {
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+  "noSavedRoutes": "No saved routes found.",
+  "errorOccurred": "An error occurred: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceLabel": "Distance",
+  "durationLabel": "Duration",
+  "languageEnglish": "English",
+  "languageTurkish": "Turkish",
+  "languageCode": "en",
+  "language": "Language",
+  "login": "Login",
+  "signUp": "Sign Up",
+  "emailAddress": "Email Address",
+  "password": "Password",
+  "createNewAccount": "Create new account",
+  "alreadyHaveAccount": "I already have an account",
+  "enterValidEmail": "Please enter a valid email address.",
+  "passwordTooShort": "Password must be at least 7 characters long."
 }

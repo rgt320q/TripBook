@@ -361,4 +361,425 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get currentLocation => 'Mevcut Konum';
+
+  @override
+  String get notificationSoundLabel => 'Zaman Aşımı Bildirim Sesi';
+
+  @override
+  String get soundDefault => 'Varsayılan';
+
+  @override
+  String get soundChime => 'Çan Sesi';
+
+  @override
+  String get soundAlert => 'Uyarı';
+
+  @override
+  String get soundNone => 'Sessiz';
+
+  @override
+  String get backgroundLocationNotificationText =>
+      'TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.';
+
+  @override
+  String get backgroundLocationNotificationTitle => 'TripBook Rota Takibi';
+
+  @override
+  String get routeCompleted => 'Rota tamamlandı!';
+
+  @override
+  String nearbyLocationNotificationTitle(String locationName) {
+    return 'Yakınlardasınız: $locationName';
+  }
+
+  @override
+  String get nearbyLocationNotificationBody =>
+      'Konum için Google araması yapmak için tıklayın!';
+
+  @override
+  String get timeExpiredNotificationTitle => 'Süreniz Doldu!';
+
+  @override
+  String timeExpiredNotificationBody(String locationName) {
+    return '$locationName konumunda planladığınız süre doldu.';
+  }
+
+  @override
+  String get minOneLocationError => 'Rota için en az bir konum seçmelisiniz.';
+
+  @override
+  String get notAvailable => 'Mevcut Değil';
+
+  @override
+  String distanceKm(String distance) {
+    return '$distance km';
+  }
+
+  @override
+  String get selectEndpointTitle => 'Bitiş Noktasını Seç';
+
+  @override
+  String get currentEndpoint => 'Mevcut Bitiş Noktası';
+
+  @override
+  String get communityRoutes => 'Topluluk Rotaları';
+
+  @override
+  String get locationsNotFoundOrInsufficient =>
+      'Bu rotadaki konumlar bulunamadı veya yetersiz.';
+
+  @override
+  String get selectedEndpoint => 'Seçilen Bitiş Noktası';
+
+  @override
+  String get routeStart => 'Rota başlangıcı';
+
+  @override
+  String get endPoint => 'Bitiş Noktası';
+
+  @override
+  String get routeEnd => 'Rota bitişi';
+
+  @override
+  String get routeExistsWarningTitle => 'Uyarı: Rota Zaten Mevcut';
+
+  @override
+  String get routeExistsWarningContent =>
+      'Bu rotayı daha önce indirdiniz. Mevcut sürümün üzerine yazmak istiyor musunuz?';
+
+  @override
+  String get overwrite => 'Üzerine Yaz';
+
+  @override
+  String get downloadRouteTitle => 'Rotayı İndir';
+
+  @override
+  String downloadRouteContent(String routeName) {
+    return '\'$routeName\' rotasını ve tüm konumlarını kendi rotalarınıza kaydetmek istiyor musunuz?';
+  }
+
+  @override
+  String get downloadAndView => 'İndir ve Görüntüle';
+
+  @override
+  String routeUpdateSuccess(String routeName) {
+    return '\'$routeName\' rotası başarıyla güncellendi!';
+  }
+
+  @override
+  String routeDownloadError(String error) {
+    return 'Rota indirilirken bir hata oluştu: $error';
+  }
+
+  @override
+  String routeDetailsPlannedDistance(String distance) {
+    return 'Planlanan Mesafe: $distance';
+  }
+
+  @override
+  String routeDetailsActualDistance(String distance) {
+    return 'Gerçekleşen Mesafe: $distance';
+  }
+
+  @override
+  String routeDetailsPlannedTravelTime(String time) {
+    return 'Planlanan Yol Süresi: $time';
+  }
+
+  @override
+  String routeDetailsPlannedStopTime(String time) {
+    return 'Planlanan Mola Süresi: $time';
+  }
+
+  @override
+  String routeDetailsPlannedTotalTime(String time) {
+    return 'Planlanan Toplam Süre: $time';
+  }
+
+  @override
+  String routeDetailsActualTotalTime(String time) {
+    return 'Gerçekleşen Toplam Süre: $time';
+  }
+
+  @override
+  String get needsListTitle => 'İhtiyaç Listesi:';
+
+  @override
+  String get privateNotesTitle => 'Özel Notlar:';
+
+  @override
+  String get close => 'Kapat';
+
+  @override
+  String get noLocationsInThisRoute => 'Bu rotada konum bulunamadı.';
+
+  @override
+  String get showDownloaded => 'İndirilenleri Göster';
+
+  @override
+  String get hideDownloaded => 'İndirilenleri Gizle';
+
+  @override
+  String get noSharedRoutes => 'Henüz paylaşılmış bir rota bulunmuyor.';
+
+  @override
+  String get allRoutesDownloaded => 'Tüm rotalar indirilmiş ve gizlenmiş.';
+
+  @override
+  String routeDistanceAndDuration(String distance, String duration) {
+    return 'Mesafe: $distance | Süre: $duration';
+  }
+
+  @override
+  String sharedBy(String author) {
+    return 'Paylaşan: $author';
+  }
+
+  @override
+  String rating(String rating, int count) {
+    return '$rating ($count oy)';
+  }
+
+  @override
+  String comments(int count) {
+    return '$count yorum';
+  }
+
+  @override
+  String get downloadingRoute => 'Rota indiriliyor...';
+
+  @override
+  String get saveRoute => 'Rotayı Kaydet';
+
+  @override
+  String saveRouteConfirmation(String routeName) {
+    return '\'$routeName\' rotasını kendi kayıtlı rotalarınıza eklemek istediğinizden emin misiniz?';
+  }
+
+  @override
+  String routeSavedSuccessfully(String routeName) {
+    return '\'$routeName\' rotası başarıyla kaydedildi!';
+  }
+
+  @override
+  String get unknownUser => 'Bilinmiyor';
+
+  @override
+  String get distance => 'Mesafe';
+
+  @override
+  String get duration => 'Süre';
+
+  @override
+  String get totalBreakTime => 'Toplam Mola Süresi';
+
+  @override
+  String get rate => 'Puanla';
+
+  @override
+  String get commentsTitle => 'Yorumlar';
+
+  @override
+  String get drawRoute => 'Rotayı Çiz';
+
+  @override
+  String get routeNeeds => 'Rota İhtiyaçları';
+
+  @override
+  String get routeNotes => 'Rota Notları';
+
+  @override
+  String get addCommentHint => 'Yorum ekle...';
+
+  @override
+  String get commentsLoadingError => 'Yorumlar yüklenemiyor.';
+
+  @override
+  String commentsLoadingErrorDescription(String error) {
+    return 'Yorumlar yüklenirken bir hata oluştu: $error';
+  }
+
+  @override
+  String get noCommentsYet => 'Henüz yorum yapılmamış.';
+
+  @override
+  String get votes => 'oy';
+
+  @override
+  String get plannedTravelTime => 'Planlanan Yol Süresi';
+
+  @override
+  String get plannedBreakTime => 'Planlanan Mola Süresi';
+
+  @override
+  String get plannedTotalTime => 'Planlanan Toplam Süre';
+
+  @override
+  String get actualTotalTime => 'Gerçekleşen Toplam Süre';
+
+  @override
+  String get needsList => 'İhtiyaç Listesi';
+
+  @override
+  String get privateNotes => 'Özel Notlar';
+
+  @override
+  String get start => 'Başlat';
+
+  @override
+  String get noLocationsInRoute => 'Bu rotada konum bulunamadı.';
+
+  @override
+  String get privateNotesLabel => 'Özel Notlar';
+
+  @override
+  String get estimatedStayTimeLabel => 'Tahmini Kalma Süresi (dakika)';
+
+  @override
+  String get enterValidNumberError => 'Lütfen geçerli bir sayı girin.';
+
+  @override
+  String get needsListLabel => 'İhtiyaç Listesi';
+
+  @override
+  String get addNewNeedHint => 'Yeni ihtiyaç ekle';
+
+  @override
+  String get sortAndEdit => 'Sırala ve Düzenle';
+
+  @override
+  String get endLocationLabel => 'Bitiş Konumu';
+
+  @override
+  String get change => 'Değiştir';
+
+  @override
+  String get latitude => 'Enlem';
+
+  @override
+  String get longitude => 'Boylam';
+
+  @override
+  String get reachedLocationsLog => 'Ulaşılan Konumlar Günlüğü';
+
+  @override
+  String get markAllAsRead => 'Tümünü Okundu İşaretle';
+
+  @override
+  String get allLogsMarkedAsRead => 'Tüm günlükler okundu olarak işaretlendi.';
+
+  @override
+  String get deleteRead => 'Okunanları Sil';
+
+  @override
+  String get readLogsDeleted => 'Okunan tüm kayıtlar silindi.';
+
+  @override
+  String get sortByDateNew => 'Tarihe Göre (Yeni)';
+
+  @override
+  String get sortByDateOld => 'Tarihe Göre (Eski)';
+
+  @override
+  String get noReachedLocations =>
+      'Henüz bir konuma ulaşmadınız.\nBir rota başlatıp hedeflere yaklaştığınızda buraya eklenecektir.';
+
+  @override
+  String get reachedAt => 'Ulaşılma';
+
+  @override
+  String get moreInfo => 'Daha Fazla Bilgi';
+
+  @override
+  String get stopSharing => 'Paylaşımı Durdur';
+
+  @override
+  String get shareRoute => 'Rotayı Paylaş';
+
+  @override
+  String stopSharingConfirmation(String routeName) {
+    return '\'$routeName\' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?';
+  }
+
+  @override
+  String shareRouteConfirmation(String routeName) {
+    return '\'$routeName\' rotasını diğer kullanıcılarla paylaşmak istediğinizden emin misiniz? Rota, topluluk ekranında görünecektir.';
+  }
+
+  @override
+  String routeNoLongerShared(Object routeName) {
+    return '\'$routeName\' rotası artık paylaşılmıyor.';
+  }
+
+  @override
+  String routeSharedSuccessfully(String routeName) {
+    return '\'$routeName\' rotası başarıyla paylaşıldı!';
+  }
+
+  @override
+  String get deleteRoute => 'Rotayı Sil';
+
+  @override
+  String deleteRouteConfirmation(String routeName) {
+    return '\'$routeName\' adlı rotayı silmek istediğinizden emin misiniz?';
+  }
+
+  @override
+  String get deleteLabel => 'Sil';
+
+  @override
+  String routeDeleted(String routeName) {
+    return '\'$routeName\' rotası silindi.';
+  }
+
+  @override
+  String get noSavedRoutes => 'Kaydedilmiş rota bulunamadı.';
+
+  @override
+  String errorOccurred(String error) {
+    return 'Bir hata oluştu: $error';
+  }
+
+  @override
+  String get distanceLabel => 'Mesafe';
+
+  @override
+  String get durationLabel => 'Süre';
+
+  @override
+  String get languageEnglish => 'İngilizce';
+
+  @override
+  String get languageTurkish => 'Türkçe';
+
+  @override
+  String get languageCode => 'tr';
+
+  @override
+  String get language => 'Dil';
+
+  @override
+  String get login => 'Giriş Yap';
+
+  @override
+  String get signUp => 'Kayıt Ol';
+
+  @override
+  String get emailAddress => 'E-posta Adresi';
+
+  @override
+  String get password => 'Şifre';
+
+  @override
+  String get createNewAccount => 'Yeni hesap oluştur';
+
+  @override
+  String get alreadyHaveAccount => 'Zaten bir hesabım var';
+
+  @override
+  String get enterValidEmail => 'Lütfen geçerli bir e-posta adresi girin.';
+
+  @override
+  String get passwordTooShort =>
+      'Şifre en az 7 karakter uzunluğunda olmalıdır.';
 }

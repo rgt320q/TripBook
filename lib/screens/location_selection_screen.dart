@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/map_screen.dart';
 
+import 'package:tripbook/l10n/app_localizations.dart';
+
 class LocationSelectionScreen extends StatefulWidget {
   final List<TravelLocation>? initialLocations;
   final TravelLocation? endLocation;
@@ -30,9 +32,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sırala ve Düzenle'),
+        title: Text(l10n.sortAndEdit),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -51,10 +54,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               ListTile( // Regular ListTile for the non-reorderable end location
                 key: Key(_selectedLocations[index].firestoreId ?? index.toString()),
                 title: Text(_selectedLocations[index].name),
-                subtitle: const Text("Bitiş Konumu"),
+                subtitle: Text(l10n.endLocationLabel),
                 leading: const Icon(Icons.location_pin),
                 trailing: TextButton(
-                  child: const Text("Değiştir"),
+                  child: Text(l10n.change),
                   onPressed: () {
                     Navigator.push(
                       context,

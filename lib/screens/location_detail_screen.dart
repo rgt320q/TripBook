@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/models/location_group.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 
 class LocationDetailScreen extends StatefulWidget {
   final TravelLocation location;
@@ -81,6 +82,7 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.location.name),
@@ -99,9 +101,9 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
             children: <Widget>[
               TextFormField(
                 initialValue: _notes,
-                decoration: const InputDecoration(
-                  labelText: 'Özel Notlar',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.privateNotesLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 3,
                 onSaved: (value) {
@@ -111,14 +113,14 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _estimatedDuration.toString(),
-                decoration: const InputDecoration(
-                  labelText: 'Tahmini Kalma Süresi (dakika)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.estimatedStayTimeLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (int.tryParse(value ?? '') == null) {
-                    return 'Lütfen geçerli bir sayı girin.';
+                    return l10n.enterValidNumberError;
                   }
                   return null;
                 },
@@ -136,9 +138,9 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                   var groups = snapshot.data!;
                   return DropdownButtonFormField<String>(
                     initialValue: _selectedGroupId,
-                    decoration: const InputDecoration(
-                      labelText: 'Grup',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.groupLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     items: groups.map((group) {
                       return DropdownMenuItem<String>(
@@ -155,7 +157,7 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text('İhtiyaç Listesi', style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.needsListLabel, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               ListView.builder(
                 shrinkWrap: true,
@@ -181,9 +183,9 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                     Expanded(
                       child: TextField(
                         controller: _needsController,
-                        decoration: const InputDecoration(
-                          labelText: 'Yeni ihtiyaç ekle',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.addNewNeedHint,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),

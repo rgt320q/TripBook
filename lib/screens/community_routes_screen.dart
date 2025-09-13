@@ -37,6 +37,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
 
   Future<void> _handleRouteTap(
       TravelRoute route, CommunityRoutesProvider provider) async {
+    final l10n = AppLocalizations.of(context)!;
     if (route.firestoreId == null) return;
 
     final existingRoute =
@@ -48,23 +49,22 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
       final confirmOverwrite = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              SizedBox(width: 10),
-              Expanded(child: Text('Uyarı: Rota Zaten Mevcut')),
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              const SizedBox(width: 10),
+              Expanded(child: Text(l10n.routeExistsWarningTitle)),
             ],
           ),
-          content: const Text(
-              'Bu rotayı daha önce indirdiniz. Mevcut sürümün üzerine yazmak istiyor musunuz?'),
+          content: Text(l10n.routeExistsWarningContent),
           actions: [
             TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('İptal')),
+                child: Text(l10n.cancel)),
             TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Üzerine Yaz')),
+                child: Text(l10n.overwrite)),
           ],
         ),
       );
@@ -75,16 +75,15 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
       final confirmDownload = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Rotayı İndir'),
-          content: Text(
-              "'${route.name}' rotasını ve tüm konumlarını kendi rotalarınıza kaydetmek istiyor musunuz?"),
+          title: Text(l10n.downloadRouteTitle),
+          content: Text(l10n.downloadRouteContent(route.name)),
           actions: [
             TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('İptal')),
+                child: Text(l10n.cancel)),
             TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('İndir ve Görüntüle')),
+                child: Text(l10n.downloadAndView)),
           ],
         ),
       );
@@ -139,7 +138,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("'${route.name}' rotası başarıyla güncellendi!"),
+              content: Text(l10n.routeUpdateSuccess(route.name)),
               backgroundColor: Colors.green,
             ),
           );
@@ -155,7 +154,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
         if (mounted && addedRouteData != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("'${route.name}' rotası başarıyla kaydedildi!"),
+              content: Text(l10n.routeSavedSuccess(route.name)),
               backgroundColor: Colors.green,
             ),
           );
@@ -168,7 +167,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Rota indirilirken bir hata oluştu: $e'),
+            content: Text(l10n.routeDownloadError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -183,6 +182,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   }
 
   void _showRouteDetailsDialog(TravelRoute route) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -318,15 +318,16 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Topluluk Rotaları'),
+        title: Text(l10n.communityRoutes),
         actions: [
           IconButton(
             icon: Icon(_hideDownloaded ? Icons.visibility_off : Icons.visibility),
             tooltip: _hideDownloaded
-                ? 'İndirilenleri Göster'
-                : 'İndirilenleri Gizle',
+                ? l10n.showDownloaded
+                : l10n.hideDownloaded,
             onPressed: () {
               setState(() {
                 _hideDownloaded = !_hideDownloaded;
@@ -343,8 +344,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (provider.items.isEmpty) {
-                return const Center(
-                    child: Text('Henüz paylaşılmış bir rota bulunmuyor.'));
+                return Center(
+                    child: Text(l10n.noSharedRoutes));
               }
 
               final allItems = provider.items;
@@ -353,8 +354,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                   : allItems;
 
               if (filteredItems.isEmpty) {
-                return const Center(
-                  child: Text('Tüm rotalar indirilmiş ve gizlenmiş.'),
+                return Center(
+                  child: Text(l10n.allRoutesDownloaded),
                 );
               }
 
@@ -400,10 +401,10 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                      'Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
+                                      l10n.routeDistanceAndDuration(route.totalDistance, route.totalTravelTime)),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Paylaşan: ${item.authorName}',
+                                    l10n.sharedBy(item.authorName),
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall
@@ -417,7 +418,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                           color: Colors.amber, size: 16),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${route.averageRating.toStringAsFixed(1)} (${route.ratingCount} oy)',
+                                        l10n.rating(route.averageRating.toStringAsFixed(1), route.ratingCount),
                                         style:
                                             Theme.of(context).textTheme.bodySmall,
                                       ),
@@ -426,7 +427,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                           color: Colors.grey, size: 16),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${route.commentCount} yorum',
+                                        l10n.comments(route.commentCount),
                                         style:
                                             Theme.of(context).textTheme.bodySmall,
                                       ),
@@ -447,14 +448,14 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
           if (_isDownloading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Rota indiriliyor...',
-                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l10n.downloadingRoute,
+                        style: const TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),

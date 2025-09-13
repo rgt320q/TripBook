@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -34,10 +35,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Bu grupta henüz konum bulunmamaktadır.'));
+            return Center(child: Text(AppLocalizations.of(context)!.noLocationsInGroup));
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+            return Center(child: Text(AppLocalizations.of(context)!.error(snapshot.error.toString())));
           }
 
           final locations = snapshot.data!;

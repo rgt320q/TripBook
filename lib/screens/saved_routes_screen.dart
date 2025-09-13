@@ -20,13 +20,14 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> _shareRoute(TravelRoute route) async {
+    final l10n = AppLocalizations.of(context)!;
     if (route.firestoreId == null) return;
 
-    final String title = route.isShared ? 'Paylaşımı Durdur' : 'Rotayı Paylaş';
+    final String title = route.isShared ? l10n.stopSharing : l10n.shareRoute;
     final String content = route.isShared
-        ? "'${route.name}' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?"
-        : "'${route.name}' rotasını diğer kullanıcılarla paylaşmak istediğinizden emin misiniz? Rota, topluluk ekranında görünecektir.";
-    final String confirmAction = route.isShared ? 'Paylaşımı Durdur' : 'Paylaş';
+        ? l10n.stopSharingConfirmation(route.name)
+        : l10n.shareRouteConfirmation(route.name);
+    final String confirmAction = route.isShared ? l10n.stopSharing : l10n.shareRoute;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -34,7 +35,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
         title: Text(title),
         content: Text(content),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
           TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(confirmAction)),
         ],
       ),
@@ -45,7 +46,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(route.isShared ? "'${route.name}' rotası artık paylaşılmıyor." : "'${route.name}' rotası başarıyla paylaşıldı!"),
+            content: Text(route.isShared ? l10n.routeNoLongerShared(route.name) : l10n.routeSharedSuccessfully(route.name)),
             backgroundColor: Colors.green,
           ),
         );
@@ -54,14 +55,15 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   }
 
   Future<void> _deleteRoute(TravelRoute route) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rotayı Sil'),
-        content: Text("'${route.name}' adlı rotayı silmek istediğinizden emin misiniz?"),
+        title: Text(l10n.deleteRoute),
+        content: Text(l10n.deleteRouteConfirmation(route.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('İptal')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Sil')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.deleteLabel)),
         ],
       ),
     );
@@ -69,13 +71,14 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
       await _firestoreService.deleteRoute(route.firestoreId!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("'${route.name}' rotası silindi."), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.routeDeleted(route.name)), backgroundColor: Colors.red),
         );
       }
     }
   }
 
   void _showRouteDetailsDialog(TravelRoute route) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -86,35 +89,35 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Planlanan Mesafe: ${route.totalDistance}'),
+                Text(l10n.routeDetailsPlannedDistance(route.totalDistance)),
                 if (route.actualDistance != null)
-                  Text('Gerçekleşen Mesafe: ${route.actualDistance}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(l10n.routeDetailsActualDistance(route.actualDistance!)),
                 const SizedBox(height: 8),
-                Text('Planlanan Yol Süresi: ${route.totalTravelTime}'),
+                Text(l10n.routeDetailsPlannedTravelTime(route.totalTravelTime)),
                 if (route.totalStopDuration != null) ...[
                   const SizedBox(height: 4),
-                  Text('Planlanan Mola Süresi: ${route.totalStopDuration}'),
+                  Text(l10n.routeDetailsPlannedStopTime(route.totalStopDuration!)),
                 ],
                 if (route.totalTripDuration != null) ...[
                   const SizedBox(height: 4),
-                  Text('Planlanan Toplam Süre: ${route.totalTripDuration}'),
+                  Text(l10n.routeDetailsPlannedTotalTime(route.totalTripDuration!)),
                 ],
                 if (route.actualDuration != null && route.actualDuration!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Gerçekleşen Toplam Süre: ${route.actualDuration}',
+                    l10n.routeDetailsActualTotalTime(route.actualDuration!),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
                   ),
                 ],
                 if (route.needs != null && route.needs!.isNotEmpty) ...[
                   const Divider(height: 20),
-                  Text('İhtiyaç Listesi:', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.needsListTitle, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   ...route.needs!.map((need) => Text('  • $need')),
                 ],
                 if (route.notes != null && route.notes!.isNotEmpty) ...[
                   const Divider(height: 20),
-                  Text('Özel Notlar:', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.privateNotesTitle, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   ...route.notes!.map((note) => Padding(
                     padding: const EdgeInsets.only(top: 4.0),
@@ -127,15 +130,14 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Kapat'),
+              child: Text(l10n.close),
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.directions),
-              label: const Text('Başlat'),
+              label: Text(l10n.start),
               onPressed: () async {
                 Navigator.of(dialogContext).pop(); // Close details dialog
 
-                final l10n = AppLocalizations.of(context)!;
                 final userProfile = await _firestoreService.getUserProfile().first;
                 TravelLocation? endLocation;
 
@@ -173,7 +175,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
 
                 if (allLocations.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bu rotada konum bulunamadı.')),
+                    SnackBar(content: Text(l10n.noLocationsInRoute)),
                   );
                   return;
                 }
@@ -200,9 +202,10 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kaydedilmiş Rotalar'),
+        title: Text(l10n.savedRoutes),
       ),
       body: StreamBuilder<List<TravelRoute>>(
         stream: _firestoreService.getRoutes(),
@@ -211,10 +214,10 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Kaydedilmiş rota bulunamadı.'));
+            return Center(child: Text(l10n.noSavedRoutes));
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+            return Center(child: Text(l10n.errorOccurred(snapshot.error.toString())));
           }
 
           final routes = snapshot.data!;
@@ -230,7 +233,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                 child: ListTile(
                   onTap: () => _showRouteDetailsDialog(route),
                   title: Text(route.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Mesafe: ${route.totalDistance} | Süre: ${route.totalTravelTime}'),
+                  subtitle: Text('${l10n.distanceLabel}: ${route.totalDistance} | ${l10n.durationLabel}: ${route.totalTravelTime}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -239,12 +242,12 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                           route.isShared ? Icons.share : Icons.share_outlined,
                           color: route.isShared ? Colors.green : null,
                         ),
-                        tooltip: route.isShared ? 'Paylaşımı Durdur' : 'Rotayı Paylaş',
+                        tooltip: route.isShared ? l10n.stopSharing : l10n.shareRoute,
                         onPressed: () => _shareRoute(route),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                        tooltip: 'Rotayı Sil',
+                        tooltip: l10n.deleteRoute,
                         onPressed: () => _deleteRoute(route),
                       ),
                     ],

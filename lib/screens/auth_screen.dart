@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
 
 
+import 'package:tripbook/l10n/app_localizations.dart';
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -60,6 +62,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       body: Center(
@@ -74,7 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      _isLogin ? 'Login' : 'Sign Up',
+                      _isLogin ? l10n.login : l10n.signUp,
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
@@ -82,7 +85,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       key: const ValueKey('email'),
                       validator: (value) {
                         if (value == null || !value.contains('@')) {
-                          return 'Please enter a valid email address.';
+                          return l10n.enterValidEmail;
                         }
                         return null;
                       },
@@ -90,15 +93,15 @@ class _AuthScreenState extends State<AuthScreen> {
                         _email = value!;
                       },
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Address',
+                      decoration: InputDecoration(
+                        labelText: l10n.emailAddress,
                       ),
                     ),
                     TextFormField(
                       key: const ValueKey('password'),
                       validator: (value) {
                         if (value == null || value.length < 7) {
-                          return 'Password must be at least 7 characters long.';
+                          return l10n.passwordTooShort;
                         }
                         return null;
                       },
@@ -106,8 +109,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         _password = value!;
                       },
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
+                      decoration: InputDecoration(
+                        labelText: l10n.password,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -116,7 +119,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     if (!_isLoading)
                       ElevatedButton(
                         onPressed: _trySubmit,
-                        child: Text(_isLogin ? 'Login' : 'Sign Up'),
+                        child: Text(_isLogin ? l10n.login : l10n.signUp),
                       ),
                     if (!_isLoading)
                       TextButton(
@@ -126,8 +129,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           });
                         },
                         child: Text(_isLogin
-                            ? 'Create new account'
-                            : 'I already have an account'),
+                            ? l10n.createNewAccount
+                            : l10n.alreadyHaveAccount),
                       )
                   ],
                 ),

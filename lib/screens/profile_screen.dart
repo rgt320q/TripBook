@@ -170,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: Text(l10n.homeLocation),
               subtitle: Text(
                 _homeLocation != null
-                    ? 'Lat: ${_homeLocation!.latitude.toStringAsFixed(4)}, Lon: ${_homeLocation!.longitude.toStringAsFixed(4)}'
+                    ? '${l10n.latitude}: ${_homeLocation!.latitude.toStringAsFixed(4)}, ${l10n.longitude}: ${_homeLocation!.longitude.toStringAsFixed(4)}'
                     : l10n.notSet,
               ),
               trailing: const Icon(Icons.map),
@@ -178,11 +178,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              initialValue: _selectedLanguage,
-              decoration: InputDecoration(labelText: l10n.profileLanguageLabel),
-              items: const [
-                DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
-                DropdownMenuItem(value: 'en', child: Text('English')),
+              value: _selectedLanguage,
+              decoration: InputDecoration(labelText: l10n.language),
+              items: [
+                DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
+                DropdownMenuItem(value: 'tr', child: Text(l10n.languageTurkish)),
               ],
               onChanged: (value) {
                 setState(() {

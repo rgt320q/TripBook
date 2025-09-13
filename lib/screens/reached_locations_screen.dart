@@ -5,6 +5,8 @@ import 'package:tripbook/models/reached_location_log.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:tripbook/l10n/app_localizations.dart';
+
 class ReachedLocationsScreen extends StatefulWidget {
   final String? highlightedLogId;
   const ReachedLocationsScreen({super.key, this.highlightedLogId});
@@ -19,30 +21,31 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ulaşılan Konumlar Günlüğü'),
+        title: Text(l10n.reachedLocationsLog),
         backgroundColor: Colors.blue[700],
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all),
-            tooltip: 'Tümünü Okundu İşaretle',
+            tooltip: l10n.markAllAsRead,
             onPressed: () async {
               await _firestoreService.markAllLogsAsRead();
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tüm günlükler okundu olarak işaretlendi.')),
+                SnackBar(content: Text(l10n.allLogsMarkedAsRead)),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
-            tooltip: 'Okunanları Sil',
+            tooltip: l10n.deleteRead,
             onPressed: () async {
               await _firestoreService.deleteReadLogs();
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Okunan tüm kayıtlar silindi.')),
+                SnackBar(content: Text(l10n.readLogsDeleted)),
               );
             },
           ),
@@ -53,21 +56,21 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
               });
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOrder>>[
-              const PopupMenuItem<SortOrder>(
+              PopupMenuItem<SortOrder>(
                 value: SortOrder.dateDescending,
-                child: Text('Tarihe Göre (Yeni)'),
+                child: Text(l10n.sortByDateNew),
               ),
-              const PopupMenuItem<SortOrder>(
+              PopupMenuItem<SortOrder>(
                 value: SortOrder.dateAscending,
-                child: Text('Tarihe Göre (Eski)'),
+                child: Text(l10n.sortByDateOld),
               ),
-              const PopupMenuItem<SortOrder>(
+              PopupMenuItem<SortOrder>(
                 value: SortOrder.nameAscending,
-                child: Text('İsme Göre (A-Z)'),
+                child: Text(l10n.sortByNameAsc),
               ),
-              const PopupMenuItem<SortOrder>(
+              PopupMenuItem<SortOrder>(
                 value: SortOrder.nameDescending,
-                child: Text('İsme Göre (Z-A)'),
+                child: Text(l10n.sortByNameDesc),
               ),
             ],
             icon: const Icon(Icons.sort),
@@ -81,9 +84,9 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'Henüz bir konuma ulaşmadınız.\nBir rota başlatıp hedeflere yaklaştığınızda buraya eklenecektir.',
+                l10n.noReachedLocations,
                 textAlign: TextAlign.center,
               ),
             );
@@ -110,11 +113,11 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
                       }
                     },
                   ),
-                  title: Text(log.locationName, style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Ulaşılma: ${DateFormat('dd/MM/yyyy HH:mm').format(log.timestamp.toDate())}'),
+                  title: Text(log.locationName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('${l10n.reachedAt}: ${DateFormat('dd/MM/yyyy HH:mm').format(log.timestamp.toDate())}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.open_in_browser, color: Colors.blue), // Changed icon
-                    tooltip: "Daha Fazla Bilgi", // Changed tooltip
+                    tooltip: l10n.moreInfo, // Changed tooltip
                     onPressed: () async {
                       if (log.infoUrl.isNotEmpty) {
                         final uri = Uri.parse(log.infoUrl);

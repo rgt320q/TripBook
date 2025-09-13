@@ -763,6 +763,732 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current Location'**
   String get currentLocation;
+
+  /// No description provided for @notificationSoundLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeout Notification Sound'**
+  String get notificationSoundLabel;
+
+  /// No description provided for @soundDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get soundDefault;
+
+  /// No description provided for @soundChime.
+  ///
+  /// In en, this message translates to:
+  /// **'Chime'**
+  String get soundChime;
+
+  /// No description provided for @soundAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert'**
+  String get soundAlert;
+
+  /// No description provided for @soundNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get soundNone;
+
+  /// No description provided for @backgroundLocationNotificationText.
+  ///
+  /// In en, this message translates to:
+  /// **'TripBook is tracking your location in the background.'**
+  String get backgroundLocationNotificationText;
+
+  /// No description provided for @backgroundLocationNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'TripBook Route Tracking'**
+  String get backgroundLocationNotificationTitle;
+
+  /// No description provided for @routeCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Route completed!'**
+  String get routeCompleted;
+
+  /// No description provided for @nearbyLocationNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You are near: {locationName}'**
+  String nearbyLocationNotificationTitle(String locationName);
+
+  /// No description provided for @nearbyLocationNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Click to search for this location on Google!'**
+  String get nearbyLocationNotificationBody;
+
+  /// No description provided for @timeExpiredNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s Up!'**
+  String get timeExpiredNotificationTitle;
+
+  /// No description provided for @timeExpiredNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your planned time at {locationName} has expired.'**
+  String timeExpiredNotificationBody(String locationName);
+
+  /// No description provided for @minOneLocationError.
+  ///
+  /// In en, this message translates to:
+  /// **'You must select at least one location for the route.'**
+  String get minOneLocationError;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'N/A'**
+  String get notAvailable;
+
+  /// No description provided for @distanceKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} km'**
+  String distanceKm(String distance);
+
+  /// No description provided for @selectEndpointTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select End Point'**
+  String get selectEndpointTitle;
+
+  /// No description provided for @currentEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current End Point'**
+  String get currentEndpoint;
+
+  /// No description provided for @communityRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Routes'**
+  String get communityRoutes;
+
+  /// No description provided for @locationsNotFoundOrInsufficient.
+  ///
+  /// In en, this message translates to:
+  /// **'The locations for this route could not be found or are insufficient.'**
+  String get locationsNotFoundOrInsufficient;
+
+  /// No description provided for @selectedEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected End Point'**
+  String get selectedEndpoint;
+
+  /// No description provided for @routeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Route start'**
+  String get routeStart;
+
+  /// No description provided for @endPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'End Point'**
+  String get endPoint;
+
+  /// No description provided for @routeEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Route end'**
+  String get routeEnd;
+
+  /// No description provided for @routeExistsWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: Route Already Exists'**
+  String get routeExistsWarningTitle;
+
+  /// No description provided for @routeExistsWarningContent.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already downloaded this route. Do you want to overwrite the existing version?'**
+  String get routeExistsWarningContent;
+
+  /// No description provided for @overwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite'**
+  String get overwrite;
+
+  /// No description provided for @downloadRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Route'**
+  String get downloadRouteTitle;
+
+  /// No description provided for @downloadRouteContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to save the route \'{routeName}\' and all its locations to your own routes?'**
+  String downloadRouteContent(String routeName);
+
+  /// No description provided for @downloadAndView.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and View'**
+  String get downloadAndView;
+
+  /// No description provided for @routeUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Route \'{routeName}\' was updated successfully!'**
+  String routeUpdateSuccess(String routeName);
+
+  /// No description provided for @routeDownloadError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while downloading the route: {error}'**
+  String routeDownloadError(String error);
+
+  /// No description provided for @routeDetailsPlannedDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Distance: {distance}'**
+  String routeDetailsPlannedDistance(String distance);
+
+  /// No description provided for @routeDetailsActualDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual Distance: {distance}'**
+  String routeDetailsActualDistance(String distance);
+
+  /// No description provided for @routeDetailsPlannedTravelTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Travel Time: {time}'**
+  String routeDetailsPlannedTravelTime(String time);
+
+  /// No description provided for @routeDetailsPlannedStopTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Stop Time: {time}'**
+  String routeDetailsPlannedStopTime(String time);
+
+  /// No description provided for @routeDetailsPlannedTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Total Time: {time}'**
+  String routeDetailsPlannedTotalTime(String time);
+
+  /// No description provided for @routeDetailsActualTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual Total Time: {time}'**
+  String routeDetailsActualTotalTime(String time);
+
+  /// No description provided for @needsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs List:'**
+  String get needsListTitle;
+
+  /// No description provided for @privateNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Notes:'**
+  String get privateNotesTitle;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @noLocationsInThisRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'No locations found in this route.'**
+  String get noLocationsInThisRoute;
+
+  /// No description provided for @showDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Downloaded'**
+  String get showDownloaded;
+
+  /// No description provided for @hideDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Downloaded'**
+  String get hideDownloaded;
+
+  /// No description provided for @noSharedRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'No shared routes yet.'**
+  String get noSharedRoutes;
+
+  /// No description provided for @allRoutesDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'All routes are downloaded and hidden.'**
+  String get allRoutesDownloaded;
+
+  /// No description provided for @routeDistanceAndDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance: {distance} | Duration: {duration}'**
+  String routeDistanceAndDuration(String distance, String duration);
+
+  /// No description provided for @sharedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared by: {author}'**
+  String sharedBy(String author);
+
+  /// No description provided for @rating.
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} ({count} votes)'**
+  String rating(String rating, int count);
+
+  /// No description provided for @comments.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} comments'**
+  String comments(int count);
+
+  /// No description provided for @downloadingRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading route...'**
+  String get downloadingRoute;
+
+  /// No description provided for @saveRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Route'**
+  String get saveRoute;
+
+  /// No description provided for @saveRouteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to add the \'{routeName}\' route to your saved routes?'**
+  String saveRouteConfirmation(String routeName);
+
+  /// No description provided for @routeSavedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{routeName}\' route saved successfully!'**
+  String routeSavedSuccessfully(String routeName);
+
+  /// No description provided for @unknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownUser;
+
+  /// No description provided for @distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distance;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @totalBreakTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Break Time'**
+  String get totalBreakTime;
+
+  /// No description provided for @rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rate;
+
+  /// No description provided for @commentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get commentsTitle;
+
+  /// No description provided for @drawRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw Route'**
+  String get drawRoute;
+
+  /// No description provided for @routeNeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Needs'**
+  String get routeNeeds;
+
+  /// No description provided for @routeNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Notes'**
+  String get routeNotes;
+
+  /// No description provided for @addCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment...'**
+  String get addCommentHint;
+
+  /// No description provided for @commentsLoadingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments can\'t be loaded.'**
+  String get commentsLoadingError;
+
+  /// No description provided for @commentsLoadingErrorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while loading comments: {error}'**
+  String commentsLoadingErrorDescription(String error);
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet.'**
+  String get noCommentsYet;
+
+  /// No description provided for @votes.
+  ///
+  /// In en, this message translates to:
+  /// **'votes'**
+  String get votes;
+
+  /// No description provided for @plannedTravelTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Travel Time'**
+  String get plannedTravelTime;
+
+  /// No description provided for @plannedBreakTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Break Time'**
+  String get plannedBreakTime;
+
+  /// No description provided for @plannedTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Total Time'**
+  String get plannedTotalTime;
+
+  /// No description provided for @actualTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual Total Time'**
+  String get actualTotalTime;
+
+  /// No description provided for @needsList.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs List'**
+  String get needsList;
+
+  /// No description provided for @privateNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Notes'**
+  String get privateNotes;
+
+  /// No description provided for @start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get start;
+
+  /// No description provided for @noLocationsInRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'No locations in this route.'**
+  String get noLocationsInRoute;
+
+  /// No description provided for @privateNotesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Notes'**
+  String get privateNotesLabel;
+
+  /// No description provided for @estimatedStayTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Stay Time (minutes)'**
+  String get estimatedStayTimeLabel;
+
+  /// No description provided for @enterValidNumberError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid number.'**
+  String get enterValidNumberError;
+
+  /// No description provided for @needsListLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs List'**
+  String get needsListLabel;
+
+  /// No description provided for @addNewNeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new need'**
+  String get addNewNeedHint;
+
+  /// No description provided for @sortAndEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort and Edit'**
+  String get sortAndEdit;
+
+  /// No description provided for @endLocationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'End Location'**
+  String get endLocationLabel;
+
+  /// No description provided for @change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get change;
+
+  /// No description provided for @latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Lat'**
+  String get latitude;
+
+  /// No description provided for @longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Lon'**
+  String get longitude;
+
+  /// No description provided for @reachedLocationsLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached Locations Log'**
+  String get reachedLocationsLog;
+
+  /// No description provided for @markAllAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark All as Read'**
+  String get markAllAsRead;
+
+  /// No description provided for @allLogsMarkedAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'All logs marked as read.'**
+  String get allLogsMarkedAsRead;
+
+  /// No description provided for @deleteRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Read'**
+  String get deleteRead;
+
+  /// No description provided for @readLogsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'All read logs have been deleted.'**
+  String get readLogsDeleted;
+
+  /// No description provided for @sortByDateNew.
+  ///
+  /// In en, this message translates to:
+  /// **'By Date (Newest)'**
+  String get sortByDateNew;
+
+  /// No description provided for @sortByDateOld.
+  ///
+  /// In en, this message translates to:
+  /// **'By Date (Oldest)'**
+  String get sortByDateOld;
+
+  /// No description provided for @noReachedLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t reached any locations yet.\nThey will be added here as you approach them on a route.'**
+  String get noReachedLocations;
+
+  /// No description provided for @reachedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached At'**
+  String get reachedAt;
+
+  /// No description provided for @moreInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'More Info'**
+  String get moreInfo;
+
+  /// No description provided for @stopSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Sharing'**
+  String get stopSharing;
+
+  /// No description provided for @shareRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Route'**
+  String get shareRoute;
+
+  /// No description provided for @stopSharingConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to stop sharing the route \'{routeName}\' with the community?'**
+  String stopSharingConfirmation(String routeName);
+
+  /// No description provided for @shareRouteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to share the route \'{routeName}\' with other users? The route will appear on the community screen.'**
+  String shareRouteConfirmation(String routeName);
+
+  /// No description provided for @routeNoLongerShared.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{routeName}\' route is no longer shared.'**
+  String routeNoLongerShared(Object routeName);
+
+  /// No description provided for @routeSharedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{routeName}\' route shared successfully!'**
+  String routeSharedSuccessfully(String routeName);
+
+  /// No description provided for @deleteRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Route'**
+  String get deleteRoute;
+
+  /// No description provided for @deleteRouteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the route named \'{routeName}\'?'**
+  String deleteRouteConfirmation(String routeName);
+
+  /// No description provided for @deleteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteLabel;
+
+  /// No description provided for @routeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{routeName}\' route has been deleted.'**
+  String routeDeleted(String routeName);
+
+  /// No description provided for @noSavedRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved routes found.'**
+  String get noSavedRoutes;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred: {error}'**
+  String errorOccurred(String error);
+
+  /// No description provided for @distanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distanceLabel;
+
+  /// No description provided for @durationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get durationLabel;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get languageTurkish;
+
+  /// No description provided for @languageCode.
+  ///
+  /// In en, this message translates to:
+  /// **'en'**
+  String get languageCode;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
+  /// No description provided for @signUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signUp;
+
+  /// No description provided for @emailAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get emailAddress;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @createNewAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new account'**
+  String get createNewAccount;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'I already have an account'**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @enterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address.'**
+  String get enterValidEmail;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 7 characters long.'**
+  String get passwordTooShort;
 }
 
 class _AppLocalizationsDelegate

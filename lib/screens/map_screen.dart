@@ -220,13 +220,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _positionStreamSubscription!.cancel();
     }
     if (_activeRouteLocations == null) {
+      final l10n = AppLocalizations.of(context)!;
       final locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 10,
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText:
-          "TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.",
-          notificationTitle: "TripBook Rota Takibi",
+        foregroundNotificationConfig: ForegroundNotificationConfig(
+          notificationText: l10n.backgroundLocationNotificationText,
+          notificationTitle: l10n.backgroundLocationNotificationTitle,
           enableWakeLock: true,
         ),
       );
@@ -293,13 +293,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       }
     });
 
+    final l10n = AppLocalizations.of(context)!;
     final locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
-      foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText:
-          "TripBook, uygulama arka planda çalışırken konumunuzu takip ediyor.",
-          notificationTitle: "TripBook Rota Takibi",
+      foregroundNotificationConfig: ForegroundNotificationConfig(
+          notificationText: l10n.backgroundLocationNotificationText,
+          notificationTitle: l10n.backgroundLocationNotificationTitle,
           enableWakeLock: true,
       ),
     );
@@ -324,6 +324,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _handleRouteCompletion() {
+    final l10n = AppLocalizations.of(context)!;
     if (_routeStartTime == null) return;
 
     setState(() {
@@ -334,7 +335,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final elapsedDuration = DateTime.now().difference(_routeStartTime!);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Rota tamamlandı!'), duration: Duration(seconds: 2)),
+      SnackBar(content: Text(l10n.routeCompleted), duration: const Duration(seconds: 2)),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -344,7 +345,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     });
   }
 
+  String? _notificationSound; 
+
   void _checkAllWaypointsProximity(Position userPosition) {
+    final l10n = AppLocalizations.of(context)!;
     if (_activeRouteLocations == null || FirebaseAuth.instance.currentUser == null || _isRouteCompleted) return;
 
     final userId = FirebaseAuth.instance.currentUser!.uid;
@@ -386,8 +390,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           _triggeredWikipediaNotifications.add(locationId);
           
           final infoUrl = 'https://www.google.com/search?q=${Uri.encodeComponent(location.geoName)}';
-          final title = 'Yakınlardasınız: ${location.name}';
-          final summary = "Konum için google araması yapmak için tıklayın!";
+          final title = l10n.nearbyLocationNotificationTitle(location.name);
+          final summary = l10n.nearbyLocationNotificationBody;
 
           final newLog = ReachedLocationLog(
             locationName: location.name,
@@ -406,8 +410,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         if (!_waypointTimers.containsKey(locationId) && (location.estimatedDuration ?? 0) > 0) {
           final timer = Timer(Duration(minutes: location.estimatedDuration!), () {
             _notificationService.showNotification(
-              'Süreniz Doldu!',
-              '${location.name} konumunda planladığınız süre doldu.'
+              l10n.timeExpiredNotificationTitle,
+              l10n.timeExpiredNotificationBody(location.name),
             );
             _waypointTimers.remove(locationId);
           });
@@ -615,9 +619,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _triggeredWikipediaNotifications.clear();
 
     final userLocation = TravelLocation(
-      name: 'Mevcut Konumunuz', // Internal
+      name: l10n.currentLocation, // Internal
       geoName: 'Mevcut Konumunuz', // Internal
-      description: 'Rota başlangıcı', // Internal
+      description: l10n.routeStart, // Internal
       latitude: _currentPosition!.latitude,
       longitude: _currentPosition!.longitude,
       firestoreId: 'start',
@@ -633,7 +637,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       finalDestination = waypoints.removeLast();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Rota için en az bir konum seçmelisiniz.")),
+        SnackBar(content: Text(l10n.minOneLocationError)),
       );
       return;
     }
@@ -810,7 +814,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void _showRouteCompletionSummary(Duration elapsedDuration) {
     final l10n = AppLocalizations.of(context)!;
     final actualDistanceKm = _actualDistanceMeters / 1000.0;
-    final actualDistanceString = '${actualDistanceKm.toStringAsFixed(1)} km';
+    final actualDistanceString = l10n.distanceKm(actualDistanceKm.toStringAsFixed(1));
 
     showDialog(
       context: context,
@@ -822,10 +826,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${l10n.plannedDistance}: ${_activeRouteInfo?.totalDistance ?? "N/A"}'),
+              Text('${l10n.plannedDistance}: ${_activeRouteInfo?.totalDistance ?? l10n.notAvailable}'),
               Text('${l10n.actualDistance}: $actualDistanceString', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('${l10n.plannedTotalDuration}: ${_activeRouteTotalTripDuration ?? "N/A"}'),
+              Text('${l10n.plannedTotalDuration}: ${_activeRouteTotalTripDuration ?? l10n.notAvailable}'),
               Text('${l10n.actualDuration}: ${_formatElapsedDuration(elapsedDuration)}', style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
@@ -1053,7 +1057,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           Marker(
             markerId: const MarkerId('initial-endpoint'),
             position: LatLng(widget.initialLocation!.latitude, widget.initialLocation!.longitude),
-            infoWindow: const InfoWindow(title: 'Current End Point'),
+            infoWindow: InfoWindow(title: l10n.currentEndpoint),
             icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueMagenta),
           ),
         );
@@ -1064,7 +1068,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Bitiş Noktasını Seç"),
+          title: Text(l10n.selectEndpointTitle),
           leading: IconButton(
             icon: const Icon(Icons.cancel),
             onPressed: () {
@@ -1250,7 +1254,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   } else {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bu rotadaki konumlar bulunamadı veya yetersiz.')),
+                      SnackBar(content: Text(l10n.locationsNotFoundOrInsufficient)),
                     );
                   }
                 }
@@ -1258,7 +1262,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             IconButton(
               icon: const Icon(Icons.public),
-              tooltip: 'Topluluk Rotaları',
+              tooltip: l10n.communityRoutes,
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
@@ -1391,7 +1395,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
                 if (confirmed == true) {
                   final endLocation = TravelLocation(
-                    name: 'Seçilen Bitiş Noktası', // Internal name, no need to translate
+                    name: l10n.selectedEndpoint, // Internal name, no need to translate
                     geoName: geoName,
                     latitude: pos.latitude,
                     longitude: pos.longitude,
@@ -1654,9 +1658,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   final optimizedLocations = _optimizeRouteByProximity(locations, _currentPosition!);
                   final defaultEndLocationGeoName = await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? l10n.unknownLocation;
                   final defaultEndLocation = TravelLocation(
-                    name: 'Bitiş Noktası', // Internal
+                    name: l10n.endPoint, // Internal
                     geoName: defaultEndLocationGeoName,
-                    description: 'Rota bitişi', // Internal
+                    description: l10n.routeEnd, // Internal
                     latitude: _currentPosition!.latitude,
                     longitude: _currentPosition!.longitude,
                     firestoreId: 'end',

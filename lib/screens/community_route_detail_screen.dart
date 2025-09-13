@@ -10,6 +10,8 @@ import 'package:tripbook/models/route_comment.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
+import 'package:tripbook/l10n/app_localizations.dart';
+
 class CommunityRouteDetailScreen extends StatefulWidget {
   final TravelRoute route;
 
@@ -215,19 +217,19 @@ class _CommunityRouteDetailScreenState
   }
 
   Future<void> _saveRoute() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rotayı Kaydet'),
-        content: Text(
-            "'${widget.route.name}' rotasını kendi kayıtlı rotalarınıza eklemek istediğinizden emin misiniz?"),
+        title: Text(l10n.saveRoute),
+        content: Text(l10n.saveRouteConfirmation(widget.route.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('İptal')),
+              child: Text(l10n.cancel)),
           TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Kaydet')),
+              child: Text(l10n.save)),
         ],
       ),
     );
@@ -268,7 +270,7 @@ class _CommunityRouteDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("'${widget.route.name}' rotası başarıyla kaydedildi!"),
+            content: Text(l10n.routeSavedSuccessfully(widget.route.name)),
             backgroundColor: Colors.green,
           ),
         );
@@ -278,13 +280,14 @@ class _CommunityRouteDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.route.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.save_alt),
-            tooltip: 'Rotayı Kaydet',
+            tooltip: l10n.saveRoute,
             onPressed: _saveRoute,
           ),
         ],
@@ -301,21 +304,21 @@ class _CommunityRouteDetailScreenState
                 children: [
                   // Basic Route Info
                   Text(
-                    'Paylaşan: ${_sharedByUserProfile?.name ?? 'Bilinmiyor'}',
+                    l10n.sharedBy(_sharedByUserProfile?.name ?? l10n.unknownUser),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                      'Mesafe: ${widget.route.totalDistance} | Süre: ${widget.route.totalTravelTime}'),
+                      '${l10n.distance}: ${widget.route.totalDistance} | ${l10n.duration}: ${widget.route.totalTravelTime}'),
                   if (widget.route.totalStopDuration != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
-                      child: Text('Toplam Mola Süresi: ${widget.route.totalStopDuration}'),
+                      child: Text('${l10n.totalBreakTime}: ${widget.route.totalStopDuration}'),
                     ),
                   if (widget.route.totalTripDuration != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
-                      child: Text('Toplam Gezi Süresi: ${widget.route.totalTripDuration}'),
+                      child: Text('${l10n.totalTripTime}: ${widget.route.totalTripDuration}'),
                     ),
                   const Divider(height: 30),
 
@@ -328,7 +331,7 @@ class _CommunityRouteDetailScreenState
                     _buildNotesSection(),
 
                   // Rating Section
-                  Text('Puanla', style: Theme.of(context).textTheme.titleLarge),
+                  Text(l10n.rate, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Row(
                     children: List.generate(5, (index) {
@@ -346,7 +349,7 @@ class _CommunityRouteDetailScreenState
                   const Divider(height: 30),
 
                   // Comments Section
-                  Text('Yorumlar',
+                  Text(l10n.commentsTitle,
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   _buildCommentInput(),
@@ -362,6 +365,7 @@ class _CommunityRouteDetailScreenState
   }
 
   Widget _buildMapSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       height: 300,
       color: Colors.grey[300],
@@ -389,7 +393,7 @@ class _CommunityRouteDetailScreenState
                     right: 16,
                     child: FloatingActionButton(
                       onPressed: _drawPolylines,
-                      tooltip: 'Rotayı Çiz',
+                      tooltip: l10n.drawRoute,
                       child: const Icon(Icons.timeline),
                     ),
                   ),
@@ -399,10 +403,11 @@ class _CommunityRouteDetailScreenState
   }
 
   Widget _buildNeedsSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Rota İhtiyaçları', style: Theme.of(context).textTheme.titleLarge),
+        Text(l10n.routeNeeds, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8.0,
@@ -417,10 +422,11 @@ class _CommunityRouteDetailScreenState
   }
 
   Widget _buildNotesSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Rota Notları', style: Theme.of(context).textTheme.titleLarge),
+        Text(l10n.routeNotes, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         ...widget.route.notes!.map((note) {
           return Card(
@@ -437,13 +443,14 @@ class _CommunityRouteDetailScreenState
   }
 
   Widget _buildCommentInput() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: TextField(
             controller: _commentController,
-            decoration: const InputDecoration(
-              hintText: 'Yorum ekle...',
+            decoration: InputDecoration(
+              hintText: l10n.addCommentHint,
               border: OutlineInputBorder(),
             ),
             textInputAction: TextInputAction.send,
@@ -459,8 +466,9 @@ class _CommunityRouteDetailScreenState
   }
 
   Widget _buildCommentsList() {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.route.firestoreId == null) {
-      return const Center(child: Text('Yorumlar yüklenemiyor.'));
+      return Center(child: Text(l10n.commentsLoadingError));
     }
     return StreamBuilder<List<RouteComment>>(
       stream: _firestoreService.getComments(widget.route.firestoreId!),
@@ -469,10 +477,10 @@ class _CommunityRouteDetailScreenState
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Yorumlar yüklenirken bir hata oluştu: ${snapshot.error}'));
+          return Center(child: Text(l10n.commentsLoadingErrorDescription(snapshot.error.toString())));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Henüz yorum yapılmamış.'));
+          return Center(child: Text(l10n.noCommentsYet));
         }
         final comments = snapshot.data!;
         return ListView.builder(
