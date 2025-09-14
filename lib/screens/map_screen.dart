@@ -41,7 +41,11 @@ class NeedItem {
 class MapScreen extends StatefulWidget {
   final TravelLocation? initialLocation;
   final bool isChangingEndPoint;
-  const MapScreen({super.key, this.initialLocation, this.isChangingEndPoint = false});
+  const MapScreen({
+    super.key,
+    this.initialLocation,
+    this.isChangingEndPoint = false,
+  });
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -80,7 +84,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   double _actualDistanceMeters = 0.0;
   bool _isNavigationStarted = false;
   // --------------------------
-  
+
   final Map<String, bool> _activeRouteNeedsState = {};
   final Set<String> _visitedWaypoints = {};
   final Set<String> _triggeredWikipediaNotifications = {};
@@ -128,13 +132,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  
-
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       if (_searchController.text.isNotEmpty) {
-        final predictions = await _directionsService.getAutocomplete(_searchController.text);
+        final predictions = await _directionsService.getAutocomplete(
+          _searchController.text,
+        );
         if (mounted) {
           setState(() {
             _placePredictions = predictions;
@@ -230,14 +234,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           enableWakeLock: true,
         ),
       );
-      _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
-        if (mounted) {
-          setState(() {
-            _currentPosition = position;
+      _positionStreamSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: locationSettings,
+          ).listen((Position position) {
+            if (mounted) {
+              setState(() {
+                _currentPosition = position;
+              });
+              _updateMapElements();
+            }
           });
-          _updateMapElements();
-        }
-      });
     }
   }
 
@@ -289,7 +296,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _userPathHistory.clear();
       _actualDistanceMeters = 0.0;
       if (_currentPosition != null) {
-        _userPathHistory.add(LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+        _userPathHistory.add(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        );
       }
     });
 
@@ -298,29 +307,34 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
       foregroundNotificationConfig: ForegroundNotificationConfig(
-          notificationText: l10n.backgroundLocationNotificationText,
-          notificationTitle: l10n.backgroundLocationNotificationTitle,
-          enableWakeLock: true,
+        notificationText: l10n.backgroundLocationNotificationText,
+        notificationTitle: l10n.backgroundLocationNotificationTitle,
+        enableWakeLock: true,
       ),
     );
-    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
-      if (mounted && !_isRouteCompleted) {
-        final newPoint = LatLng(position.latitude, position.longitude);
-        if (_userPathHistory.isNotEmpty) {
-          final lastPoint = _userPathHistory.last;
-          _actualDistanceMeters += Geolocator.distanceBetween(
-            lastPoint.latitude, lastPoint.longitude, 
-            newPoint.latitude, newPoint.longitude
-          );
-        }
-        setState(() {
-          _currentPosition = position;
-          _userPathHistory.add(newPoint);
-        });
-        _updateMapElements();
-        _checkAllWaypointsProximity(position);
-      }
-    });
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (Position position) {
+            if (mounted && !_isRouteCompleted) {
+              final newPoint = LatLng(position.latitude, position.longitude);
+              if (_userPathHistory.isNotEmpty) {
+                final lastPoint = _userPathHistory.last;
+                _actualDistanceMeters += Geolocator.distanceBetween(
+                  lastPoint.latitude,
+                  lastPoint.longitude,
+                  newPoint.latitude,
+                  newPoint.longitude,
+                );
+              }
+              setState(() {
+                _currentPosition = position;
+                _userPathHistory.add(newPoint);
+              });
+              _updateMapElements();
+              _checkAllWaypointsProximity(position);
+            }
+          },
+        );
   }
 
   void _handleRouteCompletion() {
@@ -335,7 +349,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final elapsedDuration = DateTime.now().difference(_routeStartTime!);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.routeCompleted), duration: const Duration(seconds: 2)),
+      SnackBar(
+        content: Text(l10n.routeCompleted),
+        duration: const Duration(seconds: 2),
+      ),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -345,11 +362,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     });
   }
 
-  String? _notificationSound; 
+  String? _notificationSound;
 
   void _checkAllWaypointsProximity(Position userPosition) {
     final l10n = AppLocalizations.of(context)!;
-    if (_activeRouteLocations == null || FirebaseAuth.instance.currentUser == null || _isRouteCompleted) return;
+    if (_activeRouteLocations == null ||
+        FirebaseAuth.instance.currentUser == null ||
+        _isRouteCompleted)
+      return;
 
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
@@ -362,12 +382,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
 
       final locationId = location.firestoreId!;
-      final isEndpoint = locationId == 'end' || locationId == 'home_end_location';
+      final isEndpoint =
+          locationId == 'end' || locationId == 'home_end_location';
 
       if (distance < 50 && !_visitedWaypoints.contains(locationId)) {
         if (isEndpoint) {
           final allOtherWaypointsVisited = _activeRouteLocations!
-              .where((loc) => loc.firestoreId != 'end' && loc.firestoreId != 'home_end_location')
+              .where(
+                (loc) =>
+                    loc.firestoreId != 'end' &&
+                    loc.firestoreId != 'home_end_location',
+              )
               .every((loc) => _visitedWaypoints.contains(loc.firestoreId));
           if (!allOtherWaypointsVisited) {
             continue;
@@ -380,16 +405,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           });
         }
 
-        final allWaypointIds = _activeRouteLocations!.map((loc) => loc.firestoreId!).toSet();
+        final allWaypointIds = _activeRouteLocations!
+            .map((loc) => loc.firestoreId!)
+            .toSet();
         if (_visitedWaypoints.containsAll(allWaypointIds)) {
           _handleRouteCompletion();
-          return; 
+          return;
         }
 
         if (!_triggeredWikipediaNotifications.contains(locationId)) {
           _triggeredWikipediaNotifications.add(locationId);
-          
-          final infoUrl = 'https://www.google.com/search?q=${Uri.encodeComponent(location.geoName)}';
+
+          final infoUrl =
+              'https://www.google.com/search?q=${Uri.encodeComponent(location.geoName)}';
           final title = l10n.nearbyLocationNotificationTitle(location.name);
           final summary = l10n.nearbyLocationNotificationBody;
 
@@ -402,19 +430,29 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           );
 
           _firestoreService.addReachedLocationLog(newLog).then((logId) {
-            final payload = logId != null ? 'open_logs_screen:$logId' : 'open_logs_screen';
-            _notificationService.showNotification(title, summary, payload: payload);
+            final payload = logId != null
+                ? 'open_logs_screen:$logId'
+                : 'open_logs_screen';
+            _notificationService.showNotification(
+              title,
+              summary,
+              payload: payload,
+            );
           });
         }
 
-        if (!_waypointTimers.containsKey(locationId) && (location.estimatedDuration ?? 0) > 0) {
-          final timer = Timer(Duration(minutes: location.estimatedDuration!), () {
-            _notificationService.showNotification(
-              l10n.timeExpiredNotificationTitle,
-              l10n.timeExpiredNotificationBody(location.name),
-            );
-            _waypointTimers.remove(locationId);
-          });
+        if (!_waypointTimers.containsKey(locationId) &&
+            (location.estimatedDuration ?? 0) > 0) {
+          final timer = Timer(
+            Duration(minutes: location.estimatedDuration!),
+            () {
+              _notificationService.showNotification(
+                l10n.timeExpiredNotificationTitle,
+                l10n.timeExpiredNotificationBody(location.name),
+              );
+              _waypointTimers.remove(locationId);
+            },
+          );
           _waypointTimers[locationId] = timer;
         }
       } else {
@@ -432,14 +470,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       return;
     }
 
-    _locationsSubscription = _firestoreService.getLocations().listen((locations) {
-      if (mounted) {
-        setState(() => _allLocations = locations);
-        _updateMapElements();
-      }
-    }, onError: (error) {
-      _loadMarkersFromLocalDb();
-    });
+    _locationsSubscription = _firestoreService.getLocations().listen(
+      (locations) {
+        if (mounted) {
+          setState(() => _allLocations = locations);
+          _updateMapElements();
+        }
+      },
+      onError: (error) {
+        _loadMarkersFromLocalDb();
+      },
+    );
 
     _groupsSubscription = _firestoreService.getGroups().listen((groups) {
       if (mounted) {
@@ -462,7 +503,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
 
-    final groupsMap = { for (var group in _allGroups) group.firestoreId!: group };
+    final groupsMap = {for (var group in _allGroups) group.firestoreId!: group};
     final Set<Marker> newMarkers = {};
 
     if (_currentPosition != null) {
@@ -470,7 +511,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       newMarkers.add(
         Marker(
           markerId: const MarkerId('currentLocation'),
-          position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          position: LatLng(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+          ),
           infoWindow: InfoWindow(title: l10n.myLocationTooltip),
           icon: icon,
           zIndex: 2,
@@ -487,7 +531,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           position: LatLng(_homeLocation!.latitude, _homeLocation!.longitude),
           infoWindow: InfoWindow(title: l10n.homeLocation),
           icon: icon,
-          zIndex: 1, // Lower zIndex to appear below other markers if they overlap
+          zIndex:
+              1, // Lower zIndex to appear below other markers if they overlap
         ),
       );
     }
@@ -496,10 +541,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       newMarkers.add(_searchResultMarker!);
     }
 
-    List<TravelLocation> locationsToDisplay = _activeRouteLocations ?? _allLocations;
+    List<TravelLocation> locationsToDisplay =
+        _activeRouteLocations ?? _allLocations;
 
     for (final loc in locationsToDisplay) {
-      final isVisited = _activeRouteLocations != null && _visitedWaypoints.contains(loc.firestoreId);
+      final isVisited =
+          _activeRouteLocations != null &&
+          _visitedWaypoints.contains(loc.firestoreId);
       final isEndpoint = loc.firestoreId == 'end';
 
       Color color;
@@ -513,8 +561,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         final group = groupsMap[loc.groupId];
         color = group?.color != null ? Color(group!.color!) : Colors.red;
       }
-      
-      final icon = await marker_utils.getCustomMarkerIcon(color, isEndpoint: isEndpoint);
+
+      final icon = await marker_utils.getCustomMarkerIcon(
+        color,
+        isEndpoint: isEndpoint,
+      );
 
       newMarkers.add(
         Marker(
@@ -542,39 +593,56 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final Set<Polyline> newPolylines = {};
     if (_activeRouteInfo != null && _activeRouteLocations != null) {
       final legs = _activeRouteInfo!.legsPoints;
-      final routeWaypoints = [TravelLocation(name: 'Start', geoName: 'Start', latitude: 0, longitude: 0, firestoreId: 'start'), ..._activeRouteLocations!];
+      final routeWaypoints = [
+        TravelLocation(
+          name: 'Start',
+          geoName: 'Start',
+          latitude: 0,
+          longitude: 0,
+          firestoreId: 'start',
+        ),
+        ..._activeRouteLocations!,
+      ];
 
       for (int i = 0; i < legs.length; i++) {
         bool isLegVisited = false;
         if (i + 1 < routeWaypoints.length) {
-           final destinationWaypointId = routeWaypoints[i+1].firestoreId;
-           if (destinationWaypointId != null) {
-             isLegVisited = _visitedWaypoints.contains(destinationWaypointId);
-           }
+          final destinationWaypointId = routeWaypoints[i + 1].firestoreId;
+          if (destinationWaypointId != null) {
+            isLegVisited = _visitedWaypoints.contains(destinationWaypointId);
+          }
         }
-        if (i == 0 && _visitedWaypoints.contains(routeWaypoints[1].firestoreId)) {
+        if (i == 0 &&
+            _visitedWaypoints.contains(routeWaypoints[1].firestoreId)) {
           isLegVisited = true;
         }
 
-        if (!isLegVisited) { // Only draw legs that have not been visited
-          newPolylines.add(Polyline(
-            polylineId: PolylineId('route_leg_$i'),
-            color: Colors.grey.shade400,
-            width: 5,
-            points: legs[i].map((p) => LatLng(p.latitude, p.longitude)).toList(),
-          ));
+        if (!isLegVisited) {
+          // Only draw legs that have not been visited
+          newPolylines.add(
+            Polyline(
+              polylineId: PolylineId('route_leg_$i'),
+              color: Colors.grey.shade400,
+              width: 5,
+              points: legs[i]
+                  .map((p) => LatLng(p.latitude, p.longitude))
+                  .toList(),
+            ),
+          );
         }
       }
     }
 
     // Add the user's actual path history
     if (_userPathHistory.length > 1) {
-      newPolylines.add(Polyline(
-        polylineId: const PolylineId('userPath'),
-        color: Colors.purpleAccent,
-        width: 5,
-        points: List.from(_userPathHistory),
-      ));
+      newPolylines.add(
+        Polyline(
+          polylineId: const PolylineId('userPath'),
+          color: Colors.purpleAccent,
+          width: 5,
+          points: List.from(_userPathHistory),
+        ),
+      );
     }
 
     if (mounted) {
@@ -605,12 +673,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _drawRoute(List<TravelLocation> locations, {TravelLocation? endLocation}) async {
+  void _drawRoute(
+    List<TravelLocation> locations, {
+    TravelLocation? endLocation,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     if (_currentPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.currentLocationError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.currentLocationError)));
       return;
     }
 
@@ -632,13 +703,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     if (endLocation != null) {
       finalDestination = endLocation;
-      waypoints.removeWhere((loc) => loc.firestoreId == endLocation.firestoreId);
+      waypoints.removeWhere(
+        (loc) => loc.firestoreId == endLocation.firestoreId,
+      );
     } else if (waypoints.isNotEmpty) {
       finalDestination = waypoints.removeLast();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.minOneLocationError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.minOneLocationError)));
       return;
     }
 
@@ -659,7 +732,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
 
     var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
-    final directionsInfo = await _directionsService.getDirections(routeLocationsForApi);
+    final directionsInfo = await _directionsService.getDirections(
+      routeLocationsForApi,
+    );
 
     if (directionsInfo != null) {
       final activeRouteLocations = [...waypoints, finalDestination];
@@ -677,9 +752,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _showRouteSummary(directionsInfo, activeRouteLocations);
       _startRouteTracking();
     } else {
-       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.drawRouteError)),
-       );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.drawRouteError)));
     }
   }
 
@@ -689,11 +764,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     for (int i = 0; i < parts.length; i++) {
       if (parts[i].contains('hour') || parts[i].contains('saat')) {
         if (i > 0) {
-          totalMinutes += (int.tryParse(parts[i-1]) ?? 0) * 60;
+          totalMinutes += (int.tryParse(parts[i - 1]) ?? 0) * 60;
         }
       } else if (parts[i].contains('min') || parts[i].contains('dakika')) {
         if (i > 0) {
-          totalMinutes += int.tryParse(parts[i-1]) ?? 0;
+          totalMinutes += int.tryParse(parts[i - 1]) ?? 0;
         }
       }
     }
@@ -721,7 +796,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     return "$hours:$minutes:$seconds";
   }
 
-  void _showSaveRouteDialog(DirectionsInfo info, List<TravelLocation> locations, {
+  void _showSaveRouteDialog(
+    DirectionsInfo info,
+    List<TravelLocation> locations, {
     Duration? actualDuration,
     String? actualDistance,
     String? totalStopDuration,
@@ -754,19 +831,31 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 final existingRoutes = await _firestoreService.getRoutesOnce();
                 final conflictingRoute = existingRoutes.firstWhere(
                   (r) => r.name.toLowerCase() == routeName.toLowerCase(),
-                  orElse: () => TravelRoute(name: 'dummy', locationIds: [], totalDistance: '', totalTravelTime: ''),
+                  orElse: () => TravelRoute(
+                    name: 'dummy',
+                    locationIds: [],
+                    totalDistance: '',
+                    totalTravelTime: '',
+                  ),
                 );
 
                 bool shouldProceed = true;
                 if (conflictingRoute.firestoreId != null) {
-                  shouldProceed = await showDialog<bool>(
+                  shouldProceed =
+                      await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
                           title: Text(l10n.confirm),
                           content: Text(l10n.routeExistsError(routeName)),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.no)),
-                            TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.yes)),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.no),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.yes),
+                            ),
                           ],
                         ),
                       ) ??
@@ -780,18 +869,25 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   locationIds: locations.map((l) => l.firestoreId!).toList(),
                   totalTravelTime: info.totalDuration,
                   totalDistance: info.totalDistance,
-                  totalStopDuration: totalStopDuration ?? conflictingRoute.totalStopDuration,
-                  totalTripDuration: totalTripDuration ?? conflictingRoute.totalTripDuration,
+                  totalStopDuration:
+                      totalStopDuration ?? conflictingRoute.totalStopDuration,
+                  totalTripDuration:
+                      totalTripDuration ?? conflictingRoute.totalTripDuration,
                   needs: needs ?? conflictingRoute.needs,
                   notes: notes ?? conflictingRoute.notes,
-                  actualDuration: actualDuration != null ? _formatElapsedDuration(actualDuration) : conflictingRoute.actualDuration,
-                  actualDistance: actualDistance ?? conflictingRoute.actualDistance,
+                  actualDuration: actualDuration != null
+                      ? _formatElapsedDuration(actualDuration)
+                      : conflictingRoute.actualDuration,
+                  actualDistance:
+                      actualDistance ?? conflictingRoute.actualDistance,
                 );
 
                 if (conflictingRoute.firestoreId != null) {
-                  await _firestoreService.updateRoute(conflictingRoute.firestoreId!, newRoute);
-                }
-                else {
+                  await _firestoreService.updateRoute(
+                    conflictingRoute.firestoreId!,
+                    newRoute,
+                  );
+                } else {
                   await _firestoreService.addRoute(newRoute);
                 }
 
@@ -799,7 +895,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.routeSavedSuccess(routeName)), backgroundColor: Colors.green),
+                  SnackBar(
+                    content: Text(l10n.routeSavedSuccess(routeName)),
+                    backgroundColor: Colors.green,
+                  ),
                 );
                 _clearRoute();
               },
@@ -814,7 +913,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void _showRouteCompletionSummary(Duration elapsedDuration) {
     final l10n = AppLocalizations.of(context)!;
     final actualDistanceKm = _actualDistanceMeters / 1000.0;
-    final actualDistanceString = l10n.distanceKm(actualDistanceKm.toStringAsFixed(1));
+    final actualDistanceString = l10n.distanceKm(
+      actualDistanceKm.toStringAsFixed(1),
+    );
 
     showDialog(
       context: context,
@@ -826,11 +927,21 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${l10n.plannedDistance}: ${_activeRouteInfo?.totalDistance ?? l10n.notAvailable}'),
-              Text('${l10n.actualDistance}: $actualDistanceString', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '${l10n.plannedDistance}: ${_activeRouteInfo?.totalDistance ?? l10n.notAvailable}',
+              ),
+              Text(
+                '${l10n.actualDistance}: $actualDistanceString',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
-              Text('${l10n.plannedTotalDuration}: ${_activeRouteTotalTripDuration ?? l10n.notAvailable}'),
-              Text('${l10n.actualDuration}: ${_formatElapsedDuration(elapsedDuration)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '${l10n.plannedTotalDuration}: ${_activeRouteTotalTripDuration ?? l10n.notAvailable}',
+              ),
+              Text(
+                '${l10n.actualDuration}: ${_formatElapsedDuration(elapsedDuration)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           actions: [
@@ -872,12 +983,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           final needMap = loc.needsList![i];
           if (needMap['name'] is String) {
             final needName = needMap['name']!;
-            allNeeds.add(NeedItem(
-              name: needName,
-              isChecked: _activeRouteNeedsState[needName] ?? false,
-              locationId: loc.firestoreId!,
-              originalIndex: i,
-            ));
+            allNeeds.add(
+              NeedItem(
+                name: needName,
+                isChecked: _activeRouteNeedsState[needName] ?? false,
+                locationId: loc.firestoreId!,
+                originalIndex: i,
+              ),
+            );
           }
         }
       }
@@ -922,7 +1035,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(l10n.routeSummaryTitle, style: Theme.of(context).textTheme.headlineSmall),
+                      Text(
+                        l10n.routeSummaryTitle,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
                       if (!_isNavigationStarted)
                         Row(
                           children: [
@@ -934,8 +1050,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 _showSaveRouteDialog(
                                   info,
                                   locations,
-                                  totalStopDuration: _activeRouteTotalStopDuration,
-                                  totalTripDuration: _activeRouteTotalTripDuration,
+                                  totalStopDuration:
+                                      _activeRouteTotalStopDuration,
+                                  totalTripDuration:
+                                      _activeRouteTotalTripDuration,
                                   needs: _activeRouteNeeds,
                                   notes: _activeRouteNotes,
                                 );
@@ -961,41 +1079,76 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     child: ListView(
                       shrinkWrap: true,
                       children: [
-                        ListTile(title: Text('${l10n.estimatedTravelTime}: ${info.totalDuration}')),
-                        ListTile(title: Text('${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}')),
-                        ListTile(title: Text('${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                        ListTile(title: Text('${l10n.totalDistance}: ${info.totalDistance}')),
+                        ListTile(
+                          title: Text(
+                            '${l10n.estimatedTravelTime}: ${info.totalDuration}',
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(
+                            '${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}',
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(
+                            '${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(
+                            '${l10n.totalDistance}: ${info.totalDistance}',
+                          ),
+                        ),
                         const Divider(),
-                        if (consolidatedNeeds.isNotEmpty)
-                          ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: Text(l10n.needsForTrip, style: Theme.of(context).textTheme.titleLarge),
+                        if (consolidatedNeeds.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
                             ),
-                            ...consolidatedNeeds.map((needItem) {
-                              return CheckboxListTile(
-                                title: Text(needItem.name),
-                                value: needItem.isChecked,
-                                onChanged: (bool? newValue) {
-                                  if (newValue == null) return;
-                                  
-                                  setModalState(() {
-                                    needItem.isChecked = newValue;
-                                    _activeRouteNeedsState[needItem.name] = newValue;
-                                  });
-                                },
-                              );
-                            }),
-                            const Divider(),
-                          ],
-                        if (privateNotes.isNotEmpty)
-                          ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: Text(l10n.notesForTrip, style: Theme.of(context).textTheme.titleLarge),
+                            child: Text(
+                              l10n.needsForTrip,
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
-                            ...privateNotes.map((note) => ListTile(leading: const Icon(Icons.note), title: Text('${note['locationName']}: ${note['note']}'))),
-                          ],
+                          ),
+                          ...consolidatedNeeds.map((needItem) {
+                            return CheckboxListTile(
+                              title: Text(needItem.name),
+                              value: needItem.isChecked,
+                              onChanged: (bool? newValue) {
+                                if (newValue == null) return;
+
+                                setModalState(() {
+                                  needItem.isChecked = newValue;
+                                  _activeRouteNeedsState[needItem.name] =
+                                      newValue;
+                                });
+                              },
+                            );
+                          }),
+                          const Divider(),
+                        ],
+                        if (privateNotes.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            child: Text(
+                              l10n.notesForTrip,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ...privateNotes.map(
+                            (note) => ListTile(
+                              leading: const Icon(Icons.note),
+                              title: Text(
+                                '${note['locationName']}: ${note['note']}',
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1011,15 +1164,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   Future<void> _launchGoogleMaps(List<TravelLocation> locations) async {
     final l10n = AppLocalizations.of(context)!;
     if (_currentPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.currentLocationError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.currentLocationError)));
       return;
     }
     if (locations.isEmpty) return;
 
-    final origin = '${_currentPosition!.latitude},${_currentPosition!.longitude}';
-    final destination = '${locations.last.latitude},${locations.last.longitude}';
+    final origin =
+        '${_currentPosition!.latitude},${_currentPosition!.longitude}';
+    final destination =
+        '${locations.last.latitude},${locations.last.longitude}';
     String waypoints = '';
 
     if (locations.length > 1) {
@@ -1029,7 +1184,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           .join('|');
     }
 
-    String url = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination';
+    String url =
+        'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination';
     if (waypoints.isNotEmpty) {
       url += '&waypoints=$waypoints';
     }
@@ -1040,9 +1196,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.launchMapsError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.launchMapsError)));
     }
   }
 
@@ -1056,9 +1212,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         endPointMarkers.add(
           Marker(
             markerId: const MarkerId('initial-endpoint'),
-            position: LatLng(widget.initialLocation!.latitude, widget.initialLocation!.longitude),
+            position: LatLng(
+              widget.initialLocation!.latitude,
+              widget.initialLocation!.longitude,
+            ),
             infoWindow: InfoWindow(title: l10n.currentEndpoint),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueMagenta),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueMagenta,
+            ),
           ),
         );
       }
@@ -1084,14 +1245,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               },
               initialCameraPosition: CameraPosition(
                 target: LatLng(
-                  widget.initialLocation?.latitude ?? _currentPosition?.latitude ?? 38.9637,
-                  widget.initialLocation?.longitude ?? _currentPosition?.longitude ?? 35.2433,
+                  widget.initialLocation?.latitude ??
+                      _currentPosition?.latitude ??
+                      38.9637,
+                  widget.initialLocation?.longitude ??
+                      _currentPosition?.longitude ??
+                      35.2433,
                 ),
                 zoom: widget.initialLocation != null ? 15 : 5,
               ),
               markers: endPointMarkers,
               onLongPress: (pos) async {
-                final geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
+                final geoName =
+                    await _directionsService.getPlaceName(pos) ??
+                    l10n.unknownLocation;
                 final newEndPoint = TravelLocation(
                   name: geoName,
                   geoName: geoName,
@@ -1148,14 +1315,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                               _searchResultMarker = null;
                             });
                           },
-                        )
+                        ),
                       ],
                     ),
                   ),
                   if (_placePredictions.isNotEmpty)
                     Material(
                       elevation: 4.0,
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(10),
+                      ),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxHeight: MediaQuery.of(context).size.height * 0.3,
@@ -1168,29 +1337,40 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             final prediction = _placePredictions[index];
                             return ListTile(
                               leading: const Icon(Icons.location_on),
-                              title: Text(prediction['description'] ?? l10n.unknownLocation),
+                              title: Text(
+                                prediction['description'] ??
+                                    l10n.unknownLocation,
+                              ),
                               onTap: () async {
                                 final placeId = prediction['place_id'];
                                 if (placeId == null) return;
 
-                                final details = await _directionsService.getPlaceDetails(placeId);
+                                final details = await _directionsService
+                                    .getPlaceDetails(placeId);
                                 if (details == null || !mounted) return;
 
-                                final location = details['geometry']?['location'];
+                                final location =
+                                    details['geometry']?['location'];
                                 if (location == null) return;
 
                                 final lat = location['lat'];
                                 final lng = location['lng'];
                                 final latLng = LatLng(lat, lng);
 
-                                _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+                                _mapController?.animateCamera(
+                                  CameraUpdate.newLatLngZoom(latLng, 15),
+                                );
 
                                 setState(() {
                                   _searchResultMarker = Marker(
                                     markerId: const MarkerId('searchResult'),
                                     position: latLng,
-                                    infoWindow: InfoWindow(title: prediction['description']),
-                                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                                    infoWindow: InfoWindow(
+                                      title: prediction['description'],
+                                    ),
+                                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueAzure,
+                                    ),
                                   );
                                   _placePredictions = [];
                                   _searchController.clear();
@@ -1221,8 +1401,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     final initialCamPos = widget.initialLocation != null
         ? CameraPosition(
-            target: LatLng(widget.initialLocation!.latitude,
-                widget.initialLocation!.longitude),
+            target: LatLng(
+              widget.initialLocation!.latitude,
+              widget.initialLocation!.longitude,
+            ),
             zoom: 15,
           )
         : const CameraPosition(
@@ -1254,7 +1436,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   } else {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.locationsNotFoundOrInsufficient)),
+                      SnackBar(
+                        content: Text(l10n.locationsNotFoundOrInsufficient),
+                      ),
                     );
                   }
                 }
@@ -1305,9 +1489,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const GroupsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const GroupsScreen()),
                 );
               },
             ),
@@ -1322,7 +1504,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   ),
                 );
               },
-            )
+            ),
           ]
         : [
             if (_activeRouteInfo != null)
@@ -1374,7 +1556,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             polylines: _polylines,
             onLongPress: (pos) async {
               if (_isSelectingEndpoint) {
-                final geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
+                final geoName =
+                    await _directionsService.getPlaceName(pos) ??
+                    l10n.unknownLocation;
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -1395,28 +1579,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
                 if (confirmed == true) {
                   final endLocation = TravelLocation(
-                    name: l10n.selectedEndpoint, // Internal name, no need to translate
+                    name: l10n
+                        .selectedEndpoint, // Internal name, no need to translate
                     geoName: geoName,
                     latitude: pos.latitude,
                     longitude: pos.longitude,
                     firestoreId: 'end',
                   );
                   final result = await Navigator.push<dynamic>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LocationSelectionScreen(initialLocations: _locationsForRoute, endLocation: endLocation),
-                  ),
-                );
-                if (result is List<TravelLocation>) {
-                  _drawRoute(result);
-                } else if (result == 'change_end_location') {
-                  setState(() {
-                    _isSelectingEndpoint = true;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.selectNewEndpoint)),
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LocationSelectionScreen(
+                        initialLocations: _locationsForRoute,
+                        endLocation: endLocation,
+                      ),
+                    ),
                   );
-                }
+                  if (result is List<TravelLocation>) {
+                    _drawRoute(result);
+                  } else if (result == 'change_end_location') {
+                    setState(() {
+                      _isSelectingEndpoint = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.selectNewEndpoint)),
+                    );
+                  }
                 }
                 setState(() {
                   _isSelectingEndpoint = false;
@@ -1426,8 +1614,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               }
             },
             mapType: _currentMapType,
-            compassEnabled: false, 
-            myLocationButtonEnabled: false, 
+            compassEnabled: false,
+            myLocationButtonEnabled: false,
             myLocationEnabled: false,
             onCameraMove: (position) {
               _cameraPosition = position;
@@ -1480,14 +1668,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             _searchResultMarker = null;
                           });
                         },
-                      )
+                      ),
                     ],
                   ),
                 ),
                 if (_placePredictions.isNotEmpty)
                   Material(
                     elevation: 4.0,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(10),
+                    ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.3,
@@ -1500,12 +1690,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           final prediction = _placePredictions[index];
                           return ListTile(
                             leading: const Icon(Icons.location_on),
-                            title: Text(prediction['description'] ?? l10n.unknownLocation),
+                            title: Text(
+                              prediction['description'] ?? l10n.unknownLocation,
+                            ),
                             onTap: () async {
                               final placeId = prediction['place_id'];
                               if (placeId == null) return;
 
-                              final details = await _directionsService.getPlaceDetails(placeId);
+                              final details = await _directionsService
+                                  .getPlaceDetails(placeId);
                               if (details == null || !mounted) return;
 
                               final location = details['geometry']?['location'];
@@ -1515,14 +1708,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                               final lng = location['lng'];
                               final latLng = LatLng(lat, lng);
 
-                              _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+                              _mapController?.animateCamera(
+                                CameraUpdate.newLatLngZoom(latLng, 15),
+                              );
 
                               setState(() {
                                 _searchResultMarker = Marker(
                                   markerId: const MarkerId('searchResult'),
                                   position: latLng,
-                                  infoWindow: InfoWindow(title: prediction['description']),
-                                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                                  infoWindow: InfoWindow(
+                                    title: prediction['description'],
+                                  ),
+                                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                                    BitmapDescriptor.hueAzure,
+                                  ),
                                 );
                                 _placePredictions = [];
                                 _searchController.clear();
@@ -1576,13 +1775,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  List<TravelLocation> _optimizeRouteByProximity(List<TravelLocation> locations, Position startPosition) {
+  List<TravelLocation> _optimizeRouteByProximity(
+    List<TravelLocation> locations,
+    Position startPosition,
+  ) {
     if (locations.length < 2) return locations;
 
     List<TravelLocation> remaining = List.from(locations);
     List<TravelLocation> optimized = [];
 
-    LatLng currentPoint = LatLng(startPosition.latitude, startPosition.longitude);
+    LatLng currentPoint = LatLng(
+      startPosition.latitude,
+      startPosition.longitude,
+    );
 
     while (remaining.isNotEmpty) {
       TravelLocation? closest;
@@ -1620,7 +1825,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (userProfile?.homeLocation != null) {
       homeEndLocation = TravelLocation(
         name: l10n.homeLocation, // Use localized name for home
-        geoName: '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}', // Display coordinates
+        geoName:
+            '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}', // Display coordinates
         latitude: userProfile.homeLocation!.latitude,
         longitude: userProfile.homeLocation!.longitude,
         firestoreId: 'home_end_location', // Unique ID for home as endpoint
@@ -1639,7 +1845,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               Navigator.of(dialogContext).pop();
               final result = await Navigator.push<Map<String, String>>(
                 context,
-                MaterialPageRoute(builder: (context) => const GroupsScreen(isForSelection: true)),
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const GroupsScreen(isForSelection: true),
+                ),
               );
 
               if (!mounted || result == null) return;
@@ -1647,7 +1856,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               final selectedGroupId = result['id'];
 
               if (selectedGroupId != null) {
-                final locations = await _firestoreService.getLocationsForGroup(selectedGroupId);
+                final locations = await _firestoreService.getLocationsForGroup(
+                  selectedGroupId,
+                );
                 if (locations.isNotEmpty) {
                   if (_currentPosition == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1655,8 +1866,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     );
                     return;
                   }
-                  final optimizedLocations = _optimizeRouteByProximity(locations, _currentPosition!);
-                  final defaultEndLocationGeoName = await _directionsService.getPlaceName(LatLng(_currentPosition!.latitude, _currentPosition!.longitude)) ?? l10n.unknownLocation;
+                  final optimizedLocations = _optimizeRouteByProximity(
+                    locations,
+                    _currentPosition!,
+                  );
+                  final defaultEndLocationGeoName =
+                      await _directionsService.getPlaceName(
+                        LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
+                      ) ??
+                      l10n.unknownLocation;
                   final defaultEndLocation = TravelLocation(
                     name: l10n.endPoint, // Internal
                     geoName: defaultEndLocationGeoName,
@@ -1665,11 +1886,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     longitude: _currentPosition!.longitude,
                     firestoreId: 'end',
                   );
-                  
+
                   final result = await Navigator.push<dynamic>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => LocationSelectionScreen(initialLocations: optimizedLocations, endLocation: homeEndLocation ?? defaultEndLocation),
+                      builder: (context) => LocationSelectionScreen(
+                        initialLocations: optimizedLocations,
+                        endLocation: homeEndLocation ?? defaultEndLocation,
+                      ),
                     ),
                   );
                   if (result is List<TravelLocation>) {
@@ -1695,15 +1919,24 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             child: Text(l10n.manualSelection),
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              final List<TravelLocation>? selectedLocations = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ManageLocationsScreen(isForSelection: true)),
-              );
+              final List<TravelLocation>? selectedLocations =
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ManageLocationsScreen(isForSelection: true),
+                    ),
+                  );
 
               if (selectedLocations != null && selectedLocations.isNotEmpty) {
                 final result = await Navigator.push<dynamic>(
                   context,
-                  MaterialPageRoute(builder: (context) => LocationSelectionScreen(initialLocations: selectedLocations, endLocation: homeEndLocation)),
+                  MaterialPageRoute(
+                    builder: (context) => LocationSelectionScreen(
+                      initialLocations: selectedLocations,
+                      endLocation: homeEndLocation,
+                    ),
+                  ),
                 );
 
                 if (result is List<TravelLocation>) {
@@ -1733,8 +1966,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  
-
   void _showAddLocationDialog(LatLng pos) async {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
@@ -1743,8 +1974,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final String geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
-    
+    final String geoName =
+        await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
+
     if (!mounted) return;
     Navigator.of(context).pop();
 
@@ -1768,44 +2000,72 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.realLocationNameLabel, style: Theme.of(context).textTheme.bodySmall),
-                    Text(geoName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+                    Text(
+                      l10n.realLocationNameLabel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      geoName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: customNameController,
-                      decoration: InputDecoration(labelText: l10n.customLocationNameLabel, icon: const Icon(Icons.edit_location_alt)),
+                      decoration: InputDecoration(
+                        labelText: l10n.customLocationNameLabel,
+                        icon: const Icon(Icons.edit_location_alt),
+                      ),
                       autofocus: true,
                     ),
                     TextField(
                       controller: descriptionController,
-                      decoration: InputDecoration(labelText: l10n.descriptionLabel, icon: const Icon(Icons.description)),
+                      decoration: InputDecoration(
+                        labelText: l10n.descriptionLabel,
+                        icon: const Icon(Icons.description),
+                      ),
                     ),
                     TextField(
                       controller: notesController,
-                      decoration: InputDecoration(labelText: l10n.notesLabel, icon: const Icon(Icons.note)),
+                      decoration: InputDecoration(
+                        labelText: l10n.notesLabel,
+                        icon: const Icon(Icons.note),
+                      ),
                     ),
                     TextField(
                       controller: durationController,
-                      decoration: InputDecoration(labelText: l10n.estimatedDurationLabel, icon: const Icon(Icons.timer)),
+                      decoration: InputDecoration(
+                        labelText: l10n.estimatedDurationLabel,
+                        icon: const Icon(Icons.timer),
+                      ),
                       keyboardType: TextInputType.number,
                     ),
                     TextField(
                       controller: needsController,
-                      decoration: InputDecoration(labelText: l10n.needsLabel, icon: const Icon(Icons.list)),
+                      decoration: InputDecoration(
+                        labelText: l10n.needsLabel,
+                        icon: const Icon(Icons.list),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.group),
-                      title: Text(selectedGroupName ?? l10n.selectGroupOptionalLabel),
+                      title: Text(
+                        selectedGroupName ?? l10n.selectGroupOptionalLabel,
+                      ),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () async {
-                        final result = await Navigator.push<Map<String, String>>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GroupsScreen(isForSelection: true),
-                          ),
-                        );
+                        final result =
+                            await Navigator.push<Map<String, String>>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const GroupsScreen(isForSelection: true),
+                              ),
+                            );
                         if (result != null) {
                           setState(() {
                             selectedGroupId = result['id'];
@@ -1836,11 +2096,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       final newLocation = TravelLocation(
                         name: customNameController.text,
                         geoName: geoName,
-                        description: descriptionController.text.isNotEmpty ? descriptionController.text : null,
+                        description: descriptionController.text.isNotEmpty
+                            ? descriptionController.text
+                            : null,
                         latitude: pos.latitude,
                         longitude: pos.longitude,
                         groupId: selectedGroupId,
-                        notes: notesController.text.isNotEmpty ? notesController.text : null,
+                        notes: notesController.text.isNotEmpty
+                            ? notesController.text
+                            : null,
                         needsList: needsList.isNotEmpty ? needsList : null,
                         estimatedDuration: duration,
                       );

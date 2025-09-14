@@ -27,7 +27,9 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
     final String content = route.isShared
         ? l10n.stopSharingConfirmation(route.name)
         : l10n.shareRouteConfirmation(route.name);
-    final String confirmAction = route.isShared ? l10n.stopSharing : l10n.shareRoute;
+    final String confirmAction = route.isShared
+        ? l10n.stopSharing
+        : l10n.shareRoute;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -35,8 +37,14 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
         title: Text(title),
         content: Text(content),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(confirmAction)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmAction),
+          ),
         ],
       ),
     );
@@ -46,7 +54,11 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(route.isShared ? l10n.routeNoLongerShared(route.name) : l10n.routeSharedSuccessfully(route.name)),
+            content: Text(
+              route.isShared
+                  ? l10n.routeNoLongerShared(route.name)
+                  : l10n.routeSharedSuccessfully(route.name),
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -56,22 +68,74 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
 
   Future<void> _deleteRoute(TravelRoute route) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteRoute),
-        content: Text(l10n.deleteRouteConfirmation(route.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.deleteLabel)),
-        ],
-      ),
-    );
-    if (confirm == true && route.firestoreId != null) {
+    bool deleteConfirmed = false;
+    bool deleteLocations = false;
+
+    if (route.communityRouteId != null) {
+      // It's a community route, ask about locations
+      final result = await showDialog<Map<String, bool>>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteRoute),
+          content: Text(l10n.deleteRouteConfirmationWithLocations),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop({'confirmed': false}),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop({'confirmed': true, 'deleteLocations': false}),
+              child: Text(l10n.deleteRoute),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop({'confirmed': true, 'deleteLocations': true}),
+              child: Text('${l10n.deleteRoute} + ${l10n.locationsLabel}'), // TODO: Localize
+            ),
+          ],
+        ),
+      );
+      if (result != null && result['confirmed'] == true) {
+        deleteConfirmed = true;
+        deleteLocations = result['deleteLocations'] ?? false;
+      }
+    } else {
+      // It's a regular route
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteRoute),
+          content: Text(l10n.deleteRouteConfirmation(route.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.deleteLabel),
+            ),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        deleteConfirmed = true;
+      }
+    }
+
+    if (deleteConfirmed && route.firestoreId != null) {
+      if (deleteLocations && route.locationIds.isNotEmpty) {
+        await _firestoreService.deleteLocations(route.locationIds);
+      }
       await _firestoreService.deleteRoute(route.firestoreId!);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.routeDeleted(route.name)), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(l10n.routeDeleted(route.name)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -96,33 +160,51 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                 Text(l10n.routeDetailsPlannedTravelTime(route.totalTravelTime)),
                 if (route.totalStopDuration != null) ...[
                   const SizedBox(height: 4),
-                  Text(l10n.routeDetailsPlannedStopTime(route.totalStopDuration!)),
+                  Text(
+                    l10n.routeDetailsPlannedStopTime(route.totalStopDuration!),
+                  ),
                 ],
                 if (route.totalTripDuration != null) ...[
                   const SizedBox(height: 4),
-                  Text(l10n.routeDetailsPlannedTotalTime(route.totalTripDuration!)),
+                  Text(
+                    l10n.routeDetailsPlannedTotalTime(route.totalTripDuration!),
+                  ),
                 ],
-                if (route.actualDuration != null && route.actualDuration!.isNotEmpty) ...[
+                if (route.actualDuration != null &&
+                    route.actualDuration!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
                     l10n.routeDetailsActualTotalTime(route.actualDuration!),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
                   ),
                 ],
                 if (route.needs != null && route.needs!.isNotEmpty) ...[
                   const Divider(height: 20),
-                  Text(l10n.needsListTitle, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l10n.needsListTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
                   ...route.needs!.map((need) => Text('  • $need')),
                 ],
                 if (route.notes != null && route.notes!.isNotEmpty) ...[
                   const Divider(height: 20),
-                  Text(l10n.privateNotesTitle, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l10n.privateNotesTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
-                  ...route.notes!.map((note) => Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text('  • ${note['locationName']}: ${note['note']}'),
-                  )),
+                  ...route.notes!.map(
+                    (note) => Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        '  • ${note['locationName']}: ${note['note']}',
+                      ),
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -138,7 +220,9 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
               onPressed: () async {
                 Navigator.of(dialogContext).pop(); // Close details dialog
 
-                final userProfile = await _firestoreService.getUserProfile().first;
+                final userProfile = await _firestoreService
+                    .getUserProfile()
+                    .first;
                 TravelLocation? endLocation;
 
                 if (userProfile?.homeLocation != null) {
@@ -153,7 +237,11 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                 } else {
                   try {
                     final position = await Geolocator.getCurrentPosition();
-                    final geoName = await DirectionsService().getPlaceName(LatLng(position.latitude, position.longitude)) ?? l10n.unknownLocation;
+                    final geoName =
+                        await DirectionsService().getPlaceName(
+                          LatLng(position.latitude, position.longitude),
+                        ) ??
+                        l10n.unknownLocation;
                     endLocation = TravelLocation(
                       name: l10n.currentLocation,
                       geoName: geoName,
@@ -170,7 +258,9 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                   }
                 }
 
-                final allLocations = await _firestoreService.getLocationsByIds(route.locationIds);
+                final allLocations = await _firestoreService.getLocationsByIds(
+                  route.locationIds,
+                );
                 if (!mounted) return;
 
                 if (allLocations.isEmpty) {
@@ -204,9 +294,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.savedRoutes),
-      ),
+      appBar: AppBar(title: Text(l10n.savedRoutes)),
       body: StreamBuilder<List<TravelRoute>>(
         stream: _firestoreService.getRoutes(),
         builder: (context, snapshot) {
@@ -217,12 +305,18 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
             return Center(child: Text(l10n.noSavedRoutes));
           }
           if (snapshot.hasError) {
-            return Center(child: Text(l10n.errorOccurred(snapshot.error.toString())));
+            return Center(
+              child: Text(l10n.errorOccurred(snapshot.error.toString())),
+            );
           }
 
           final routes = snapshot.data!;
           // Sort routes by creation date, newest first
-          routes.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+          routes.sort(
+            (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
+              a.createdAt ?? DateTime(0),
+            ),
+          );
 
           return ListView.builder(
             itemCount: routes.length,
@@ -232,8 +326,29 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                 margin: const EdgeInsets.all(8.0),
                 child: ListTile(
                   onTap: () => _showRouteDetailsDialog(route),
-                  title: Text(route.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${l10n.distanceLabel}: ${route.totalDistance} | ${l10n.durationLabel}: ${route.totalTravelTime}'),
+                  title: Text(
+                    route.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${l10n.distanceLabel}: ${route.totalDistance} | ${l10n.durationLabel}: ${route.totalTravelTime}',
+                      ),
+                      if (route.communityRouteId != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            l10n.downloadedFromCommunity,
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -242,11 +357,18 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                           route.isShared ? Icons.share : Icons.share_outlined,
                           color: route.isShared ? Colors.green : null,
                         ),
-                        tooltip: route.isShared ? l10n.stopSharing : l10n.shareRoute,
-                        onPressed: () => _shareRoute(route),
+                        tooltip: route.isShared
+                            ? l10n.stopSharing
+                            : l10n.shareRoute,
+                        onPressed: route.communityRouteId != null
+                            ? null
+                            : () => _shareRoute(route),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                        ),
                         tooltip: l10n.deleteRoute,
                         onPressed: () => _deleteRoute(route),
                       ),

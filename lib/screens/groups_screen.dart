@@ -23,10 +23,26 @@ class _GroupsScreenState extends State<GroupsScreen> {
   GroupSortBy _currentSortBy = GroupSortBy.nameAsc;
 
   final List<Color> _groupColors = [
-    Colors.red, Colors.pink, Colors.purple, Colors.deepPurple, Colors.indigo,
-    Colors.blue, Colors.lightBlue, Colors.cyan, Colors.teal, Colors.green,
-    Colors.lightGreen, Colors.lime, Colors.yellow, Colors.amber, Colors.orange,
-    Colors.deepOrange, Colors.brown, Colors.grey, Colors.blueGrey, Colors.black,
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
   ];
 
   @override
@@ -44,17 +60,27 @@ class _GroupsScreenState extends State<GroupsScreen> {
         groups.sort((a, b) => b.name.compareTo(a.name));
         break;
       case GroupSortBy.dateNewest:
-        groups.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+        groups.sort(
+          (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
+            a.createdAt ?? DateTime(0),
+          ),
+        );
         break;
       case GroupSortBy.dateOldest:
-        groups.sort((a, b) => (a.createdAt ?? DateTime(0)).compareTo(b.createdAt ?? DateTime(0)));
+        groups.sort(
+          (a, b) => (a.createdAt ?? DateTime(0)).compareTo(
+            b.createdAt ?? DateTime(0),
+          ),
+        );
         break;
     }
   }
 
   void _showGroupDialog({LocationGroup? groupToEdit}) {
     _groupNameController.text = groupToEdit?.name ?? '';
-    _selectedColor = groupToEdit != null ? Color(groupToEdit.color ?? Colors.blue.value) : Colors.blue;
+    _selectedColor = groupToEdit != null
+        ? Color(groupToEdit.color ?? Colors.blue.value)
+        : Colors.blue;
 
     showDialog(
       context: context,
@@ -62,14 +88,20 @@ class _GroupsScreenState extends State<GroupsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(groupToEdit == null ? AppLocalizations.of(context)!.newGroup : AppLocalizations.of(context)!.editGroup),
+              title: Text(
+                groupToEdit == null
+                    ? AppLocalizations.of(context)!.newGroup
+                    : AppLocalizations.of(context)!.editGroup,
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: _groupNameController,
-                      decoration: InputDecoration(hintText: AppLocalizations.of(context)!.groupName),
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.groupName,
+                      ),
                       autofocus: true,
                     ),
                     const SizedBox(height: 20),
@@ -92,7 +124,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _selectedColor == color ? Colors.black : Colors.transparent,
+                                color: _selectedColor == color
+                                    ? Colors.black
+                                    : Colors.transparent,
                                 width: 2,
                               ),
                             ),
@@ -118,14 +152,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       final group = LocationGroup(
                         firestoreId: groupToEdit?.firestoreId,
                         name: _groupNameController.text,
-                                                color: _selectedColor?.value,
-                        createdAt: groupToEdit?.createdAt, // Preserve original creation date
+                        color: _selectedColor?.value,
+                        createdAt: groupToEdit
+                            ?.createdAt, // Preserve original creation date
                       );
 
                       if (groupToEdit == null) {
                         await _firestoreService.addGroup(group);
                       } else {
-                        await _firestoreService.updateGroup(group.firestoreId!, group);
+                        await _firestoreService.updateGroup(
+                          group.firestoreId!,
+                          group,
+                        );
                       }
 
                       _groupNameController.clear();
@@ -148,7 +186,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isForSelection ? AppLocalizations.of(context)!.selectGroup : AppLocalizations.of(context)!.travelGroups),
+        title: Text(
+          widget.isForSelection
+              ? AppLocalizations.of(context)!.selectGroup
+              : AppLocalizations.of(context)!.travelGroups,
+        ),
         actions: [
           if (!widget.isForSelection)
             PopupMenuButton<GroupSortBy>(
@@ -158,24 +200,29 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   _currentSortBy = result;
                 });
               },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<GroupSortBy>>[
-                PopupMenuItem<GroupSortBy>(
-                  value: GroupSortBy.nameAsc,
-                  child: Text(AppLocalizations.of(context)!.sortByNameAsc),
-                ),
-                PopupMenuItem<GroupSortBy>(
-                  value: GroupSortBy.nameDesc,
-                  child: Text(AppLocalizations.of(context)!.sortByNameDesc),
-                ),
-                PopupMenuItem<GroupSortBy>(
-                  value: GroupSortBy.dateNewest,
-                  child: Text(AppLocalizations.of(context)!.sortByDateNewest),
-                ),
-                PopupMenuItem<GroupSortBy>(
-                  value: GroupSortBy.dateOldest,
-                  child: Text(AppLocalizations.of(context)!.sortByDateOldest),
-                ),
-              ],
+              itemBuilder: (BuildContext context) =>
+                  <PopupMenuEntry<GroupSortBy>>[
+                    PopupMenuItem<GroupSortBy>(
+                      value: GroupSortBy.nameAsc,
+                      child: Text(AppLocalizations.of(context)!.sortByNameAsc),
+                    ),
+                    PopupMenuItem<GroupSortBy>(
+                      value: GroupSortBy.nameDesc,
+                      child: Text(AppLocalizations.of(context)!.sortByNameDesc),
+                    ),
+                    PopupMenuItem<GroupSortBy>(
+                      value: GroupSortBy.dateNewest,
+                      child: Text(
+                        AppLocalizations.of(context)!.sortByDateNewest,
+                      ),
+                    ),
+                    PopupMenuItem<GroupSortBy>(
+                      value: GroupSortBy.dateOldest,
+                      child: Text(
+                        AppLocalizations.of(context)!.sortByDateOldest,
+                      ),
+                    ),
+                  ],
             ),
         ],
       ),
@@ -186,10 +233,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text(AppLocalizations.of(context)!.noGroupsYet));
+            return Center(
+              child: Text(AppLocalizations.of(context)!.noGroupsYet),
+            );
           }
           if (snapshot.hasError) {
-            return Center(child: Text(AppLocalizations.of(context)!.error(snapshot.error.toString())));
+            return Center(
+              child: Text(
+                AppLocalizations.of(context)!.error(snapshot.error.toString()),
+              ),
+            );
           }
 
           final groups = snapshot.data!;
@@ -207,7 +260,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     verticalOffset: 50.0,
                     child: FadeInAnimation(
                       child: ListTile(
-                        leading: Icon(Icons.circle, color: Color(group.color ?? Colors.blue.value)),
+                        leading: Icon(
+                          Icons.circle,
+                          color: Color(group.color ?? Colors.blue.value),
+                        ),
                         title: Text(group.name),
                         trailing: widget.isForSelection
                             ? const Icon(Icons.arrow_forward_ios)
@@ -223,25 +279,50 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () async {
-                                      final bool? confirmDelete = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: Text(AppLocalizations.of(context)!.deleteGroup),
-                                          content: Text(AppLocalizations.of(context)!.deleteGroupConfirmation(group.name)),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(context).pop(false),
-                                              child: Text(AppLocalizations.of(context)!.cancel),
+                                      final bool? confirmDelete =
+                                          await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.deleteGroup,
+                                              ),
+                                              content: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.deleteGroupConfirmation(
+                                                  group.name,
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(false),
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.cancel,
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(true),
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.delete,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            TextButton(
-                                              onPressed: () => Navigator.of(context).pop(true),
-                                              child: Text(AppLocalizations.of(context)!.delete),
-                                            ),
-                                          ],
-                                        ),
-                                      );
+                                          );
                                       if (confirmDelete == true) {
-                                        await _firestoreService.deleteGroup(group.firestoreId!);
+                                        await _firestoreService.deleteGroup(
+                                          group.firestoreId!,
+                                        );
                                       }
                                     },
                                   ),
@@ -249,7 +330,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               ),
                         onTap: () {
                           if (widget.isForSelection) {
-                            Navigator.of(context).pop({'id': group.firestoreId!, 'name': group.name});
+                            Navigator.of(context).pop({
+                              'id': group.firestoreId!,
+                              'name': group.name,
+                            });
                           } else {
                             Navigator.of(context).push(
                               MaterialPageRoute(

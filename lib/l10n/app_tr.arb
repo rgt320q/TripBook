@@ -380,6 +380,9 @@
   "reachedLocationsLog": "Ulaşılan Konumlar Günlüğü",
   "markAllAsRead": "Tümünü Okundu İşaretle",
   "allLogsMarkedAsRead": "Tüm günlükler okundu olarak işaretlendi.",
+  "selectAll": "Tümünü Seç",
+  "unselectAll": "Tüm Seçimi Kaldır",
+  "allLogsMarkedAsUnread": "Tüm günlükler okunmadı olarak işaretlendi.",
   "deleteRead": "Okunanları Sil",
   "readLogsDeleted": "Okunan tüm kayıtlar silindi.",
   "sortByDateNew": "Tarihe Göre (Yeni)",
@@ -454,5 +457,10 @@
   "createNewAccount": "Yeni hesap oluştur",
   "alreadyHaveAccount": "Zaten bir hesabım var",
   "enterValidEmail": "Lütfen geçerli bir e-posta adresi girin.",
-  "passwordTooShort": "Şifre en az 7 karakter uzunluğunda olmalıdır."
+  "passwordTooShort": "Şifre en az 7 karakter uzunluğunda olmalıdır.",
+  "routeAlreadySaved": "Bu rota zaten kayıtlı.",
+  "downloadedFromCommunity": "(Topluluktan indirildi)",
+  "deleteRouteConfirmationWithLocations": "Bu rota topluluktan indirildi. İlişkili konumları da silmek istiyor musunuz?",
+  "locationsLabel": "Konumlar",
+  "deleteRouteAndLocations": "Rotayı ve Konumları Sil"
 }

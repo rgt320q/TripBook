@@ -380,6 +380,9 @@
   "reachedLocationsLog": "Reached Locations Log",
   "markAllAsRead": "Mark All as Read",
   "allLogsMarkedAsRead": "All logs marked as read.",
+  "selectAll": "Select All",
+  "unselectAll": "Unselect All",
+  "allLogsMarkedAsUnread": "All logs marked as unread.",
   "deleteRead": "Delete Read",
   "readLogsDeleted": "All read logs have been deleted.",
   "sortByDateNew": "By Date (Newest)",
@@ -454,5 +457,10 @@
   "createNewAccount": "Create new account",
   "alreadyHaveAccount": "I already have an account",
   "enterValidEmail": "Please enter a valid email address.",
-  "passwordTooShort": "Password must be at least 7 characters long."
+  "passwordTooShort": "Password must be at least 7 characters long.",
+  "routeAlreadySaved": "This route is already saved.",
+  "downloadedFromCommunity": "(Downloaded from community)",
+  "deleteRouteConfirmationWithLocations": "This route was downloaded from the community. Do you want to delete the associated locations as well?",
+  "locationsLabel": "Locations",
+  "deleteRouteAndLocations": "Delete Route and Locations"
 }

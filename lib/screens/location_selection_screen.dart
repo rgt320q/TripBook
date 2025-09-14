@@ -8,10 +8,15 @@ class LocationSelectionScreen extends StatefulWidget {
   final List<TravelLocation>? initialLocations;
   final TravelLocation? endLocation;
 
-  const LocationSelectionScreen({super.key, this.initialLocations, this.endLocation});
+  const LocationSelectionScreen({
+    super.key,
+    this.initialLocations,
+    this.endLocation,
+  });
 
   @override
-  State<LocationSelectionScreen> createState() => _LocationSelectionScreenState();
+  State<LocationSelectionScreen> createState() =>
+      _LocationSelectionScreenState();
 }
 
 class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
@@ -50,9 +55,13 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
         children: <Widget>[
           for (int index = 0; index < _selectedLocations.length; index++)
             // Check if this is the end location
-            if (_selectedLocations[index].firestoreId == _currentEndLocation?.firestoreId)
-              ListTile( // Regular ListTile for the non-reorderable end location
-                key: Key(_selectedLocations[index].firestoreId ?? index.toString()),
+            if (_selectedLocations[index].firestoreId ==
+                _currentEndLocation?.firestoreId)
+              ListTile(
+                // Regular ListTile for the non-reorderable end location
+                key: Key(
+                  _selectedLocations[index].firestoreId ?? index.toString(),
+                ),
                 title: Text(_selectedLocations[index].name),
                 subtitle: Text(l10n.endLocationLabel),
                 leading: const Icon(Icons.location_pin),
@@ -62,12 +71,19 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MapScreen(isChangingEndPoint: true, initialLocation: _selectedLocations[index]),
+                        builder: (context) => MapScreen(
+                          isChangingEndPoint: true,
+                          initialLocation: _selectedLocations[index],
+                        ),
                       ),
                     ).then((newEndPoint) {
                       if (newEndPoint != null) {
                         setState(() {
-                          final oldEndIndex = _selectedLocations.indexWhere((loc) => loc.firestoreId == _currentEndLocation?.firestoreId);
+                          final oldEndIndex = _selectedLocations.indexWhere(
+                            (loc) =>
+                                loc.firestoreId ==
+                                _currentEndLocation?.firestoreId,
+                          );
                           if (oldEndIndex != -1) {
                             _selectedLocations[oldEndIndex] = newEndPoint;
                             _currentEndLocation = newEndPoint;
@@ -79,8 +95,11 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 ),
               )
             else
-              ListTile( // Reorderable ListTile for intermediate locations
-                key: Key(_selectedLocations[index].firestoreId ?? index.toString()),
+              ListTile(
+                // Reorderable ListTile for intermediate locations
+                key: Key(
+                  _selectedLocations[index].firestoreId ?? index.toString(),
+                ),
                 title: Text(_selectedLocations[index].name),
                 leading: ReorderableDragStartListener(
                   index: index,
@@ -99,7 +118,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
         onReorder: (int oldIndex, int newIndex) {
           setState(() {
             // If the item being moved is the end location, do nothing.
-            if (_selectedLocations[oldIndex].firestoreId == _currentEndLocation?.firestoreId) {
+            if (_selectedLocations[oldIndex].firestoreId ==
+                _currentEndLocation?.firestoreId) {
               return;
             }
 

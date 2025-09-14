@@ -71,21 +71,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
           if (_selectedLanguage != null) {
-            Provider.of<LocaleProvider>(context, listen: false)
-                .setLocale(Locale(_selectedLanguage!));
+            Provider.of<LocaleProvider>(
+              context,
+              listen: false,
+            ).setLocale(Locale(_selectedLanguage!));
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.profileSaveSuccess)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.profileSaveSuccess)));
           Navigator.of(context).pop();
         }
       } catch (e) {
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.error(e.toString()))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.error(e.toString()))));
         }
       }
     }
@@ -105,7 +107,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (pickedLocation != null) {
       setState(() {
-        _homeLocation = GeoPoint(pickedLocation.latitude, pickedLocation.longitude);
+        _homeLocation = GeoPoint(
+          pickedLocation.latitude,
+          pickedLocation.longitude,
+        );
       });
     }
   }
@@ -114,9 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.profileScreenTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.profileScreenTitle)),
       body: FutureBuilder<UserProfile?>(
         future: _userProfileFuture,
         builder: (context, snapshot) {
@@ -126,7 +129,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
             final user = FirebaseAuth.instance.currentUser;
             if (user != null) {
-              return _buildForm(l10n, UserProfile(uid: user.uid, languageCode: 'tr'));
+              return _buildForm(
+                l10n,
+                UserProfile(uid: user.uid, languageCode: 'tr'),
+              );
             }
             return Center(child: Text(l10n.profileLoadError));
           }
@@ -181,8 +187,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               value: _selectedLanguage,
               decoration: InputDecoration(labelText: l10n.language),
               items: [
-                DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
-                DropdownMenuItem(value: 'tr', child: Text(l10n.languageTurkish)),
+                DropdownMenuItem(
+                  value: 'en',
+                  child: Text(l10n.languageEnglish),
+                ),
+                DropdownMenuItem(
+                  value: 'tr',
+                  child: Text(l10n.languageTurkish),
+                ),
               ],
               onChanged: (value) {
                 setState(() {
@@ -191,10 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: _saveProfile,
-              child: Text(l10n.save),
-            ),
+            ElevatedButton(onPressed: _saveProfile, child: Text(l10n.save)),
             const SizedBox(height: 20),
             TextButton(
               onPressed: () async {

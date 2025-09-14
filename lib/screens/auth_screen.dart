@@ -1,7 +1,5 @@
-
 import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
-
 
 import 'package:tripbook/l10n/app_localizations.dart';
 
@@ -32,9 +30,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
       String? authResult;
       if (_isLogin) {
-        authResult = await _authService.signIn(email: _email, password: _password);
+        authResult = await _authService.signIn(
+          email: _email,
+          password: _password,
+        );
       } else {
-        authResult = await _authService.signUp(email: _email, password: _password);
+        authResult = await _authService.signUp(
+          email: _email,
+          password: _password,
+        );
       }
 
       if (authResult != null) {
@@ -48,7 +52,9 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         // Login/Signup successful, simply pop AuthScreen
         if (mounted) {
-          Navigator.of(context).pop(); // Just pop, let AuthWrapper handle the rest
+          Navigator.of(
+            context,
+          ).pop(); // Just pop, let AuthWrapper handle the rest
         }
       }
 
@@ -78,7 +84,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   children: <Widget>[
                     Text(
                       _isLogin ? l10n.login : l10n.signUp,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -93,9 +102,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         _email = value!;
                       },
                       keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: l10n.emailAddress,
-                      ),
+                      decoration: InputDecoration(labelText: l10n.emailAddress),
                     ),
                     TextFormField(
                       key: const ValueKey('password'),
@@ -109,13 +116,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         _password = value!;
                       },
                       obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.password,
-                      ),
+                      decoration: InputDecoration(labelText: l10n.password),
                     ),
                     const SizedBox(height: 20),
-                    if (_isLoading)
-                      const CircularProgressIndicator(),
+                    if (_isLoading) const CircularProgressIndicator(),
                     if (!_isLoading)
                       ElevatedButton(
                         onPressed: _trySubmit,
@@ -128,10 +132,12 @@ class _AuthScreenState extends State<AuthScreen> {
                             _isLogin = !_isLogin;
                           });
                         },
-                        child: Text(_isLogin
-                            ? l10n.createNewAccount
-                            : l10n.alreadyHaveAccount),
-                      )
+                        child: Text(
+                          _isLogin
+                              ? l10n.createNewAccount
+                              : l10n.alreadyHaveAccount,
+                        ),
+                      ),
                   ],
                 ),
               ),

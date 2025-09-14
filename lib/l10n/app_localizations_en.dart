@@ -668,6 +668,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allLogsMarkedAsRead => 'All logs marked as read.';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get unselectAll => 'Unselect All';
+
+  @override
+  String get allLogsMarkedAsUnread => 'All logs marked as unread.';
+
+  @override
   String get deleteRead => 'Delete Read';
 
   @override
@@ -780,4 +789,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordTooShort => 'Password must be at least 7 characters long.';
+
+  @override
+  String get routeAlreadySaved => 'This route is already saved.';
+
+  @override
+  String get downloadedFromCommunity => '(Downloaded from community)';
+
+  @override
+  String get deleteRouteConfirmationWithLocations =>
+      'This route was downloaded from the community. Do you want to delete the associated locations as well?';
+
+  @override
+  String get locationsLabel => 'Locations';
+
+  @override
+  String get deleteRouteAndLocations => 'Delete Route and Locations';
 }

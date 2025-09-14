@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserProfile {
@@ -14,7 +13,9 @@ class UserProfile {
     this.homeLocation,
   });
 
-  factory UserProfile.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot) {
+  factory UserProfile.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+  ) {
     final data = snapshot.data() ?? {};
     return UserProfile(
       uid: snapshot.id,

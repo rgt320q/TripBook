@@ -4,7 +4,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 Future<BitmapDescriptor> getHomeMarkerIcon({double size = 30}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
-  final Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset.zero, Offset(size, size)));
+  final Canvas canvas = Canvas(
+    pictureRecorder,
+    Rect.fromPoints(Offset.zero, Offset(size, size)),
+  );
   final double radius = size / 2;
 
   // Draw a perfect circle as the base
@@ -31,18 +34,31 @@ Future<BitmapDescriptor> getHomeMarkerIcon({double size = 30}) async {
   );
   textPainter.layout();
   // Center the icon within the circle
-  textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
+  textPainter.paint(
+    canvas,
+    Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
+  );
 
-  final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+  final img = await pictureRecorder.endRecording().toImage(
+    size.toInt(),
+    size.toInt(),
+  );
   final data = await img.toByteData(format: ImageByteFormat.png);
 
   return BitmapDescriptor.bytes(data!.buffer.asUint8List());
 }
 
-Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, bool isEndpoint = false}) async {
+Future<BitmapDescriptor> getCustomMarkerIcon(
+  Color color, {
+  double size = 40,
+  bool isEndpoint = false,
+}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
   // Gölgenin kırpılmasını önlemek için canvas'ı biraz daha büyük yapalım
-  final Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset.zero, Offset(size, size)));
+  final Canvas canvas = Canvas(
+    pictureRecorder,
+    Rect.fromPoints(Offset.zero, Offset(size, size)),
+  );
 
   // Materyal Tasarım ikonuna dayalı bir pin yolu (path) oluşturalım
   Path path = Path();
@@ -54,7 +70,8 @@ Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, boo
   path.close();
 
   // Yolu istenen boyuta ölçeklendirelim
-  final double scale = size / 24.0; // Orijinal yol 24x24 bir alana göre tanımlanmıştır
+  final double scale =
+      size / 24.0; // Orijinal yol 24x24 bir alana göre tanımlanmıştır
   final Matrix4 matrix = Matrix4.identity()..scale(scale);
   final Path scaledPath = path.transform(matrix.storage);
 
@@ -90,8 +107,10 @@ Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, boo
       ),
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
-
+    textPainter.paint(
+      canvas,
+      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
+    );
   } else {
     final Paint innerCirclePaint = Paint()..color = Colors.white;
     // Orijinal 24x24 yoldaki dairenin merkezi (12, 9.5)'tur
@@ -101,15 +120,23 @@ Future<BitmapDescriptor> getCustomMarkerIcon(Color color, {double size = 40, boo
   }
 
   // Canvas'ı resme dönüştürelim
-  final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+  final img = await pictureRecorder.endRecording().toImage(
+    size.toInt(),
+    size.toInt(),
+  );
   final data = await img.toByteData(format: ImageByteFormat.png);
 
   return BitmapDescriptor.bytes(data!.buffer.asUint8List());
 }
 
-Future<BitmapDescriptor> getCurrentLocationMarkerIcon({double size = 30}) async {
+Future<BitmapDescriptor> getCurrentLocationMarkerIcon({
+  double size = 30,
+}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
-  final Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset.zero, Offset(size, size)));
+  final Canvas canvas = Canvas(
+    pictureRecorder,
+    Rect.fromPoints(Offset.zero, Offset(size, size)),
+  );
   final double radius = size / 2;
 
   // 1. Dışarıdaki yarı saydam "aura"yı çizelim
@@ -117,7 +144,8 @@ Future<BitmapDescriptor> getCurrentLocationMarkerIcon({double size = 30}) async 
   canvas.drawCircle(Offset(radius, radius), radius, auraPaint);
 
   // 2. Ana mavi noktayı çizelim
-  final Paint fillPaint = Paint()..color = const Color(0xFF4285F4); // Google Mavisi
+  final Paint fillPaint = Paint()
+    ..color = const Color(0xFF4285F4); // Google Mavisi
   canvas.drawCircle(Offset(radius, radius), radius * 0.7, fillPaint);
 
   // 3. Ana noktanın beyaz kenarlığını çizelim
@@ -128,7 +156,10 @@ Future<BitmapDescriptor> getCurrentLocationMarkerIcon({double size = 30}) async 
   canvas.drawCircle(Offset(radius, radius), radius * 0.7, borderPaint);
 
   // Canvas'ı resme dönüştürelim
-  final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+  final img = await pictureRecorder.endRecording().toImage(
+    size.toInt(),
+    size.toInt(),
+  );
   final data = await img.toByteData(format: ImageByteFormat.png);
 
   return BitmapDescriptor.bytes(data!.buffer.asUint8List());

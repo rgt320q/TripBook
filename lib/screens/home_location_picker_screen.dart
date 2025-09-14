@@ -41,7 +41,9 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
     if (widget.initialLocation != null && _pickedLocation == null) {
       _pickedLocation = widget.initialLocation;
       _updateMarker(
-          widget.initialLocation!, AppLocalizations.of(context)!.homeLocation);
+        widget.initialLocation!,
+        AppLocalizations.of(context)!.homeLocation,
+      );
     }
   }
 
@@ -62,14 +64,13 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
     if (_searchController.text.isEmpty) return;
 
     try {
-      List<Location> locations =
-          await locationFromAddress(_searchController.text);
+      List<Location> locations = await locationFromAddress(
+        _searchController.text,
+      );
       if (locations.isNotEmpty) {
         final location = locations.first;
         final latLng = LatLng(location.latitude, location.longitude);
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(latLng, 15.0),
-        );
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15.0));
         _updateMarker(latLng, _searchController.text);
       }
     } catch (e) {
@@ -84,7 +85,7 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
     super.dispose();
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
@@ -106,7 +107,8 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
           GoogleMap(
             initialCameraPosition: CameraPosition(
               target:
-                  widget.initialLocation ?? const LatLng(38.9637, 35.2433), // Turkey
+                  widget.initialLocation ??
+                  const LatLng(38.9637, 35.2433), // Turkey
               zoom: widget.initialLocation != null ? 15.0 : 5.0,
             ),
             onMapCreated: (controller) {
@@ -116,8 +118,9 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
               });
             },
             onTap: (latLng) => _updateMarker(latLng, l10n.homeLocation),
-            markers:
-                _pickedLocationMarker != null ? {_pickedLocationMarker!} : {},
+            markers: _pickedLocationMarker != null
+                ? {_pickedLocationMarker!}
+                : {},
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
           ),

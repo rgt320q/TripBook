@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
-import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/travel_route.dart';
 import 'package:tripbook/providers/community_routes_provider.dart';
-import 'package:tripbook/screens/location_selection_screen.dart';
-import 'package:tripbook/services/directions_service.dart';
-import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/screens/community_route_detail_screen.dart';
 import 'package:tripbook/widgets/route_mini_map.dart';
 
 class CommunityRoutesScreen extends StatefulWidget {
@@ -19,8 +14,6 @@ class CommunityRoutesScreen extends StatefulWidget {
 }
 
 class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
-  bool _isDownloading = false;
   bool _hideDownloaded = false;
 
   @override
@@ -30,290 +23,26 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // We set listen to false because we don't need to rebuild this widget
       // when the provider notifies listeners, that's handled by the Consumer.
-      Provider.of<CommunityRoutesProvider>(context, listen: false)
-          .fetchRoutes();
+      Provider.of<CommunityRoutesProvider>(
+        context,
+        listen: false,
+      ).fetchRoutes();
     });
   }
 
   Future<void> _handleRouteTap(
-      TravelRoute route, CommunityRoutesProvider provider) async {
-    final l10n = AppLocalizations.of(context)!;
-    if (route.firestoreId == null) return;
-
-    final existingRoute =
-        await _firestoreService.getDownloadedCommunityRoute(route.firestoreId!);
-
-    bool shouldProceed = false;
-
-    if (existingRoute != null) {
-      final confirmOverwrite = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              const SizedBox(width: 10),
-              Expanded(child: Text(l10n.routeExistsWarningTitle)),
-            ],
-          ),
-          content: Text(l10n.routeExistsWarningContent),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(l10n.cancel)),
-            TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(l10n.overwrite)),
-          ],
-        ),
-      );
-      if (confirmOverwrite == true) {
-        shouldProceed = true;
-      }
-    } else {
-      final confirmDownload = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.downloadRouteTitle),
-          content: Text(l10n.downloadRouteContent(route.name)),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(l10n.cancel)),
-            TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(l10n.downloadAndView)),
-          ],
-        ),
-      );
-      if (confirmDownload == true) {
-        shouldProceed = true;
-      }
-    }
-
-    if (!shouldProceed) return;
-
-    setState(() {
-      _isDownloading = true;
-    });
-
-    try {
-      List<String> newLocationIds = [];
-      if (route.locations != null && route.locations!.isNotEmpty) {
-        final locationsToImport = route.locations!
-            .map((locMap) =>
-                TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
-            .map((loc) => TravelLocation(
-                  name: loc.name,
-                  geoName: loc.geoName,
-                  description: loc.description,
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                  notes: loc.notes,
-                  needsList: loc.needsList,
-                  estimatedDuration: loc.estimatedDuration,
-                  isImported: true, // Mark as imported
-                ))
-            .toList();
-        newLocationIds = await _firestoreService.addLocations(locationsToImport);
-      }
-
-      final newRouteData = route.copyWith(
-        locationIds:
-            newLocationIds.isNotEmpty ? newLocationIds : route.locationIds,
-        isShared: false,
-        sharedBy: null,
-        averageRating: 0.0,
-        ratingCount: 0,
-        commentCount: 0,
-        locations: [], // Clear locations when saving to user's own routes
-        communityRouteId: route.firestoreId, // Set the original community route ID
-      );
-
-      if (existingRoute != null && existingRoute.firestoreId != null) {
-        // Update existing route
-        await _firestoreService.updateRoute(
-            existingRoute.firestoreId!, newRouteData);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.routeUpdateSuccess(route.name)),
-              backgroundColor: Colors.green,
-            ),
-          );
-          _showRouteDetailsDialog(
-              newRouteData.copyWith(firestoreId: existingRoute.firestoreId));
-        }
-      } else {
-        // Add as new route
-        final newRouteRef = await _firestoreService.addRoute(newRouteData);
-        final newRouteSnapshot = await newRouteRef.get();
-        final addedRouteData = newRouteSnapshot.data();
-
-        if (mounted && addedRouteData != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.routeSavedSuccess(route.name)),
-              backgroundColor: Colors.green,
-            ),
-          );
-          _showRouteDetailsDialog(addedRouteData);
-        }
-      }
-      // After download/update, refresh the list in the provider
-      await provider.fetchRoutes();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.routeDownloadError(e.toString())),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isDownloading = false;
-        });
-      }
-    }
-  }
-
-  void _showRouteDetailsDialog(TravelRoute route) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(route.name),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Planlanan Mesafe: ${route.totalDistance}'),
-                if (route.actualDistance != null)
-                  Text('Gerçekleşen Mesafe: ${route.actualDistance}',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('Planlanan Yol Süresi: ${route.totalTravelTime}'),
-                if (route.totalStopDuration != null) ...[
-                  const SizedBox(height: 4),
-                  Text('Planlanan Mola Süresi: ${route.totalStopDuration}'),
-                ],
-                if (route.totalTripDuration != null) ...[
-                  const SizedBox(height: 4),
-                  Text('Planlanan Toplam Süre: ${route.totalTripDuration}'),
-                ],
-                if (route.actualDuration != null &&
-                    route.actualDuration!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Gerçekleşen Toplam Süre: ${route.actualDuration}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.green),
-                  ),
-                ],
-                if (route.needs != null && route.needs!.isNotEmpty) ...[
-                  const Divider(height: 20),
-                  Text('İhtiyaç Listesi:',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  ...route.needs!.map((need) => Text('  • $need')),
-                ],
-                if (route.notes != null && route.notes!.isNotEmpty) ...[
-                  const Divider(height: 20),
-                  Text('Özel Notlar:',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  ...route.notes!
-                      .map((note) => Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                                '  • ${note['locationName']}: ${note['note']}'),
-                          ))
-                      ,
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Kapat'),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.directions),
-              label: const Text('Başlat'),
-              onPressed: () async {
-                Navigator.of(dialogContext).pop(); // Close details dialog
-
-                final l10n = AppLocalizations.of(context)!;
-                final userProfile = await _firestoreService.getUserProfile().first;
-                TravelLocation? endLocation;
-
-                if (userProfile?.homeLocation != null) {
-                  endLocation = TravelLocation(
-                    name: l10n.homeLocation,
-                    geoName:
-                        '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
-                    latitude: userProfile.homeLocation!.latitude,
-                    longitude: userProfile.homeLocation!.longitude,
-                    firestoreId: 'home_end_location',
-                  );
-                } else {
-                  try {
-                    final position = await Geolocator.getCurrentPosition();
-                    final geoName = await DirectionsService().getPlaceName(
-                            LatLng(position.latitude, position.longitude)) ??
-                        l10n.unknownLocation;
-                    endLocation = TravelLocation(
-                      name: l10n.currentLocation,
-                      geoName: geoName,
-                      latitude: position.latitude,
-                      longitude: position.longitude,
-                      firestoreId: 'end',
-                    );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.currentLocationError)),
-                    );
-                    return;
-                  }
-                }
-
-                final allLocations =
-                    await _firestoreService.getLocationsByIds(route.locationIds);
-                if (!mounted) return;
-
-                if (allLocations.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bu rotada konum bulunamadı.')),
-                  );
-                  return;
-                }
-
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => LocationSelectionScreen(
-                      initialLocations: allLocations,
-                      endLocation: endLocation,
-                    ),
-                  ),
-                );
-
-                if (result != null && mounted) {
-                  Navigator.of(context).pop(result); // Go back to map
-                }
-              },
-            ),
-          ],
-        );
-      },
+    TravelRoute route,
+    CommunityRoutesProvider provider,
+  ) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CommunityRouteDetailScreen(route: route),
+      ),
     );
+
+    if (result == true) {
+      provider.fetchRoutes();
+    }
   }
 
   @override
@@ -324,7 +53,9 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
         title: Text(l10n.communityRoutes),
         actions: [
           IconButton(
-            icon: Icon(_hideDownloaded ? Icons.visibility_off : Icons.visibility),
+            icon: Icon(
+              _hideDownloaded ? Icons.visibility_off : Icons.visibility,
+            ),
             tooltip: _hideDownloaded
                 ? l10n.showDownloaded
                 : l10n.hideDownloaded,
@@ -336,131 +67,128 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Consumer<CommunityRoutesProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading && provider.items.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (provider.items.isEmpty) {
-                return Center(
-                    child: Text(l10n.noSharedRoutes));
-              }
+      body: Consumer<CommunityRoutesProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading && provider.items.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (provider.items.isEmpty) {
+            return Center(child: Text(l10n.noSharedRoutes));
+          }
 
-              final allItems = provider.items;
-              final filteredItems = _hideDownloaded
-                  ? allItems.where((item) => !item.isDownloaded).toList()
-                  : allItems;
+          final allItems = provider.items;
+          final filteredItems = _hideDownloaded
+              ? allItems.where((item) => !item.isDownloaded).toList()
+              : allItems;
 
-              if (filteredItems.isEmpty) {
-                return Center(
-                  child: Text(l10n.allRoutesDownloaded),
-                );
-              }
+          if (filteredItems.isEmpty) {
+            return Center(child: Text(l10n.allRoutesDownloaded));
+          }
 
-              return RefreshIndicator(
-                onRefresh: () => provider.fetchRoutes(),
-                child: ListView.builder(
-                  itemCount: filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    final route = item.route;
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 8.0, vertical: 4.0),
-                      clipBehavior: Clip.antiAlias,
-                      color: item.isDownloaded ? Colors.green[50] : null,
-                      child: InkWell(
-                        onTap: () => _handleRouteTap(route, provider),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (route.locations != null &&
-                                route.locations!.isNotEmpty)
-                              RouteMiniMap(route: route),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+          return RefreshIndicator(
+            onRefresh: () => provider.fetchRoutes(),
+            child: ListView.builder(
+              itemCount: filteredItems.length,
+              itemBuilder: (context, index) {
+                final item = filteredItems[index];
+                final route = item.route;
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 4.0,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  color: item.isDownloaded ? Colors.green[50] : null,
+                  child: InkWell(
+                    onTap: () => _handleRouteTap(route, provider),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (route.locations != null &&
+                            route.locations!.isNotEmpty)
+                          RouteMiniMap(route: route),
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(route.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge),
-                                      ),
-                                      if (item.isDownloaded)
-                                        const Icon(Icons.check_circle,
-                                            color: Colors.green, size: 20),
-                                    ],
+                                  Expanded(
+                                    child: Text(
+                                      route.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                      l10n.routeDistanceAndDuration(route.totalDistance, route.totalTravelTime)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    l10n.sharedBy(item.authorName),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            fontStyle: FontStyle.italic),
+                                  if (item.isDownloaded)
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.routeDistanceAndDuration(
+                                  route.totalDistance,
+                                  route.totalTravelTime,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.sharedBy(item.authorName),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 16,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.star,
-                                          color: Colors.amber, size: 16),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        l10n.rating(route.averageRating.toStringAsFixed(1), route.ratingCount),
-                                        style:
-                                            Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Icon(Icons.comment_outlined,
-                                          color: Colors.grey, size: 16),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        l10n.comments(route.commentCount),
-                                        style:
-                                            Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                    ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.rating(
+                                      route.averageRating.toStringAsFixed(1),
+                                      route.ratingCount,
+                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Icon(
+                                    Icons.comment_outlined,
+                                    color: Colors.grey,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.comments(route.commentCount),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-          if (_isDownloading)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(l10n.downloadingRoute,
-                        style: const TextStyle(color: Colors.white, fontSize: 16)),
-                  ],
-                ),
-              ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-        ],
+          );
+        },
       ),
     );
   }

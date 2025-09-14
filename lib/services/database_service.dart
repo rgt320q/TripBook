@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:sqflite/sqflite.dart';
@@ -21,7 +20,12 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _onUpgradeDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgradeDB,
+    );
   }
 
   Future _onUpgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -30,7 +34,7 @@ class DatabaseService {
       // This is a simple migration, for complex ones, a full schema migration is needed.
       // As we are just changing the type, and sqlite is flexible, we might not even need to do anything.
       // But for future-proofing, this is the place.
-      
+
       // Example: await db.execute("ALTER TABLE locations ADD COLUMN new_column TEXT;");
     }
   }
@@ -65,7 +69,9 @@ CREATE TABLE locations (
       'longitude': location.longitude,
       'groupId': location.groupId,
       'notes': location.notes,
-      'needsList': location.needsList != null ? jsonEncode(location.needsList) : null,
+      'needsList': location.needsList != null
+          ? jsonEncode(location.needsList)
+          : null,
       'estimatedDuration': location.estimatedDuration,
     });
     return location.copyWith(id: id);
@@ -83,7 +89,8 @@ CREATE TABLE locations (
           final decoded = jsonDecode(needsListString);
           if (decoded is List) {
             needsList = List<Map<String, dynamic>>.from(
-                decoded.map((item) => Map<String, dynamic>.from(item as Map)));
+              decoded.map((item) => Map<String, dynamic>.from(item as Map)),
+            );
           }
         } catch (e) {
           // If decoding fails, assume it's the old comma-separated format
@@ -121,7 +128,9 @@ CREATE TABLE locations (
         'longitude': location.longitude,
         'groupId': location.groupId,
         'notes': location.notes,
-        'needsList': location.needsList != null ? jsonEncode(location.needsList) : null,
+        'needsList': location.needsList != null
+            ? jsonEncode(location.needsList)
+            : null,
         'estimatedDuration': location.estimatedDuration,
       },
       where: 'id = ?',
@@ -131,11 +140,7 @@ CREATE TABLE locations (
 
   Future<int> delete(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      'locations',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('locations', where: 'id = ?', whereArgs: [id]);
   }
 
   Future close() async {

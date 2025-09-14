@@ -1,4 +1,3 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
@@ -11,7 +10,10 @@ class AuthService {
     required String password,
   }) async {
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return e.message; // Return error message
@@ -23,7 +25,10 @@ class AuthService {
     required String password,
   }) async {
     try {
-      await _firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
+      await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return e.message; // Return error message

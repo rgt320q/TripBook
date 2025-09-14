@@ -25,7 +25,10 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
 
   void _setupMap() {
     final locations = widget.route.locations
-        ?.map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
+        ?.map(
+          (locMap) =>
+              TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap),
+        )
         .toList();
 
     if (locations == null || locations.isEmpty) {
@@ -58,9 +61,12 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
 
   void _zoomToFitBounds() {
     final locations = widget.route.locations;
-    if (_mapController == null || locations == null || locations.length < 2) return;
+    if (_mapController == null || locations == null || locations.length < 2)
+      return;
 
-    final latLngList = locations.map((l) => LatLng(l['latitude'], l['longitude'])).toList();
+    final latLngList = locations
+        .map((l) => LatLng(l['latitude'], l['longitude']))
+        .toList();
     final bounds = _boundsFromLatLngList(latLngList);
 
     _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
@@ -79,7 +85,10 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
         if (latLng.longitude < y0!) y0 = latLng.longitude;
       }
     }
-    return LatLngBounds(northeast: LatLng(x1!, y1!), southwest: LatLng(x0!, y0!));
+    return LatLngBounds(
+      northeast: LatLng(x1!, y1!),
+      southwest: LatLng(x0!, y0!),
+    );
   }
 
   @override

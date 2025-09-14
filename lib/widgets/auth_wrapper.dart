@@ -32,7 +32,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: _authStream,
       builder: (context, authSnapshot) {
         if (authSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (authSnapshot.hasData) {
@@ -41,11 +43,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
             future: _firestoreService.getUserProfile().first,
             builder: (context, profileSnapshot) {
               if (profileSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
               }
 
               final langCode = profileSnapshot.data?.languageCode ?? 'tr';
-              final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+              final localeProvider = Provider.of<LocaleProvider>(
+                context,
+                listen: false,
+              );
               final currentLangCode = localeProvider.locale?.languageCode;
 
               // Check if the locale needs to be changed.
@@ -57,7 +64,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   localeProvider.setLocale(Locale(langCode));
                 });
-                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
               }
 
               // If we reach here, the locale is correct. We can show the map.

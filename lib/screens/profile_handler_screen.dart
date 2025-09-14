@@ -33,7 +33,9 @@ class _ProfileHandlerScreenState extends State<ProfileHandlerScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MapScreen(key: UniqueKey())),
+            MaterialPageRoute(
+              builder: (context) => MapScreen(key: UniqueKey()),
+            ),
           );
         }
       });
@@ -44,7 +46,9 @@ class _ProfileHandlerScreenState extends State<ProfileHandlerScreen> {
           if (mounted) {
             // Use the same firestoreService instance declared at the top.
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => MapScreen(key: UniqueKey())),
+              MaterialPageRoute(
+                builder: (context) => MapScreen(key: UniqueKey()),
+              ),
             );
           }
         });
@@ -55,10 +59,6 @@ class _ProfileHandlerScreenState extends State<ProfileHandlerScreen> {
   @override
   Widget build(BuildContext context) {
     // Show a loading indicator while the profile is being fetched and processed.
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

@@ -28,7 +28,8 @@ class DirectionsService {
     return _instance;
   }
 
-  final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'YOUR_API_KEY_HERE';
+  final String _apiKey =
+      dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'YOUR_API_KEY_HERE';
   String? _sessionToken;
   final Uuid _uuid = const Uuid();
 
@@ -41,13 +42,15 @@ class DirectionsService {
 
     final origin = locations.first;
     final destination = locations.last;
-    final waypoints = locations.length > 2 
-      ? locations.sublist(1, locations.length - 1)
-          .map((loc) => '${loc.latitude},${loc.longitude}')
-          .join('|')
-      : '';
+    final waypoints = locations.length > 2
+        ? locations
+              .sublist(1, locations.length - 1)
+              .map((loc) => '${loc.latitude},${loc.longitude}')
+              .join('|')
+        : '';
 
-    final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+    final url =
+        'https://maps.googleapis.com/maps/api/directions/json?'
         'origin=${origin.latitude},${origin.longitude}&'
         'destination=${destination.latitude},${destination.longitude}'
         '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&'
@@ -66,7 +69,6 @@ class DirectionsService {
       final List<List<PointLatLng>> legsPoints = [];
       int totalDistanceMeters = 0;
       int totalDurationSeconds = 0;
-      
 
       for (final leg in route["legs"]) {
         totalDistanceMeters += leg["distance"]['value'] as int;
@@ -74,7 +76,9 @@ class DirectionsService {
 
         List<PointLatLng> legPath = [];
         for (final step in leg["steps"]) {
-          final points = PolylinePoints.decodePolyline(step["polyline"]["points"]);
+          final points = PolylinePoints.decodePolyline(
+            step["polyline"]["points"],
+          );
           legPath.addAll(points);
         }
         legsPoints.add(legPath);
@@ -95,8 +99,14 @@ class DirectionsService {
       final double totalDistanceKm = totalDistanceMeters / 1000.0;
 
       final bounds = LatLngBounds(
-        southwest: LatLng(route["bounds"]["southwest"]['lat'], route["bounds"]["southwest"]['lng']),
-        northeast: LatLng(route["bounds"]["northeast"]['lat'], route["bounds"]["northeast"]['lng']),
+        southwest: LatLng(
+          route["bounds"]["southwest"]['lat'],
+          route["bounds"]["southwest"]['lng'],
+        ),
+        northeast: LatLng(
+          route["bounds"]["northeast"]['lat'],
+          route["bounds"]["northeast"]['lng'],
+        ),
       );
 
       return DirectionsInfo(
@@ -106,13 +116,13 @@ class DirectionsService {
         totalDuration: totalDurationText.trim(),
       );
     } else {
-      
       return null;
     }
   }
 
   Future<String?> getPlaceName(LatLng position) async {
-    final url = 'https://maps.googleapis.com/maps/api/geocode/json?'
+    final url =
+        'https://maps.googleapis.com/maps/api/geocode/json?'
         'latlng=${position.latitude},${position.longitude}&'
         'key=$_apiKey&'
         'language=tr';

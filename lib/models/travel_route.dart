@@ -55,7 +55,9 @@ class TravelRoute {
       if (locations != null) 'locations': locations,
       'totalTravelTime': totalTravelTime,
       'totalDistance': totalDistance,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       if (actualDuration != null) 'actualDuration': actualDuration,
       if (actualDistance != null) 'actualDistance': actualDistance,
       if (totalStopDuration != null) 'totalStopDuration': totalStopDuration,
@@ -115,15 +117,20 @@ class TravelRoute {
     );
   }
 
-  factory TravelRoute.fromFirestore(String id, Map<String, dynamic> firestoreMap) {
+  factory TravelRoute.fromFirestore(
+    String id,
+    Map<String, dynamic> firestoreMap,
+  ) {
     return TravelRoute(
       firestoreId: id,
       name: firestoreMap['name'] as String,
       locationIds: List<String>.from(firestoreMap['locationIds']),
       locations: firestoreMap['locations'] != null
           ? List<Map<String, dynamic>>.from(
-        (firestoreMap['locations'] as List).map((item) => Map<String, dynamic>.from(item)),
-      )
+              (firestoreMap['locations'] as List).map(
+                (item) => Map<String, dynamic>.from(item),
+              ),
+            )
           : null,
       totalTravelTime: firestoreMap['totalTravelTime'] as String,
       totalDistance: firestoreMap['totalDistance'] as String,
@@ -132,10 +139,15 @@ class TravelRoute {
       actualDistance: firestoreMap['actualDistance'] as String?,
       totalStopDuration: firestoreMap['totalStopDuration'] as String?,
       totalTripDuration: firestoreMap['totalTripDuration'] as String?,
-      needs: firestoreMap['needs'] != null ? List<String>.from(firestoreMap['needs']) : null,
+      needs: firestoreMap['needs'] != null
+          ? List<String>.from(firestoreMap['needs'])
+          : null,
       notes: firestoreMap['notes'] != null
           ? List<Map<String, String>>.from(
-              (firestoreMap['notes'] as List).map((item) => Map<String, String>.from(item)))
+              (firestoreMap['notes'] as List).map(
+                (item) => Map<String, String>.from(item),
+              ),
+            )
           : null,
       isShared: firestoreMap['isShared'] as bool? ?? false,
       sharedBy: firestoreMap['sharedBy'] as String?,

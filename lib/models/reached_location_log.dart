@@ -25,7 +25,10 @@ class ReachedLocationLog {
       id: doc.id,
       locationName: data['locationName'] ?? '',
       geoName: data['geoName'] ?? data['locationName'] ?? '',
-      infoUrl: data['infoUrl'] ?? data['wikipediaUrl'] ?? '', // Fallback for old data
+      infoUrl:
+          data['infoUrl'] ??
+          data['wikipediaUrl'] ??
+          '', // Fallback for old data
       timestamp: data['timestamp'] ?? Timestamp.now(),
       isRead: data['isRead'] ?? false,
       userId: data['userId'] ?? '',

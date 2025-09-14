@@ -669,6 +669,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get allLogsMarkedAsRead => 'Tüm günlükler okundu olarak işaretlendi.';
 
   @override
+  String get selectAll => 'Tümünü Seç';
+
+  @override
+  String get unselectAll => 'Tüm Seçimi Kaldır';
+
+  @override
+  String get allLogsMarkedAsUnread =>
+      'Tüm günlükler okunmadı olarak işaretlendi.';
+
+  @override
   String get deleteRead => 'Okunanları Sil';
 
   @override
@@ -782,4 +792,20 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get passwordTooShort =>
       'Şifre en az 7 karakter uzunluğunda olmalıdır.';
+
+  @override
+  String get routeAlreadySaved => 'Bu rota zaten kayıtlı.';
+
+  @override
+  String get downloadedFromCommunity => '(Topluluktan indirildi)';
+
+  @override
+  String get deleteRouteConfirmationWithLocations =>
+      'Bu rota topluluktan indirildi. İlişkili konumları da silmek istiyor musunuz?';
+
+  @override
+  String get locationsLabel => 'Konumlar';
+
+  @override
+  String get deleteRouteAndLocations => 'Rotayı ve Konumları Sil';
 }

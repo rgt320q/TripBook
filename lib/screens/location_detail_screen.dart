@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/services/firestore_service.dart';
@@ -29,7 +28,9 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
     super.initState();
     _notes = widget.location.notes ?? '';
     _estimatedDuration = widget.location.estimatedDuration ?? 0;
-    _needsList = List<Map<String, dynamic>>.from(widget.location.needsList ?? []);
+    _needsList = List<Map<String, dynamic>>.from(
+      widget.location.needsList ?? [],
+    );
     _selectedGroupId = widget.location.groupId;
   }
 
@@ -45,7 +46,9 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
 
       final updatedLocation = TravelLocation(
         firestoreId: widget.location.firestoreId,
-        name: widget.location.name, // Name and other core properties are not editable here
+        name: widget
+            .location
+            .name, // Name and other core properties are not editable here
         geoName: widget.location.geoName, // Pass the geoName along
         description: widget.location.description,
         latitude: widget.location.latitude,
@@ -57,9 +60,12 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
       );
 
       if (widget.location.firestoreId != null) {
-        await _firestoreService.updateLocation(widget.location.firestoreId!, updatedLocation);
+        await _firestoreService.updateLocation(
+          widget.location.firestoreId!,
+          updatedLocation,
+        );
       }
-      
+
       if (!mounted) return;
       Navigator.of(context).pop();
     }
@@ -87,10 +93,7 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
       appBar: AppBar(
         title: Text(widget.location.name),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveForm,
-          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _saveForm),
         ],
       ),
       body: Padding(
@@ -157,7 +160,10 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text(l10n.needsListLabel, style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                l10n.needsListLabel,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               ListView.builder(
                 shrinkWrap: true,

@@ -1292,6 +1292,24 @@ abstract class AppLocalizations {
   /// **'All logs marked as read.'**
   String get allLogsMarkedAsRead;
 
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @unselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unselect All'**
+  String get unselectAll;
+
+  /// No description provided for @allLogsMarkedAsUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'All logs marked as unread.'**
+  String get allLogsMarkedAsUnread;
+
   /// No description provided for @deleteRead.
   ///
   /// In en, this message translates to:
@@ -1489,6 +1507,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password must be at least 7 characters long.'**
   String get passwordTooShort;
+
+  /// No description provided for @routeAlreadySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'This route is already saved.'**
+  String get routeAlreadySaved;
+
+  /// No description provided for @downloadedFromCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'(Downloaded from community)'**
+  String get downloadedFromCommunity;
+
+  /// No description provided for @deleteRouteConfirmationWithLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'This route was downloaded from the community. Do you want to delete the associated locations as well?'**
+  String get deleteRouteConfirmationWithLocations;
+
+  /// No description provided for @locationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get locationsLabel;
+
+  /// No description provided for @deleteRouteAndLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Route and Locations'**
+  String get deleteRouteAndLocations;
 }
 
 class _AppLocalizationsDelegate

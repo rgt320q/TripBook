@@ -31,7 +31,8 @@ class FirestoreService {
         .doc(_currentUser!.uid)
         .collection('locations')
         .withConverter<TravelLocation>(
-          fromFirestore: (snapshots, _) => TravelLocation.fromFirestore(snapshots.id, snapshots.data()!),
+          fromFirestore: (snapshots, _) =>
+              TravelLocation.fromFirestore(snapshots.id, snapshots.data()!),
           toFirestore: (location, _) => location.toFirestore(),
         );
   }
@@ -65,22 +66,42 @@ class FirestoreService {
 
   Future<List<TravelLocation>> getLocationsByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
-    final snapshot = await _locationsCollection.where(FieldPath.documentId, whereIn: ids).get();
+    final snapshot = await _locationsCollection
+        .where(FieldPath.documentId, whereIn: ids)
+        .get();
     final locationsMap = {for (var doc in snapshot.docs) doc.id: doc.data()};
     // Order the results based on the original ID list
-    return ids.map((id) => locationsMap[id]).where((loc) => loc != null).cast<TravelLocation>().toList();
+    return ids
+        .map((id) => locationsMap[id])
+        .where((loc) => loc != null)
+        .cast<TravelLocation>()
+        .toList();
   }
 
   Future<void> updateLocation(String id, TravelLocation location) async {
     await _locationsCollection.doc(id).update(location.toFirestore());
   }
 
-  Future<void> updateLocationNeeds(String docId, List<Map<String, dynamic>> needs) async {
+  Future<void> updateLocationNeeds(
+    String docId,
+    List<Map<String, dynamic>> needs,
+  ) async {
     await _locationsCollection.doc(docId).update({'needsList': needs});
   }
 
   Future<void> deleteLocation(String id) async {
     await _locationsCollection.doc(id).delete();
+  }
+
+  Future<void> deleteLocations(List<String> ids) async {
+    if (_currentUser == null || ids.isEmpty) {
+      return;
+    }
+    final WriteBatch batch = _db.batch();
+    for (final id in ids) {
+      batch.delete(_locationsCollection.doc(id));
+    }
+    await batch.commit();
   }
 
   // GROUPS
@@ -94,7 +115,8 @@ class FirestoreService {
         .doc(_currentUser!.uid)
         .collection('groups')
         .withConverter<LocationGroup>(
-          fromFirestore: (snapshot, _) => LocationGroup.fromFirestore(snapshot.id, snapshot.data()!),
+          fromFirestore: (snapshot, _) =>
+              LocationGroup.fromFirestore(snapshot.id, snapshot.data()!),
           toFirestore: (group, _) => group.toFirestore(),
         );
   }
@@ -115,7 +137,10 @@ class FirestoreService {
   }
 
   Future<List<TravelLocation>> getLocationsForGroup(String groupId) async {
-    final snapshot = await _locationsCollection.where('groupId', isEqualTo: groupId).snapshots().first;
+    final snapshot = await _locationsCollection
+        .where('groupId', isEqualTo: groupId)
+        .snapshots()
+        .first;
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
@@ -125,7 +150,9 @@ class FirestoreService {
 
   Future<void> deleteGroup(String id) async {
     // Delete all locations associated with this group
-    final locationsToDelete = await _locationsCollection.where('groupId', isEqualTo: id).get();
+    final locationsToDelete = await _locationsCollection
+        .where('groupId', isEqualTo: id)
+        .get();
     for (final doc in locationsToDelete.docs) {
       await doc.reference.delete();
     }
@@ -144,13 +171,17 @@ class FirestoreService {
         .doc(_currentUser!.uid)
         .collection('routes')
         .withConverter<TravelRoute>(
-          fromFirestore: (snapshot, _) => TravelRoute.fromFirestore(snapshot.id, snapshot.data()!),
+          fromFirestore: (snapshot, _) =>
+              TravelRoute.fromFirestore(snapshot.id, snapshot.data()!),
           toFirestore: (route, _) => route.toFirestore(),
         );
   }
 
-  CollectionReference<TravelRoute> get _communityRoutesCollection => _db.collection('community_routes').withConverter<TravelRoute>(
-        fromFirestore: (snapshot, _) => TravelRoute.fromFirestore(snapshot.id, snapshot.data()!),
+  CollectionReference<TravelRoute> get _communityRoutesCollection => _db
+      .collection('community_routes')
+      .withConverter<TravelRoute>(
+        fromFirestore: (snapshot, _) =>
+            TravelRoute.fromFirestore(snapshot.id, snapshot.data()!),
         toFirestore: (route, _) => route.toFirestore(),
       );
 
@@ -185,7 +216,9 @@ class FirestoreService {
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  Future<TravelRoute?> getDownloadedCommunityRoute(String communityRouteId) async {
+  Future<TravelRoute?> getDownloadedCommunityRoute(
+    String communityRouteId,
+  ) async {
     if (_currentUser == null) return null;
     final snapshot = await _routesCollection
         .where('communityRouteId', isEqualTo: communityRouteId)
@@ -217,7 +250,10 @@ class FirestoreService {
           locations: locationMaps,
         );
         await _communityRoutesCollection.doc(routeId).set(sharedRoute);
-        await originalRouteDoc.update({'isShared': true, 'sharedBy': _currentUser!.uid});
+        await originalRouteDoc.update({
+          'isShared': true,
+          'sharedBy': _currentUser!.uid,
+        });
       }
     } else {
       // Unshare the route
@@ -227,7 +263,9 @@ class FirestoreService {
   }
 
   Future<List<TravelRoute>> getRoutesOnce() async {
-    final snapshot = await _routesCollection.orderBy('createdAt', descending: true).get();
+    final snapshot = await _routesCollection
+        .orderBy('createdAt', descending: true)
+        .get();
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
@@ -241,7 +279,10 @@ class FirestoreService {
 
   Future<void> deleteRoute(String routeId) async {
     // Also delete from community if it's shared
-    await _communityRoutesCollection.doc(routeId).delete().catchError((_) => {});
+    await _communityRoutesCollection
+        .doc(routeId)
+        .delete()
+        .catchError((_) => {});
     await _routesCollection.doc(routeId).delete();
   }
 
@@ -251,13 +292,23 @@ class FirestoreService {
     if (_currentUser == null) throw Exception('User not logged in');
     final userId = _currentUser!.uid;
 
-    final ratingDoc = _communityRoutesCollection.doc(routeId).collection('ratings').doc(userId);
+    final ratingDoc = _communityRoutesCollection
+        .doc(routeId)
+        .collection('ratings')
+        .doc(userId);
     await ratingDoc.set({'rating': rating});
 
     // Update average rating on the main route document
-    final ratingsSnapshot = await _communityRoutesCollection.doc(routeId).collection('ratings').get();
-    final ratings = ratingsSnapshot.docs.map((doc) => doc.data()['rating'] as double).toList();
-    final double averageRating = ratings.isNotEmpty ? ratings.reduce((a, b) => a + b) / ratings.length : 0.0;
+    final ratingsSnapshot = await _communityRoutesCollection
+        .doc(routeId)
+        .collection('ratings')
+        .get();
+    final ratings = ratingsSnapshot.docs
+        .map((doc) => doc.data()['rating'] as double)
+        .toList();
+    final double averageRating = ratings.isNotEmpty
+        ? ratings.reduce((a, b) => a + b) / ratings.length
+        : 0.0;
     final int ratingCount = ratings.length;
 
     await _communityRoutesCollection.doc(routeId).update({
@@ -310,7 +361,11 @@ class FirestoreService {
         .collection('comments')
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => RouteComment.fromMap(doc.data())).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => RouteComment.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
   // REACHED LOCATION LOGS
@@ -324,7 +379,8 @@ class FirestoreService {
         .doc(_currentUser!.uid)
         .collection('reached_logs')
         .withConverter<ReachedLocationLog>(
-          fromFirestore: (snapshot, _) => ReachedLocationLog.fromFirestore(snapshot),
+          fromFirestore: (snapshot, _) =>
+              ReachedLocationLog.fromFirestore(snapshot),
           toFirestore: (log, _) => log.toFirestore(),
         );
   }
@@ -344,16 +400,21 @@ class FirestoreService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => doc.data()).toList();
-    });
+          return snapshot.docs.map((doc) => doc.data()).toList();
+        });
   }
 
-  Future<void> updateReachedLocationLog(String id, {required bool isRead}) async {
+  Future<void> updateReachedLocationLog(
+    String id, {
+    required bool isRead,
+  }) async {
     await _reachedLogsCollection.doc(id).update({'isRead': isRead});
   }
 
   Future<void> deleteReadLogs() async {
-    final snapshot = await _reachedLogsCollection.where('isRead', isEqualTo: true).get();
+    final snapshot = await _reachedLogsCollection
+        .where('isRead', isEqualTo: true)
+        .get();
     WriteBatch batch = _db.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
@@ -362,10 +423,23 @@ class FirestoreService {
   }
 
   Future<void> markAllLogsAsRead() async {
-    final snapshot = await _reachedLogsCollection.where('isRead', isEqualTo: false).get();
+    final snapshot = await _reachedLogsCollection
+        .where('isRead', isEqualTo: false)
+        .get();
     WriteBatch batch = _db.batch();
     for (final doc in snapshot.docs) {
       batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
+
+  Future<void> markAllLogsAsUnread() async {
+    final snapshot = await _reachedLogsCollection
+        .where('isRead', isEqualTo: true)
+        .get();
+    WriteBatch batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {'isRead': false});
     }
     await batch.commit();
   }
@@ -376,10 +450,13 @@ class FirestoreService {
     if (_currentUser == null) {
       throw Exception('User not logged in');
     }
-    return _db.collection('users').doc(_currentUser!.uid).withConverter<UserProfile>(
-      fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
-      toFirestore: (profile, _) => profile.toFirestore(),
-    );
+    return _db
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .withConverter<UserProfile>(
+          fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
+          toFirestore: (profile, _) => profile.toFirestore(),
+        );
   }
 
   Stream<UserProfile?> getUserProfile() {
@@ -406,7 +483,9 @@ class FirestoreService {
     }
   }
 
-  Future<Map<String, UserProfile>> getUsersProfilesByIds(List<String> userIds) async {
+  Future<Map<String, UserProfile>> getUsersProfilesByIds(
+    List<String> userIds,
+  ) async {
     if (userIds.isEmpty) return {};
     try {
       final snapshot = await _db
@@ -417,7 +496,7 @@ class FirestoreService {
             toFirestore: (profile, _) => profile.toFirestore(),
           )
           .get();
-      
+
       return {for (var doc in snapshot.docs) doc.id: doc.data()};
     } catch (e) {
       print('Error getting user profiles by IDs: $e');

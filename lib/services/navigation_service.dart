@@ -8,7 +8,8 @@ class NavigationService {
   NavigationService._internal();
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  final StreamController<String> _navigationController = StreamController<String>.broadcast();
+  final StreamController<String> _navigationController =
+      StreamController<String>.broadcast();
 
   void dispose() {
     _navigationController.close();
@@ -28,11 +29,12 @@ class NavigationService {
         if (parts.length > 1) {
           logId = parts[1];
         }
-        
+
         if (navigatorKey.currentState != null) {
           navigatorKey.currentState!.push(
             MaterialPageRoute(
-              builder: (context) => ReachedLocationsScreen(highlightedLogId: logId),
+              builder: (context) =>
+                  ReachedLocationsScreen(highlightedLogId: logId),
             ),
           );
         }

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/travel_location.dart';
@@ -25,20 +24,26 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.groupName),
-      ),
+      appBar: AppBar(title: Text(widget.groupName)),
       body: StreamBuilder<List<TravelLocation>>(
-        stream: _firestoreService.getLocationsForGroup(widget.groupId).asStream(), // Convert Future to Stream
+        stream: _firestoreService
+            .getLocationsForGroup(widget.groupId)
+            .asStream(), // Convert Future to Stream
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text(AppLocalizations.of(context)!.noLocationsInGroup));
+            return Center(
+              child: Text(AppLocalizations.of(context)!.noLocationsInGroup),
+            );
           }
           if (snapshot.hasError) {
-            return Center(child: Text(AppLocalizations.of(context)!.error(snapshot.error.toString())));
+            return Center(
+              child: Text(
+                AppLocalizations.of(context)!.error(snapshot.error.toString()),
+              ),
+            );
           }
 
           final locations = snapshot.data!;

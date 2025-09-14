@@ -9,7 +9,11 @@ import "package:tripbook/services/firestore_service.dart";
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
   final bool isForSelection;
-  const ManageLocationsScreen({super.key, this.initiallyExpandedLocationId, this.isForSelection = false});
+  const ManageLocationsScreen({
+    super.key,
+    this.initiallyExpandedLocationId,
+    this.isForSelection = false,
+  });
 
   @override
   State<ManageLocationsScreen> createState() => _ManageLocationsScreenState();
@@ -32,12 +36,18 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
         locations.sort((a, b) => b.name.compareTo(a.name));
         break;
       case SortBy.dateNewest:
-        locations.sort((a, b) =>
-            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+        locations.sort(
+          (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
+            a.createdAt ?? DateTime(0),
+          ),
+        );
         break;
       case SortBy.dateOldest:
-        locations.sort((a, b) =>
-            (a.createdAt ?? DateTime(0)).compareTo(b.createdAt ?? DateTime(0)));
+        locations.sort(
+          (a, b) => (a.createdAt ?? DateTime(0)).compareTo(
+            b.createdAt ?? DateTime(0),
+          ),
+        );
         break;
     }
   }
@@ -110,7 +120,8 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
           }
           if (locationSnapshot.hasError) {
             return Center(
-                child: Text(l10n.error(locationSnapshot.error.toString())));
+              child: Text(l10n.error(locationSnapshot.error.toString())),
+            );
           }
 
           final locations = locationSnapshot.data!;
@@ -118,7 +129,10 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
 
           // Find the index of the item to scroll to
           final targetLocationIndex = widget.initiallyExpandedLocationId != null
-              ? locations.indexWhere((loc) => loc.firestoreId == widget.initiallyExpandedLocationId)
+              ? locations.indexWhere(
+                  (loc) =>
+                      loc.firestoreId == widget.initiallyExpandedLocationId,
+                )
               : -1;
 
           if (targetLocationIndex != -1) {
@@ -212,11 +226,19 @@ class _LocationListItemState extends State<LocationListItem> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.location.name);
-    _descriptionController = TextEditingController(text: widget.location.description);
+    _descriptionController = TextEditingController(
+      text: widget.location.description,
+    );
     _notesController = TextEditingController(text: widget.location.notes);
-    final needNames = widget.location.needsList?.map((need) => need['name'] as String).join(', ') ?? '';
+    final needNames =
+        widget.location.needsList
+            ?.map((need) => need['name'] as String)
+            .join(', ') ??
+        '';
     _needsController = TextEditingController(text: needNames);
-    _durationController = TextEditingController(text: widget.location.estimatedDuration?.toString());
+    _durationController = TextEditingController(
+      text: widget.location.estimatedDuration?.toString(),
+    );
     _selectedGroupId = widget.location.groupId;
     _isExpanded = widget.isInitiallyExpanded;
   }
@@ -244,15 +266,12 @@ class _LocationListItemState extends State<LocationListItem> {
     final oldNeedsMap = {
       for (var need in (widget.location.needsList ?? []))
         if (need['name'] is String)
-          (need['name'] as String): (need['checked'] as bool? ?? false)
+          (need['name'] as String): (need['checked'] as bool? ?? false),
     };
 
     final List<Map<String, dynamic>> needsList = [];
     for (var name in newNames) {
-      needsList.add({
-        'name': name,
-        'checked': oldNeedsMap[name] ?? false,
-      });
+      needsList.add({'name': name, 'checked': oldNeedsMap[name] ?? false});
     }
 
     final updatedLocation = TravelLocation(
@@ -270,13 +289,16 @@ class _LocationListItemState extends State<LocationListItem> {
     );
 
     try {
-      await widget.firestoreService
-          .updateLocation(widget.location.firestoreId!, updatedLocation);
+      await widget.firestoreService.updateLocation(
+        widget.location.firestoreId!,
+        updatedLocation,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(l10n.locationUpdatedSuccess),
-              backgroundColor: Colors.green),
+            content: Text(l10n.locationUpdatedSuccess),
+            backgroundColor: Colors.green,
+          ),
         );
         setState(() {
           _isExpanded = false;
@@ -286,8 +308,9 @@ class _LocationListItemState extends State<LocationListItem> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(l10n.error(e.toString())),
-              backgroundColor: Colors.red),
+            content: Text(l10n.error(e.toString())),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -348,12 +371,18 @@ class _LocationListItemState extends State<LocationListItem> {
                 const SizedBox(height: 16),
                 _buildTextField(_needsController, l10n.needsLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_durationController, l10n.estimatedDurationLabel, inputType: TextInputType.number),
+                _buildTextField(
+                  _durationController,
+                  l10n.estimatedDurationLabel,
+                  inputType: TextInputType.number,
+                ),
                 const SizedBox(height: 16),
                 _buildGroupDropdown(),
                 const SizedBox(height: 16),
-                Text(l10n.googleMapsNameLabel,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  l10n.googleMapsNameLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text(widget.location.geoName),
                 const SizedBox(height: 16),
                 Row(
@@ -366,9 +395,8 @@ class _LocationListItemState extends State<LocationListItem> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MapScreen(
-                              initialLocation: widget.location,
-                            ),
+                            builder: (context) =>
+                                MapScreen(initialLocation: widget.location),
                           ),
                         );
                       },
@@ -408,7 +436,11 @@ class _LocationListItemState extends State<LocationListItem> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {TextInputType inputType = TextInputType.text}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    TextInputType inputType = TextInputType.text,
+  }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -424,8 +456,9 @@ class _LocationListItemState extends State<LocationListItem> {
     final allGroupIds = widget.allGroups.map((g) => g.firestoreId).toSet();
     allGroupIds.add(null);
 
-    final String? validSelectedGroupId = 
-        allGroupIds.contains(_selectedGroupId) ? _selectedGroupId : null;
+    final String? validSelectedGroupId = allGroupIds.contains(_selectedGroupId)
+        ? _selectedGroupId
+        : null;
 
     return DropdownButtonFormField<String>(
       initialValue: validSelectedGroupId,
@@ -434,10 +467,7 @@ class _LocationListItemState extends State<LocationListItem> {
         border: const OutlineInputBorder(),
       ),
       items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(l10n.groupNone),
-        ),
+        DropdownMenuItem<String>(value: null, child: Text(l10n.groupNone)),
         ...widget.allGroups.map((group) {
           return DropdownMenuItem<String>(
             value: group.firestoreId,
@@ -473,7 +503,9 @@ class _LocationListItemState extends State<LocationListItem> {
       ),
     );
     if (confirmDelete == true && widget.location.firestoreId != null) {
-      await widget.firestoreService.deleteLocation(widget.location.firestoreId!);
+      await widget.firestoreService.deleteLocation(
+        widget.location.firestoreId!,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

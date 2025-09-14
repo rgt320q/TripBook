@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/models/travel_route.dart';
-import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/models/route_comment.dart';
 import 'package:tripbook/models/user_profile.dart';
-import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
+import 'package:tripbook/widgets/route_mini_map.dart';
 
 import 'package:tripbook/l10n/app_localizations.dart';
 
@@ -25,36 +23,44 @@ class CommunityRouteDetailScreen extends StatefulWidget {
 class _CommunityRouteDetailScreenState
     extends State<CommunityRouteDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  final DirectionsService _directionsService = DirectionsService();
   final TextEditingController _commentController = TextEditingController();
 
   // User and Rating State
   double? _userRating;
   UserProfile? _sharedByUserProfile;
 
-  // Map State
-  GoogleMapController? _mapController;
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
-  bool _isMapLoading = true;
-  bool _polylinesVisible = false;
+  bool _isSaved = false;
+  bool _madeChanges = false;
 
   @override
   void initState() {
     super.initState();
+    _checkIfSaved();
     _loadInitialData();
+  }
+
+  Future<void> _checkIfSaved() async {
+    if (widget.route.firestoreId == null) return;
+    final existingRoute = await _firestoreService.getDownloadedCommunityRoute(
+      widget.route.firestoreId!,
+    );
+    if (mounted) {
+      setState(() {
+        _isSaved = existingRoute != null;
+      });
+    }
   }
 
   Future<void> _loadInitialData() async {
     _loadSharedByUserProfile();
     _fetchUserRating();
-    _loadMapData();
   }
 
   Future<void> _loadSharedByUserProfile() async {
     if (widget.route.sharedBy != null) {
-      final profile =
-          await _firestoreService.getUserProfileById(widget.route.sharedBy!);
+      final profile = await _firestoreService.getUserProfileById(
+        widget.route.sharedBy!,
+      );
       if (mounted) {
         setState(() {
           _sharedByUserProfile = profile;
@@ -65,8 +71,9 @@ class _CommunityRouteDetailScreenState
 
   Future<void> _fetchUserRating() async {
     if (widget.route.firestoreId == null) return;
-    final rating =
-        await _firestoreService.getUserRating(widget.route.firestoreId!);
+    final rating = await _firestoreService.getUserRating(
+      widget.route.firestoreId!,
+    );
     if (mounted && rating != null) {
       setState(() {
         _userRating = rating;
@@ -74,125 +81,9 @@ class _CommunityRouteDetailScreenState
     }
   }
 
-  Future<void> _loadMapData() async {
-    if (mounted) {
-      setState(() {
-        _isMapLoading = true;
-      });
-    }
-
-    List<TravelLocation> locations = [];
-    if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
-      locations = widget.route.locations!
-          .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
-          .toList();
-    } else if (widget.route.locationIds.isNotEmpty) {
-      locations = await _firestoreService.getLocationsByIds(widget.route.locationIds);
-    }
-
-    if (locations.isEmpty) {
-      if (mounted) setState(() => _isMapLoading = false);
-      return;
-    }
-
-    await _updateMarkers(locations);
-
-    if (mounted) {
-      setState(() {
-        _isMapLoading = false;
-      });
-      _zoomToFitMarkers(locations);
-    }
-  }
-
-  Future<void> _drawPolylines() async {
-     List<TravelLocation> locations = [];
-    if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
-      locations = widget.route.locations!
-          .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
-          .toList();
-    } else if (widget.route.locationIds.isNotEmpty) {
-      locations = await _firestoreService.getLocationsByIds(widget.route.locationIds);
-    }
-
-    if (locations.length < 2) return;
-
-    final directionsInfo = await _directionsService.getDirections(locations);
-
-    if (directionsInfo != null && mounted) {
-      final Set<Polyline> newPolylines = {};
-      for (int i = 0; i < directionsInfo.legsPoints.length; i++) {
-        newPolylines.add(Polyline(
-          polylineId: PolylineId('route_leg_$i'),
-          color: Colors.blue.withOpacity(0.8),
-          width: 5,
-          points: directionsInfo.legsPoints[i].map((p) => LatLng(p.latitude, p.longitude)).toList(),
-        ));
-      }
-      setState(() {
-        _polylines.addAll(newPolylines);
-        _polylinesVisible = true;
-      });
-    }
-  }
-
-  void _zoomToFitMarkers(List<TravelLocation> locations) {
-    if (_mapController == null || locations.isEmpty) return;
-
-    if (locations.length == 1) {
-      _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(locations.first.latitude, locations.first.longitude),
-          zoom: 14,
-        ),
-      ));
-    } else {
-      final latLngList = locations.map((l) => LatLng(l.latitude, l.longitude)).toList();
-      final bounds = _boundsFromLatLngList(latLngList);
-      _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-    }
-  }
-
-  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
-    double? x0, x1, y0, y1;
-    for (LatLng latLng in list) {
-      if (x0 == null) {
-        x0 = x1 = latLng.latitude;
-        y0 = y1 = latLng.longitude;
-      } else {
-        if (latLng.latitude > x1!) x1 = latLng.latitude;
-        if (latLng.latitude < x0) x0 = latLng.latitude;
-        if (latLng.longitude > y1!) y1 = latLng.longitude;
-        if (latLng.longitude < y0!) y0 = latLng.longitude;
-      }
-    }
-    return LatLngBounds(northeast: LatLng(x1!, y1!), southwest: LatLng(x0!, y0!));
-  }
-
-  Future<void> _updateMarkers(List<TravelLocation> locations) async {
-    final Set<Marker> newMarkers = {};
-    for (final loc in locations) {
-      final icon = await marker_utils.getCustomMarkerIcon(Colors.blue);
-      newMarkers.add(
-        Marker(
-          markerId: MarkerId(loc.firestoreId!),
-          position: LatLng(loc.latitude, loc.longitude),
-          infoWindow: InfoWindow(title: loc.name),
-          icon: icon,
-        ),
-      );
-    }
-    if (mounted) {
-      setState(() {
-        _markers.addAll(newMarkers);
-      });
-    }
-  }
-
   @override
   void dispose() {
     _commentController.dispose();
-    _mapController?.dispose();
     super.dispose();
   }
 
@@ -202,9 +93,14 @@ class _CommunityRouteDetailScreenState
       return;
     }
     _firestoreService.addComment(
-        widget.route.firestoreId!, _commentController.text.trim());
+      widget.route.firestoreId!,
+      _commentController.text.trim(),
+    );
     _commentController.clear();
     FocusScope.of(context).unfocus();
+    setState(() {
+      _madeChanges = true;
+    });
   }
 
   void _submitRating(double rating) {
@@ -212,12 +108,23 @@ class _CommunityRouteDetailScreenState
     // Optimistically update the UI
     setState(() {
       _userRating = rating;
+      _madeChanges = true;
     });
     _firestoreService.addOrUpdateRating(widget.route.firestoreId!, rating);
   }
 
   Future<void> _saveRoute() async {
     final l10n = AppLocalizations.of(context)!;
+    if (_isSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.routeAlreadySaved),
+          backgroundColor: Colors.amber,
+        ),
+      );
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -225,49 +132,67 @@ class _CommunityRouteDetailScreenState
         content: Text(l10n.saveRouteConfirmation(widget.route.name)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.cancel)),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
           TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.save)),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.save),
+          ),
         ],
       ),
     );
 
     if (confirm == true) {
       List<String> newLocationIds = [];
-      if (widget.route.locations != null && widget.route.locations!.isNotEmpty) {
+      if (widget.route.locations != null &&
+          widget.route.locations!.isNotEmpty) {
         final locationsToImport = widget.route.locations!
-            .map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap))
-            .map((loc) => TravelLocation(
-                  name: loc.name,
-                  geoName: loc.geoName,
-                  description: loc.description,
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                  notes: loc.notes,
-                  needsList: loc.needsList,
-                  estimatedDuration: loc.estimatedDuration,
-                  isImported: true, // Mark as imported
-                ))
+            .map(
+              (locMap) => TravelLocation.fromFirestore(
+                locMap['firestoreId'] ?? '',
+                locMap,
+              ),
+            )
+            .map(
+              (loc) => TravelLocation(
+                name: loc.name,
+                geoName: loc.geoName,
+                description: loc.description,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                notes: loc.notes,
+                needsList: loc.needsList,
+                estimatedDuration: loc.estimatedDuration,
+                isImported: true, // Mark as imported
+              ),
+            )
             .toList();
 
-        newLocationIds = await _firestoreService.addLocations(locationsToImport);
+        newLocationIds = await _firestoreService.addLocations(
+          locationsToImport,
+        );
       }
 
       final newRoute = widget.route.copyWith(
-        locationIds: newLocationIds.isNotEmpty ? newLocationIds : widget.route.locationIds,
+        locationIds: newLocationIds.isNotEmpty
+            ? newLocationIds
+            : widget.route.locationIds,
         isShared: false,
         sharedBy: null,
         averageRating: 0.0,
         ratingCount: 0,
         commentCount: 0,
         locations: [], // Clear locations when saving to user's own routes
+        communityRouteId: widget.route.firestoreId,
       );
 
       await _firestoreService.addRoute(newRoute);
 
       if (mounted) {
+        setState(() {
+          _isSaved = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.routeSavedSuccessfully(widget.route.name)),
@@ -281,124 +206,110 @@ class _CommunityRouteDetailScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.route.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_alt),
-            tooltip: l10n.saveRoute,
-            onPressed: _saveRoute,
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMapSection(),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Basic Route Info
-                  Text(
-                    l10n.sharedBy(_sharedByUserProfile?.name ?? l10n.unknownUser),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                      '${l10n.distance}: ${widget.route.totalDistance} | ${l10n.duration}: ${widget.route.totalTravelTime}'),
-                  if (widget.route.totalStopDuration != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text('${l10n.totalBreakTime}: ${widget.route.totalStopDuration}'),
-                    ),
-                  if (widget.route.totalTripDuration != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text('${l10n.totalTripTime}: ${widget.route.totalTripDuration}'),
-                    ),
-                  const Divider(height: 30),
-
-                  // Needs Section
-                  if (widget.route.needs != null && widget.route.needs!.isNotEmpty)
-                    _buildNeedsSection(),
-
-                  // Notes Section
-                  if (widget.route.notes != null && widget.route.notes!.isNotEmpty)
-                    _buildNotesSection(),
-
-                  // Rating Section
-                  Text(l10n.rate, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        icon: Icon(
-                          (_userRating ?? 0) >= index + 1
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
-                        ),
-                        onPressed: () => _submitRating(index + 1.0),
-                      );
-                    }),
-                  ),
-                  const Divider(height: 30),
-
-                  // Comments Section
-                  Text(l10n.commentsTitle,
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  _buildCommentInput(),
-                  const SizedBox(height: 16),
-                  _buildCommentsList(),
-                ],
-              ),
+    // TODO: WillPopScope is deprecated, but PopScope is not yet flexible enough to handle this case.
+    // This should be migrated to PopScope when possible.
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _madeChanges);
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.route.name),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save_alt),
+              tooltip: l10n.saveRoute,
+              onPressed: _saveRoute,
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMapSection() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      height: 300,
-      color: Colors.grey[300],
-      child: _isMapLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                GoogleMap(
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                    _zoomToFitMarkers(widget.route.locations?.map((locMap) => TravelLocation.fromFirestore(locMap['firestoreId'] ?? '', locMap)).toList() ?? []);
-                  },
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(39.9334, 32.8597), // Default to Ankara
-                    zoom: 5,
-                  ),
-                  markers: _markers,
-                  polylines: _polylines,
-                  myLocationButtonEnabled: true,
-                  zoomControlsEnabled: true,
-                ),
-                if (!_polylinesVisible)
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton(
-                      onPressed: _drawPolylines,
-                      tooltip: l10n.drawRoute,
-                      child: const Icon(Icons.timeline),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.route.locations != null &&
+                  widget.route.locations!.isNotEmpty)
+                RouteMiniMap(route: widget.route),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Basic Route Info
+                    Text(
+                      l10n.sharedBy(
+                        _sharedByUserProfile?.name ?? l10n.unknownUser,
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${l10n.distance}: ${widget.route.totalDistance} | ${l10n.duration}: ${widget.route.totalTravelTime}',
+                    ),
+                    if (widget.route.totalStopDuration != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          '${l10n.totalBreakTime}: ${widget.route.totalStopDuration}',
+                        ),
+                      ),
+                    if (widget.route.totalTripDuration != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          '${l10n.totalTripTime}: ${widget.route.totalTripDuration}',
+                        ),
+                      ),
+                    const Divider(height: 30),
+
+                    // Needs Section
+                    if (widget.route.needs != null &&
+                        widget.route.needs!.isNotEmpty)
+                      _buildNeedsSection(),
+
+                    // Notes Section
+                    if (widget.route.notes != null &&
+                        widget.route.notes!.isNotEmpty)
+                      _buildNotesSection(),
+
+                    // Rating Section
+                    Text(
+                      l10n.rate,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          icon: Icon(
+                            (_userRating ?? 0) >= index + 1
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: Colors.amber,
+                          ),
+                          onPressed: () => _submitRating(index + 1.0),
+                        );
+                      }),
+                    ),
+                    const Divider(height: 30),
+
+                    // Comments Section
+                    Text(
+                      l10n.commentsTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCommentInput(),
+                    const SizedBox(height: 16),
+                    _buildCommentsList(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -429,12 +340,14 @@ class _CommunityRouteDetailScreenState
         Text(l10n.routeNotes, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         ...widget.route.notes!.map((note) {
+          final title = note['title'];
+          final content = note['content'];
+          if (title == null || content == null) {
+            return const SizedBox.shrink(); // Or some other placeholder
+          }
           return Card(
             margin: const EdgeInsets.only(bottom: 8.0),
-            child: ListTile(
-              title: Text(note['title']!),
-              subtitle: Text(note['content']!),
-            ),
+            child: ListTile(title: Text(title), subtitle: Text(content)),
           );
         }),
         const Divider(height: 30),
@@ -457,10 +370,7 @@ class _CommunityRouteDetailScreenState
             onSubmitted: (_) => _submitComment(),
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _submitComment,
-        ),
+        IconButton(icon: const Icon(Icons.send), onPressed: _submitComment),
       ],
     );
   }
@@ -477,7 +387,11 @@ class _CommunityRouteDetailScreenState
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text(l10n.commentsLoadingErrorDescription(snapshot.error.toString())));
+          return Center(
+            child: Text(
+              l10n.commentsLoadingErrorDescription(snapshot.error.toString()),
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(child: Text(l10n.noCommentsYet));
@@ -492,8 +406,10 @@ class _CommunityRouteDetailScreenState
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
-                title: Text(comment.userName,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  comment.userName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text(comment.comment),
                 trailing: Text(
                   '${comment.timestamp.toDate().day}/${comment.timestamp.toDate().month}/${comment.timestamp.toDate().year}',

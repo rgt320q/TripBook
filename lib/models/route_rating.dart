@@ -2,16 +2,10 @@ class RouteRating {
   final String userId;
   final double rating;
 
-  RouteRating({
-    required this.userId,
-    required this.rating,
-  });
+  RouteRating({required this.userId, required this.rating});
 
   Map<String, dynamic> toMap() {
-    return {
-      'userId': userId,
-      'rating': rating,
-    };
+    return {'userId': userId, 'rating': rating};
   }
 
   factory RouteRating.fromMap(Map<String, dynamic> map) {

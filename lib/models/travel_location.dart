@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TravelLocation {
@@ -43,12 +42,17 @@ class TravelLocation {
       if (notes != null) "notes": notes,
       if (needsList != null) "needsList": needsList,
       if (estimatedDuration != null) "estimatedDuration": estimatedDuration,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       'isImported': isImported,
     };
   }
 
-  factory TravelLocation.fromFirestore(String id, Map<String, dynamic> firestoreMap) {
+  factory TravelLocation.fromFirestore(
+    String id,
+    Map<String, dynamic> firestoreMap,
+  ) {
     List<Map<String, dynamic>>? parsedNeeds;
     final needsData = firestoreMap['needsList'];
     if (needsData is List) {
@@ -60,14 +64,17 @@ class TravelLocation {
       } else {
         // Handle new format List<Map<String, dynamic>>
         parsedNeeds = List<Map<String, dynamic>>.from(
-            needsData.map((item) => Map<String, dynamic>.from(item as Map)));
+          needsData.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
       }
     }
 
     return TravelLocation(
       firestoreId: id,
       name: firestoreMap['name'] as String,
-      geoName: firestoreMap['geoName'] as String? ?? firestoreMap['name'] as String, // Fallback for old data
+      geoName:
+          firestoreMap['geoName'] as String? ??
+          firestoreMap['name'] as String, // Fallback for old data
       description: firestoreMap['description'] as String?,
       latitude: firestoreMap['latitude'] as double,
       longitude: firestoreMap['longitude'] as double,
@@ -88,8 +95,8 @@ class TravelLocation {
         (firestoreId != null && other.firestoreId != null
             ? firestoreId == other.firestoreId
             : name == other.name &&
-              latitude == other.latitude &&
-              longitude == other.longitude);
+                  latitude == other.latitude &&
+                  longitude == other.longitude);
   }
 
   @override
