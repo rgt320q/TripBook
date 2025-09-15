@@ -790,8 +790,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get enterValidEmail => 'Lütfen geçerli bir e-posta adresi girin.';
 
   @override
-  String get passwordTooShort =>
-      'Şifre en az 7 karakter uzunluğunda olmalıdır.';
+  String get passwordMinLengthError =>
+      'Şifre en az 8 karakter uzunluğunda olmalıdır.';
 
   @override
   String get routeAlreadySaved => 'Bu rota zaten kayıtlı.';
@@ -808,4 +808,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteRouteAndLocations => 'Rotayı ve Konumları Sil';
+
+  @override
+  String get passwordComplexityError =>
+      'Şifre en az bir harf ve bir rakam içermelidir.';
+
+  @override
+  String get passwordWhitespaceError => 'Şifre boşluk içeremez.';
+
+  @override
+  String get invalidCommentError => 'Yorum geçersiz karakterler içeriyor.';
+
+  @override
+  String get invalidGroupNameError => 'Grup adı geçersiz karakterler içeriyor.';
+
+  @override
+  String get locationNameEmptyError => 'Konum adı boş olamaz.';
+
+  @override
+  String get locationNameInvalidCharsError =>
+      'Konum adı geçersiz karakterler içeriyor.';
+
+  @override
+  String get descriptionInvalidCharsError =>
+      'Açıklama geçersiz karakterler içeriyor.';
+
+  @override
+  String get notesInvalidCharsError => 'Notlar geçersiz karakterler içeriyor.';
+
+  @override
+  String get routeNameInvalidCharsError =>
+      'Rota adı geçersiz karakterler içeriyor.';
+
+  @override
+  String get usernameInvalidCharsError =>
+      'Kullanıcı adı geçersiz karakterler içeriyor.';
 }

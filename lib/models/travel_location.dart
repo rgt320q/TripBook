@@ -14,6 +14,7 @@ class TravelLocation {
   final int? estimatedDuration; // Duration in minutes
   final DateTime? createdAt;
   final bool isImported;
+  final String userId;
 
   TravelLocation({
     this.id,
@@ -29,6 +30,7 @@ class TravelLocation {
     this.estimatedDuration,
     this.createdAt,
     this.isImported = false,
+    required this.userId,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -46,6 +48,7 @@ class TravelLocation {
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
       'isImported': isImported,
+      'userId': userId,
     };
   }
 
@@ -84,6 +87,7 @@ class TravelLocation {
       estimatedDuration: firestoreMap['estimatedDuration'] as int?,
       createdAt: (firestoreMap['createdAt'] as Timestamp?)?.toDate(),
       isImported: firestoreMap['isImported'] as bool? ?? false,
+      userId: firestoreMap['userId'] as String? ?? '', // Handle old data without userId
     );
   }
 

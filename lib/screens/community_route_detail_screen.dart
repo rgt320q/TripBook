@@ -7,6 +7,7 @@ import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/models/route_comment.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/widgets/route_mini_map.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:tripbook/l10n/app_localizations.dart';
 
@@ -88,13 +89,27 @@ class _CommunityRouteDetailScreenState
   }
 
   void _submitComment() {
-    if (_commentController.text.trim().isEmpty ||
-        widget.route.firestoreId == null) {
+    final l10n = AppLocalizations.of(context)!;
+    final commentText = _commentController.text.trim();
+    if (commentText.isEmpty || widget.route.firestoreId == null) {
       return;
     }
+
+    // Basic validation for potentially harmful characters
+    final invalidChars = RegExp(r'[<>]');
+    if (invalidChars.hasMatch(commentText)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.invalidCommentError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     _firestoreService.addComment(
       widget.route.firestoreId!,
-      _commentController.text.trim(),
+      commentText, // Already trimmed
     );
     _commentController.clear();
     FocusScope.of(context).unfocus();
@@ -164,7 +179,7 @@ class _CommunityRouteDetailScreenState
                 notes: loc.notes,
                 needsList: loc.needsList,
                 estimatedDuration: loc.estimatedDuration,
-                isImported: true, // Mark as imported
+                isImported: true, userId: '', // Mark as imported
               ),
             )
             .toList();

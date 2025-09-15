@@ -1,3 +1,4 @@
+import "package:firebase_auth/firebase_auth.dart";
 import "package:tripbook/l10n/app_localizations.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -257,6 +258,56 @@ class _LocationListItemState extends State<LocationListItem> {
     final l10n = AppLocalizations.of(context)!;
     if (widget.location.firestoreId == null) return;
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Handle user not logged in
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.locationNameEmptyError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final invalidChars = RegExp(r'[<>]');
+    if (invalidChars.hasMatch(name)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.locationNameInvalidCharsError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final description = _descriptionController.text.trim();
+    if (invalidChars.hasMatch(description)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.descriptionInvalidCharsError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final notes = _notesController.text.trim();
+    if (invalidChars.hasMatch(notes)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.notesInvalidCharsError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     final newNames = _needsController.text
         .split(',')
         .map((e) => e.trim())
@@ -276,16 +327,16 @@ class _LocationListItemState extends State<LocationListItem> {
 
     final updatedLocation = TravelLocation(
       firestoreId: widget.location.firestoreId,
-      name: _nameController.text,
+      name: name,
       geoName: widget.location.geoName,
       latitude: widget.location.latitude,
       longitude: widget.location.longitude,
-      description: _descriptionController.text,
+      description: description,
       groupId: _selectedGroupId,
-      notes: _notesController.text,
+      notes: notes,
       needsList: needsList,
       estimatedDuration: int.tryParse(_durationController.text),
-      createdAt: widget.location.createdAt,
+      createdAt: widget.location.createdAt, userId: '',
     );
 
     try {

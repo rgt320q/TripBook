@@ -1502,11 +1502,11 @@ abstract class AppLocalizations {
   /// **'Please enter a valid email address.'**
   String get enterValidEmail;
 
-  /// No description provided for @passwordTooShort.
+  /// No description provided for @passwordMinLengthError.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 7 characters long.'**
-  String get passwordTooShort;
+  /// **'Password must be at least 8 characters long.'**
+  String get passwordMinLengthError;
 
   /// No description provided for @routeAlreadySaved.
   ///
@@ -1537,6 +1537,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Route and Locations'**
   String get deleteRouteAndLocations;
+
+  /// No description provided for @passwordComplexityError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one letter and one number.'**
+  String get passwordComplexityError;
+
+  /// No description provided for @passwordWhitespaceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password cannot contain spaces.'**
+  String get passwordWhitespaceError;
+
+  /// No description provided for @invalidCommentError.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment contains invalid characters.'**
+  String get invalidCommentError;
+
+  /// No description provided for @invalidGroupNameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name contains invalid characters.'**
+  String get invalidGroupNameError;
+
+  /// No description provided for @locationNameEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Location name cannot be empty.'**
+  String get locationNameEmptyError;
+
+  /// No description provided for @locationNameInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Location name contains invalid characters.'**
+  String get locationNameInvalidCharsError;
+
+  /// No description provided for @descriptionInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Description contains invalid characters.'**
+  String get descriptionInvalidCharsError;
+
+  /// No description provided for @notesInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes contain invalid characters.'**
+  String get notesInvalidCharsError;
+
+  /// No description provided for @routeNameInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Route name contains invalid characters.'**
+  String get routeNameInvalidCharsError;
+
+  /// No description provided for @usernameInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Username contains invalid characters.'**
+  String get usernameInvalidCharsError;
 }
 
 class _AppLocalizationsDelegate

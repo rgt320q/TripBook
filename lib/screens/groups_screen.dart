@@ -4,6 +4,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/screens/group_detail_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 enum GroupSortBy { nameAsc, nameDesc, dateNewest, dateOldest }
 
@@ -148,29 +149,46 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (_groupNameController.text.isNotEmpty) {
-                      final group = LocationGroup(
-                        firestoreId: groupToEdit?.firestoreId,
-                        name: _groupNameController.text,
-                        color: _selectedColor?.value,
-                        createdAt: groupToEdit
-                            ?.createdAt, // Preserve original creation date
-                      );
+                    final l10n = AppLocalizations.of(context)!;
+                    final groupName = _groupNameController.text.trim();
 
-                      if (groupToEdit == null) {
-                        await _firestoreService.addGroup(group);
-                      } else {
-                        await _firestoreService.updateGroup(
-                          group.firestoreId!,
-                          group,
-                        );
-                      }
-
-                      _groupNameController.clear();
-                      _selectedColor = null;
-                      if (!mounted) return;
-                      Navigator.of(context).pop();
+                    if (groupName.isEmpty) {
+                      // Optionally show a snackbar for empty name
+                      return;
                     }
+
+                    final invalidChars = RegExp(r'[<>]');
+                    if (invalidChars.hasMatch(groupName)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.invalidGroupNameError),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final group = LocationGroup(
+                      firestoreId: groupToEdit?.firestoreId,
+                      name: groupName,
+                      color: _selectedColor?.value,
+                      createdAt: groupToEdit
+                          ?.createdAt, userId: '', // Preserve original creation date
+                    );
+
+                    if (groupToEdit == null) {
+                      await _firestoreService.addGroup(group);
+                    } else {
+                      await _firestoreService.updateGroup(
+                        group.firestoreId!,
+                        group,
+                      );
+                    }
+
+                    _groupNameController.clear();
+                    _selectedColor = null;
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
                   },
                   child: Text(AppLocalizations.of(context)!.save),
                 ),

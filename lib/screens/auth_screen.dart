@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
-
 import 'package:tripbook/l10n/app_localizations.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -93,13 +92,18 @@ class _AuthScreenState extends State<AuthScreen> {
                     TextFormField(
                       key: const ValueKey('email'),
                       validator: (value) {
-                        if (value == null || !value.contains('@')) {
+                        final trimmedValue = value?.trim();
+                        if (trimmedValue == null || trimmedValue.isEmpty) {
+                          return l10n.enterValidEmail;
+                        }
+                        final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\\.[^\s@]+$');
+                        if (!emailRegex.hasMatch(trimmedValue)) {
                           return l10n.enterValidEmail;
                         }
                         return null;
                       },
                       onSaved: (value) {
-                        _email = value!;
+                        _email = value!.trim();
                       },
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(labelText: l10n.emailAddress),
@@ -107,13 +111,24 @@ class _AuthScreenState extends State<AuthScreen> {
                     TextFormField(
                       key: const ValueKey('password'),
                       validator: (value) {
-                        if (value == null || value.length < 7) {
-                          return l10n.passwordTooShort;
+                        final trimmedValue = value?.trim() ?? '';
+                        if (trimmedValue.isEmpty) {
+                          return l10n.passwordMinLengthError;
+                        }
+                        if (trimmedValue.length < 8) {
+                          return l10n.passwordMinLengthError;
+                        }
+                        if (trimmedValue.contains(' ')) {
+                          return l10n.passwordWhitespaceError;
+                        }
+                        final passwordRegExp = RegExp(r'^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$');
+                        if (!passwordRegExp.hasMatch(trimmedValue)) {
+                          return l10n.passwordComplexityError;
                         }
                         return null;
                       },
                       onSaved: (value) {
-                        _password = value!;
+                        _password = value!.trim();
                       },
                       obscureText: true,
                       decoration: InputDecoration(labelText: l10n.password),

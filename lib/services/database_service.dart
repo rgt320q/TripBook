@@ -112,7 +112,7 @@ CREATE TABLE locations (
         groupId: json['groupId'] as String?,
         notes: json['notes'] as String?,
         needsList: needsList,
-        estimatedDuration: json['estimatedDuration'] as int?,
+        estimatedDuration: json['estimatedDuration'] as int?, userId: '',
       );
     }).toList();
   }
@@ -177,7 +177,7 @@ extension TravelLocationCopyWith on TravelLocation {
       notes: notes ?? this.notes,
       needsList: needsList ?? this.needsList,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
-      createdAt: createdAt ?? this.createdAt,
+      createdAt: createdAt ?? this.createdAt, userId: '',
     );
   }
 }

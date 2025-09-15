@@ -457,10 +457,20 @@
   "createNewAccount": "Create new account",
   "alreadyHaveAccount": "I already have an account",
   "enterValidEmail": "Please enter a valid email address.",
-  "passwordTooShort": "Password must be at least 7 characters long.",
+  "passwordMinLengthError": "Password must be at least 8 characters long.",
   "routeAlreadySaved": "This route is already saved.",
   "downloadedFromCommunity": "(Downloaded from community)",
   "deleteRouteConfirmationWithLocations": "This route was downloaded from the community. Do you want to delete the associated locations as well?",
   "locationsLabel": "Locations",
-  "deleteRouteAndLocations": "Delete Route and Locations"
+  "deleteRouteAndLocations": "Delete Route and Locations",
+  "passwordComplexityError": "Password must contain at least one letter and one number.",
+  "passwordWhitespaceError": "Password cannot contain spaces.",
+  "invalidCommentError": "Comment contains invalid characters.",
+  "invalidGroupNameError": "Group name contains invalid characters.",
+  "locationNameEmptyError": "Location name cannot be empty.",
+  "locationNameInvalidCharsError": "Location name contains invalid characters.",
+  "descriptionInvalidCharsError": "Description contains invalid characters.",
+  "notesInvalidCharsError": "Notes contain invalid characters.",
+  "routeNameInvalidCharsError": "Route name contains invalid characters.",
+  "usernameInvalidCharsError": "Username contains invalid characters."
 }

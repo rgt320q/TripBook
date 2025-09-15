@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final userProfile = UserProfile(
         uid: user.uid,
-        name: _usernameController.text,
+        name: _usernameController.text.trim(),
         languageCode: _selectedLanguage,
         homeLocation: _homeLocation,
       );
@@ -245,3 +245,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+  

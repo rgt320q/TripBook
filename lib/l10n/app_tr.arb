@@ -457,10 +457,20 @@
   "createNewAccount": "Yeni hesap oluştur",
   "alreadyHaveAccount": "Zaten bir hesabım var",
   "enterValidEmail": "Lütfen geçerli bir e-posta adresi girin.",
-  "passwordTooShort": "Şifre en az 7 karakter uzunluğunda olmalıdır.",
+  "passwordMinLengthError": "Şifre en az 8 karakter uzunluğunda olmalıdır.",
   "routeAlreadySaved": "Bu rota zaten kayıtlı.",
   "downloadedFromCommunity": "(Topluluktan indirildi)",
   "deleteRouteConfirmationWithLocations": "Bu rota topluluktan indirildi. İlişkili konumları da silmek istiyor musunuz?",
   "locationsLabel": "Konumlar",
-  "deleteRouteAndLocations": "Rotayı ve Konumları Sil"
+  "deleteRouteAndLocations": "Rotayı ve Konumları Sil",
+  "passwordComplexityError": "Şifre en az bir harf ve bir rakam içermelidir.",
+  "passwordWhitespaceError": "Şifre boşluk içeremez.",
+  "invalidCommentError": "Yorum geçersiz karakterler içeriyor.",
+  "invalidGroupNameError": "Grup adı geçersiz karakterler içeriyor.",
+  "locationNameEmptyError": "Konum adı boş olamaz.",
+  "locationNameInvalidCharsError": "Konum adı geçersiz karakterler içeriyor.",
+  "descriptionInvalidCharsError": "Açıklama geçersiz karakterler içeriyor.",
+  "notesInvalidCharsError": "Notlar geçersiz karakterler içeriyor.",
+  "routeNameInvalidCharsError": "Rota adı geçersiz karakterler içeriyor.",
+  "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor."
 }

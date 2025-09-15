@@ -599,7 +599,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           geoName: 'Start',
           latitude: 0,
           longitude: 0,
-          firestoreId: 'start',
+          firestoreId: 'start', userId: '',
         ),
         ..._activeRouteLocations!,
       ];
@@ -685,6 +685,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       return;
     }
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Handle user not logged in
+      return;
+    }
+
     _activeRouteNeedsState.clear();
     _visitedWaypoints.clear();
     _triggeredWikipediaNotifications.clear();
@@ -695,7 +701,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       description: l10n.routeStart, // Internal
       latitude: _currentPosition!.latitude,
       longitude: _currentPosition!.longitude,
-      firestoreId: 'start',
+      firestoreId: 'start', userId: '',
     );
 
     TravelLocation finalDestination;
@@ -728,7 +734,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       needsList: finalDestination.needsList,
       estimatedDuration: finalDestination.estimatedDuration,
       createdAt: finalDestination.createdAt,
-      isImported: finalDestination.isImported,
+      isImported: finalDestination.isImported, userId: '',
     );
 
     var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
@@ -825,8 +831,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             ElevatedButton(
               onPressed: () async {
-                final routeName = routeNameController.text;
+                final l10n = AppLocalizations.of(context)!;
+                final routeName = routeNameController.text.trim();
                 if (routeName.isEmpty) return;
+
+                final invalidChars = RegExp(r'[<>]');
+                if (invalidChars.hasMatch(routeName)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.routeNameInvalidCharsError),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                  return;
+                }
 
                 final existingRoutes = await _firestoreService.getRoutesOnce();
                 final conflictingRoute = existingRoutes.firstWhere(
@@ -1264,7 +1282,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   geoName: geoName,
                   latitude: pos.latitude,
                   longitude: pos.longitude,
-                  firestoreId: 'end',
+                  firestoreId: 'end', userId: '',
                 );
                 Navigator.of(context).pop(newEndPoint);
               },
@@ -1587,7 +1605,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     geoName: geoName,
                     latitude: pos.latitude,
                     longitude: pos.longitude,
-                    firestoreId: 'end',
+                    firestoreId: 'end', userId: '',
                   );
                   final result = await Navigator.push<dynamic>(
                     context,
@@ -1832,8 +1850,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}', // Display coordinates
         latitude: userProfile.homeLocation!.latitude,
         longitude: userProfile.homeLocation!.longitude,
-        firestoreId: 'home_end_location', // Unique ID for home as endpoint
-      );
+                                    firestoreId: 'home_end_location', // Unique ID for home as endpoint
+        userId: userProfile.uid,
+      ); // Unique ID for home as endpoint
     }
 
     showDialog(
@@ -1887,7 +1906,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     description: l10n.routeEnd, // Internal
                     latitude: _currentPosition!.latitude,
                     longitude: _currentPosition!.longitude,
-                    firestoreId: 'end',
+                    firestoreId: 'end', userId: '',
                   );
 
                   final result = await Navigator.push<dynamic>(
@@ -2109,7 +2128,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             ? notesController.text
                             : null,
                         needsList: needsList.isNotEmpty ? needsList : null,
-                        estimatedDuration: duration,
+                        estimatedDuration: duration, userId: '',
                       );
 
                       await _firestoreService.addLocation(newLocation);

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/services/firestore_service.dart';
@@ -44,6 +45,12 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        // Handle user not logged in
+        return;
+      }
+
       final updatedLocation = TravelLocation(
         firestoreId: widget.location.firestoreId,
         name: widget
@@ -57,6 +64,7 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
         notes: _notes,
         estimatedDuration: _estimatedDuration,
         needsList: _needsList,
+        userId: user.uid,
       );
 
       if (widget.location.firestoreId != null) {

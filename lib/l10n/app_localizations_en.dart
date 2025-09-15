@@ -788,7 +788,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterValidEmail => 'Please enter a valid email address.';
 
   @override
-  String get passwordTooShort => 'Password must be at least 7 characters long.';
+  String get passwordMinLengthError =>
+      'Password must be at least 8 characters long.';
 
   @override
   String get routeAlreadySaved => 'This route is already saved.';
@@ -805,4 +806,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteRouteAndLocations => 'Delete Route and Locations';
+
+  @override
+  String get passwordComplexityError =>
+      'Password must contain at least one letter and one number.';
+
+  @override
+  String get passwordWhitespaceError => 'Password cannot contain spaces.';
+
+  @override
+  String get invalidCommentError => 'Comment contains invalid characters.';
+
+  @override
+  String get invalidGroupNameError => 'Group name contains invalid characters.';
+
+  @override
+  String get locationNameEmptyError => 'Location name cannot be empty.';
+
+  @override
+  String get locationNameInvalidCharsError =>
+      'Location name contains invalid characters.';
+
+  @override
+  String get descriptionInvalidCharsError =>
+      'Description contains invalid characters.';
+
+  @override
+  String get notesInvalidCharsError => 'Notes contain invalid characters.';
+
+  @override
+  String get routeNameInvalidCharsError =>
+      'Route name contains invalid characters.';
+
+  @override
+  String get usernameInvalidCharsError =>
+      'Username contains invalid characters.';
 }
