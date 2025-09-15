@@ -1536,7 +1536,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(l10n.appTitle),
+        ),
         actions: appBarActions,
         backgroundColor: Colors.blue[700],
       ),
