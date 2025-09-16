@@ -22,6 +22,7 @@ class TravelRoute {
   final double averageRating;
   final int ratingCount;
   final int commentCount;
+  final String? authorName;
 
   // Field for tracking original community route
   final String? communityRouteId;
@@ -46,6 +47,7 @@ class TravelRoute {
     this.ratingCount = 0,
     this.commentCount = 0,
     this.communityRouteId,
+    this.authorName,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -70,6 +72,7 @@ class TravelRoute {
       'ratingCount': ratingCount,
       'commentCount': commentCount,
       if (communityRouteId != null) 'communityRouteId': communityRouteId,
+      if (authorName != null) 'authorName': authorName,
     };
   }
 
@@ -93,6 +96,7 @@ class TravelRoute {
     int? ratingCount,
     int? commentCount,
     String? communityRouteId,
+    String? authorName,
   }) {
     return TravelRoute(
       firestoreId: firestoreId ?? this.firestoreId,
@@ -114,6 +118,7 @@ class TravelRoute {
       ratingCount: ratingCount ?? this.ratingCount,
       commentCount: commentCount ?? this.commentCount,
       communityRouteId: communityRouteId ?? this.communityRouteId,
+      authorName: authorName ?? this.authorName,
     );
   }
 
@@ -155,6 +160,7 @@ class TravelRoute {
       ratingCount: firestoreMap['ratingCount'] as int? ?? 0,
       commentCount: firestoreMap['commentCount'] as int? ?? 0,
       communityRouteId: firestoreMap['communityRouteId'] as String?,
+      authorName: firestoreMap['authorName'] as String?,
     );
   }
 }

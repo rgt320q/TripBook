@@ -49,18 +49,30 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
     );
 
     if (confirm == true) {
-      await _firestoreService.shareRoute(route.firestoreId!, !route.isShared);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              route.isShared
-                  ? l10n.routeNoLongerShared(route.name)
-                  : l10n.routeSharedSuccessfully(route.name),
+      try {
+        final isCurrentlyShared = route.isShared;
+        await _firestoreService.shareRoute(route.firestoreId!, !isCurrentlyShared);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isCurrentlyShared
+                    ? l10n.routeNoLongerShared(route.name)
+                    : l10n.routeSharedSuccessfully(route.name),
+              ),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.errorOccurred(e.toString())),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       }
     }
   }

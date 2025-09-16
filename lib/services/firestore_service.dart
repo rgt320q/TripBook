@@ -212,7 +212,7 @@ class FirestoreService {
     final snapshot = await _communityRoutesCollection
         .where('isShared', isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        .get();
+        .get(const GetOptions(source: Source.server));
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
@@ -244,9 +244,13 @@ class FirestoreService {
         final locations = await getLocationsByIds(routeData.locationIds);
         final locationMaps = locations.map((loc) => loc.toFirestore()).toList();
 
+        final userProfile = await getUserProfile().first;
+        final userName = userProfile?.name ?? 'Anonymous';
+
         final sharedRoute = routeData.copyWith(
           isShared: true,
           sharedBy: _currentUser!.uid,
+          authorName: userName,
           locations: locationMaps,
         );
         await _communityRoutesCollection.doc(routeId).set(sharedRoute);
@@ -257,8 +261,14 @@ class FirestoreService {
       }
     } else {
       // Unshare the route
-      await _communityRoutesCollection.doc(routeId).delete();
-      await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
+      try {
+        await _communityRoutesCollection.doc(routeId).delete();
+        await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
+      } catch (e) {
+        print('Error un-sharing route: $e');
+        // Re-throw the exception to be handled by the caller if needed
+        rethrow;
+      }
     }
   }
 
@@ -487,17 +497,33 @@ class FirestoreService {
     List<String> userIds,
   ) async {
     if (userIds.isEmpty) return {};
-    try {
-      final snapshot = await _db
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: userIds)
-          .withConverter<UserProfile>(
-            fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
-            toFirestore: (profile, _) => profile.toFirestore(),
-          )
-          .get();
+    final Map<String, UserProfile> profiles = {};
 
-      return {for (var doc in snapshot.docs) doc.id: doc.data()};
+    try {
+      // Firestore 'whereIn' query has a limit of 10 elements per query.
+      const chunkSize = 10;
+      for (var i = 0; i < userIds.length; i += chunkSize) {
+        final chunk = userIds.sublist(
+          i,
+          i + chunkSize > userIds.length ? userIds.length : i + chunkSize,
+        );
+
+        if (chunk.isEmpty) continue;
+
+        final snapshot = await _db
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .withConverter<UserProfile>(
+              fromFirestore: (snapshot, _) => UserProfile.fromFirestore(snapshot),
+              toFirestore: (profile, _) => profile.toFirestore(),
+            )
+            .get();
+
+        for (var doc in snapshot.docs) {
+          profiles[doc.id] = doc.data();
+        }
+      }
+      return profiles;
     } catch (e) {
       print('Error getting user profiles by IDs: $e');
       return {};

@@ -1367,7 +1367,7 @@ abstract class AppLocalizations {
   /// No description provided for @stopSharingConfirmation.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to stop sharing the route \'{routeName}\' with the community?'**
+  /// **'When sharing is removed, all related information about the route (ratings, comments, etc.) will be deleted. Are you sure you want to stop sharing the route \'{routeName}\' with the community?'**
   String stopSharingConfirmation(String routeName);
 
   /// No description provided for @shareRouteConfirmation.
@@ -1597,6 +1597,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Username contains invalid characters.'**
   String get usernameInvalidCharsError;
+
+  /// No description provided for @mySharedRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a route I shared'**
+  String get mySharedRoute;
 }
 
 class _AppLocalizationsDelegate

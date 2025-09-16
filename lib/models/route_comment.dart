@@ -24,10 +24,10 @@ class RouteComment {
 
   factory RouteComment.fromMap(Map<String, dynamic> map) {
     return RouteComment(
-      userId: map['userId'] as String,
-      userName: map['userName'] as String,
-      comment: map['comment'] as String,
-      timestamp: map['timestamp'] as Timestamp,
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String? ?? 'Unknown',
+      comment: map['comment'] as String? ?? '',
+      timestamp: map['timestamp'] as Timestamp? ?? Timestamp.now(),
     );
   }
 }

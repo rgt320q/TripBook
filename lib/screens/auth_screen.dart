@@ -96,7 +96,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         if (trimmedValue == null || trimmedValue.isEmpty) {
                           return l10n.enterValidEmail;
                         }
-                        final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\\.[^\s@]+$');
+                        final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
                         if (!emailRegex.hasMatch(trimmedValue)) {
                           return l10n.enterValidEmail;
                         }
@@ -121,7 +121,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         if (trimmedValue.contains(' ')) {
                           return l10n.passwordWhitespaceError;
                         }
-                        final passwordRegExp = RegExp(r'^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$');
+                        final passwordRegExp = RegExp(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$');
                         if (!passwordRegExp.hasMatch(trimmedValue)) {
                           return l10n.passwordComplexityError;
                         }

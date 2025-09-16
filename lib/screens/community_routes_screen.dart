@@ -16,38 +16,25 @@ class CommunityRoutesScreen extends StatefulWidget {
 class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   bool _hideDownloaded = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Use a post-frame callback to fetch the data after the first frame is built.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // We set listen to false because we don't need to rebuild this widget
-      // when the provider notifies listeners, that's handled by the Consumer.
-      Provider.of<CommunityRoutesProvider>(
-        context,
-        listen: false,
-      ).fetchRoutes();
-    });
-  }
+  // No longer need initState to fetch data, provider handles it.
 
   Future<void> _handleRouteTap(
     TravelRoute route,
-    CommunityRoutesProvider provider,
   ) async {
-    final result = await Navigator.of(context).push(
+    // The provider will update automatically, so we don't need to pass it
+    // or call fetchRoutes anymore.
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => CommunityRouteDetailScreen(route: route),
       ),
     );
-
-    if (result == true) {
-      provider.fetchRoutes();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final provider = context.watch<CommunityRoutesProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.communityRoutes),
@@ -86,7 +73,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.fetchRoutes(),
+            onRefresh: () async => provider.refreshRoutes(),
             child: ListView.builder(
               itemCount: filteredItems.length,
               itemBuilder: (context, index) {
@@ -100,7 +87,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                   clipBehavior: Clip.antiAlias,
                   color: item.isDownloaded ? Colors.green[50] : null,
                   child: InkWell(
-                    onTap: () => _handleRouteTap(route, provider),
+                    onTap: () => _handleRouteTap(route),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

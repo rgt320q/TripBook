@@ -706,7 +706,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String stopSharingConfirmation(String routeName) {
-    return 'Are you sure you want to stop sharing the route \'$routeName\' with the community?';
+    return 'When sharing is removed, all related information about the route (ratings, comments, etc.) will be deleted. Are you sure you want to stop sharing the route \'$routeName\' with the community?';
   }
 
   @override
@@ -841,4 +841,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get usernameInvalidCharsError =>
       'Username contains invalid characters.';
+
+  @override
+  String get mySharedRoute => 'This is a route I shared';
 }

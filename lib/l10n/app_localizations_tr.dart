@@ -708,7 +708,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String stopSharingConfirmation(String routeName) {
-    return '\'$routeName\' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?';
+    return 'Paylaşım kaldırıldığında, rota ile ilgili tüm bilgiler (puanlar, yorumlar vb.) silinecektir. \'$routeName\' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?';
   }
 
   @override
@@ -843,4 +843,7 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get usernameInvalidCharsError =>
       'Kullanıcı adı geçersiz karakterler içeriyor.';
+
+  @override
+  String get mySharedRoute => 'Paylaştığım rota';
 }

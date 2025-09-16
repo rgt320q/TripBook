@@ -289,24 +289,8 @@ class _CommunityRouteDetailScreenState
                       _buildNotesSection(),
 
                     // Rating Section
-                    Text(
-                      l10n.rate,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return IconButton(
-                          icon: Icon(
-                            (_userRating ?? 0) >= index + 1
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: Colors.amber,
-                          ),
-                          onPressed: () => _submitRating(index + 1.0),
-                        );
-                      }),
-                    ),
+                    _buildRatingSection(),
+
                     const Divider(height: 30),
 
                     // Comments Section
@@ -325,6 +309,48 @@ class _CommunityRouteDetailScreenState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRatingSection() {
+    final l10n = AppLocalizations.of(context)!;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isMyRoute = currentUser != null && currentUser.uid == widget.route.sharedBy;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.rate,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        if (isMyRoute)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Text(
+              l10n.mySharedRoute,
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          )
+        else
+          Row(
+            children: List.generate(5, (index) {
+              return IconButton(
+                icon: Icon(
+                  (_userRating ?? 0) >= index + 1
+                      ? Icons.star
+                      : Icons.star_border,
+                  color: Colors.amber,
+                ),
+                onPressed: () => _submitRating(index + 1.0),
+              );
+            }),
+          ),
+      ],
     );
   }
 

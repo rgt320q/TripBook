@@ -392,7 +392,7 @@
   "moreInfo": "Daha Fazla Bilgi",
   "stopSharing": "Paylaşımı Durdur",
   "shareRoute": "Rotayı Paylaş",
-  "stopSharingConfirmation": "'{routeName}' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?",
+  "stopSharingConfirmation": "Paylaşım kaldırıldığında, rota ile ilgili tüm bilgiler (puanlar, yorumlar vb.) silinecektir. '{routeName}' rotasının toplulukla paylaşımını durdurmak istediğinizden emin misiniz?",
   "@stopSharingConfirmation": {
     "placeholders": {
       "routeName": {
@@ -472,5 +472,6 @@
   "descriptionInvalidCharsError": "Açıklama geçersiz karakterler içeriyor.",
   "notesInvalidCharsError": "Notlar geçersiz karakterler içeriyor.",
   "routeNameInvalidCharsError": "Rota adı geçersiz karakterler içeriyor.",
-  "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor."
+  "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor.",
+  "mySharedRoute": "Paylaştığım rota"
 }
