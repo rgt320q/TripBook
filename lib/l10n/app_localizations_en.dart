@@ -844,4 +844,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mySharedRoute => 'This is a route I shared';
+
+  @override
+  String get add => 'Add';
 }

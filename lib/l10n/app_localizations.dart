@@ -1603,6 +1603,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is a route I shared'**
   String get mySharedRoute;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
 }
 
 class _AppLocalizationsDelegate

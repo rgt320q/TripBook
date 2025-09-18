@@ -845,5 +845,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kullanıcı adı geçersiz karakterler içeriyor.';
 
   @override
-  String get mySharedRoute => 'Paylaştığım rota';
+  String get mySharedRoute => 'Bu benim paylaştığım bir rota';
+
+  @override
+  String get add => 'Ekle';
 }

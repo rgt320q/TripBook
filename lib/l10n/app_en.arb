@@ -473,5 +473,6 @@
   "notesInvalidCharsError": "Notes contain invalid characters.",
   "routeNameInvalidCharsError": "Route name contains invalid characters.",
   "usernameInvalidCharsError": "Username contains invalid characters.",
-  "mySharedRoute": "This is a route I shared"
+  "mySharedRoute": "This is a route I shared",
+  "add": "Add"
 }

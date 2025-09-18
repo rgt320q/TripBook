@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,9 @@ import 'package:tripbook/screens/home_location_picker_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tripbook/widgets/auth_wrapper.dart';
+import 'package:tripbook/services/navigation_service.dart';
+import 'package:tripbook/services/auth_service.dart';
 import 'package:tripbook/screens/auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,6 +22,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  StreamSubscription<User?>? _authSubscription;
+
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final _usernameController = TextEditingController();
@@ -40,6 +46,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       return profile;
     });
+
+    // Listen for auth changes to pop the screen on logout.
+    _authSubscription = AuthService().authStateChanges.listen((user) {
+      if (user == null && mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    });
   }
 
   Future<UserProfile?> _loadUserProfile() async {
@@ -50,6 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _usernameController.dispose();
     super.dispose();
   }
@@ -225,13 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 );
                 if (confirm == true) {
-                  await FirebaseAuth.instance.signOut();
-                  if (mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => AuthScreen()),
-                      (Route<dynamic> route) => false,
-                    );
-                  }
+                  await AuthService().signOut();
                 }
               },
               child: Text(

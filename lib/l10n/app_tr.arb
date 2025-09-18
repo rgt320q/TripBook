@@ -473,5 +473,6 @@
   "notesInvalidCharsError": "Notlar geçersiz karakterler içeriyor.",
   "routeNameInvalidCharsError": "Rota adı geçersiz karakterler içeriyor.",
   "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor.",
-  "mySharedRoute": "Paylaştığım rota"
+  "mySharedRoute": "Bu benim paylaştığım bir rota",
+  "add": "Ekle"
 }
