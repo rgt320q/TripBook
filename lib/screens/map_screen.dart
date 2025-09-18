@@ -1220,6 +1220,50 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          contentPadding: const EdgeInsets.all(16.0),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 70,
+                child: Image.asset(
+                  'assets/icon/icon.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.email),
+                title: const SelectableText("cetin.omer@outlook.com.tr"),
+                onTap: () async {
+                  final Uri uri = Uri.parse("mailto:cetin.omer@outlook.com.tr");
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.link),
+                title: const SelectableText("https://github.com/rgt320q"),
+                onTap: () async {
+                  final Uri uri = Uri.parse("https://github.com/rgt320q");
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1554,9 +1598,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(l10n.appTitle),
+        title: GestureDetector(
+          onTap: _showAboutDialog,
+          child: SizedBox(
+            height: 50,
+            child: Image.asset(
+              'assets/icon/icon.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
         actions: appBarActions,
         backgroundColor: Colors.blue[700],
