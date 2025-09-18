@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tripbook/services/notification_service.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
@@ -14,6 +16,7 @@ class AuthService {
         email: email,
         password: password,
       );
+      await _notificationService.onUserLogin(); // Save FCM token
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return e.message; // Return error message
@@ -29,6 +32,7 @@ class AuthService {
         email: email,
         password: password,
       );
+      await _notificationService.onUserLogin(); // Save FCM token
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return e.message; // Return error message
@@ -36,6 +40,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    await _notificationService.onUserLogout(); // Clear FCM token
     await _firebaseAuth.signOut();
   }
 }

@@ -11,11 +11,12 @@ import 'package:tripbook/services/navigation_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/widgets/auth_wrapper.dart';
 
-// This needs to be a top-level function (or a static method) for background isolate registration.
+// This needs to be a top-level function for background isolate registration.
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse response) {
-  // This function is called on a separate isolate when the app is in the background.
+  // This function is called on a separate isolate when a notification is tapped and the app is in the background.
   // We pass the payload to our navigation service to handle it on the main isolate.
+  // Note: You might need a robust way to ensure NavigationService() is initialized if it holds state.
   NavigationService().handleNotificationPayload(response.payload);
 }
 
@@ -25,14 +26,16 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Set up the navigation service to listen for navigation events.
-  NavigationService().setup();
+  final navigationService = NavigationService();
+  navigationService.setup();
 
-  // Initialize the notification service with separate handlers for foreground and background.
+  // Initialize the notification service.
   await NotificationService().init(
     onDidReceiveNotificationResponse: (response) {
-      // This is for when the app is in the foreground.
-      NavigationService().handleNotificationPayload(response.payload);
+      // This handles taps on notifications when the app is in the foreground.
+      navigationService.handleNotificationPayload(response.payload);
     },
+    // Provide the top-level function for background taps.
     onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
   );
 

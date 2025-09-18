@@ -5,12 +5,14 @@ class UserProfile {
   final String? name; // Renamed from username
   final String? languageCode;
   final GeoPoint? homeLocation;
+  final String? fcmToken;
 
   UserProfile({
     required this.uid,
     this.name,
     this.languageCode,
     this.homeLocation,
+    this.fcmToken,
   });
 
   factory UserProfile.fromFirestore(
@@ -22,6 +24,7 @@ class UserProfile {
       name: data['name'] as String?,
       languageCode: data['languageCode'] as String?,
       homeLocation: data['homeLocation'] as GeoPoint?,
+      fcmToken: data['fcmToken'] as String?,
     );
   }
 
@@ -30,6 +33,23 @@ class UserProfile {
       if (name != null) 'name': name,
       if (languageCode != null) 'languageCode': languageCode,
       if (homeLocation != null) 'homeLocation': homeLocation,
+      if (fcmToken != null) 'fcmToken': fcmToken,
     };
+  }
+
+  UserProfile copyWith({
+    String? uid,
+    String? name,
+    String? languageCode,
+    GeoPoint? homeLocation,
+    String? fcmToken,
+  }) {
+    return UserProfile(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      languageCode: languageCode ?? this.languageCode,
+      homeLocation: homeLocation ?? this.homeLocation,
+      fcmToken: fcmToken ?? this.fcmToken,
+    );
   }
 }
