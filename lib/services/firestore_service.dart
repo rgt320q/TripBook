@@ -262,7 +262,15 @@ class FirestoreService {
     } else {
       // Unshare the route
       try {
-        await _communityRoutesCollection.doc(routeId).delete();
+        final communityRouteRef = _communityRoutesCollection.doc(routeId);
+
+        // Delete subcollections
+        await _deleteSubcollection(communityRouteRef.collection('comments'));
+        await _deleteSubcollection(communityRouteRef.collection('ratings'));
+
+        // Delete the main document
+        await communityRouteRef.delete();
+
         await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
       } catch (e) {
         print('Error un-sharing route: $e');
@@ -270,6 +278,17 @@ class FirestoreService {
         rethrow;
       }
     }
+  }
+
+  Future<void> _deleteSubcollection(CollectionReference collection) async {
+    final snapshot = await collection.get();
+    if (snapshot.docs.isEmpty) return;
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 
   Future<List<TravelRoute>> getRoutesOnce() async {
