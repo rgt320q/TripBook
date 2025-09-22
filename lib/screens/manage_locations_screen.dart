@@ -223,6 +223,134 @@ class _LocationListItemState extends State<LocationListItem> {
 
   late bool _isExpanded;
 
+  final List<Color> _groupColors = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
+  ];
+
+  Future<LocationGroup?> _showAddNewGroupDialog(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final groupNameController = TextEditingController();
+    Color selectedColor = _groupColors.first;
+    final formKey = GlobalKey<FormState>();
+
+    return await showDialog<LocationGroup>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(l10n.newGroup),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: groupNameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.groupName,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.locationNameEmptyError;
+                          }
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.invalidGroupNameError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Text(l10n.selectGroupColor),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: _groupColors.map((color) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            },
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selectedColor == color
+                                      ? Colors.black
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final newGroup = LocationGroup(
+                        name: groupNameController.text.trim(),
+                        color: selectedColor.value,
+                        createdAt: DateTime.now(),
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                      );
+                      final docRef = await widget.firestoreService.addGroup(newGroup);
+                      final createdGroup = LocationGroup(
+                        firestoreId: docRef.id,
+                        name: newGroup.name,
+                        color: newGroup.color,
+                        createdAt: newGroup.createdAt,
+                        userId: newGroup.userId,
+                      );
+                      Navigator.of(dialogContext).pop(createdGroup);
+                    }
+                  },
+                  child: Text(l10n.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -370,8 +498,10 @@ class _LocationListItemState extends State<LocationListItem> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         leading: widget.onSelected != null
             ? Checkbox(
@@ -380,7 +510,7 @@ class _LocationListItemState extends State<LocationListItem> {
                   widget.onSelected!(widget.location, value!);
                 },
               )
-            : null,
+            : Icon(Icons.location_on, color: theme.colorScheme.primary),
         initiallyExpanded: _isExpanded,
         onExpansionChanged: (expanded) {
           setState(() {
@@ -389,23 +519,27 @@ class _LocationListItemState extends State<LocationListItem> {
         },
         title: Text(
           widget.location.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        subtitle: RichText(
-          text: TextSpan(
-            style: DefaultTextStyle.of(context).style,
-            children: <TextSpan>[
-              TextSpan(text: '${l10n.groupLabel}: ${widget.groupName}\n'),
-              TextSpan(text: widget.location.geoName),
-            ],
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${l10n.groupLabel}: ${widget.groupName}',
+              style: theme.textTheme.bodySmall,
+            ),
+            Text(
+              widget.location.geoName,
+              style: theme.textTheme.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
         trailing: _isExpanded
             ? null
             : IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
+                icon: Icon(Icons.delete, color: theme.colorScheme.error),
                 onPressed: () => _deleteLocation(context),
               ),
         children: [
@@ -420,7 +554,7 @@ class _LocationListItemState extends State<LocationListItem> {
                 const SizedBox(height: 16),
                 _buildTextField(_notesController, l10n.notesLabel),
                 const SizedBox(height: 16),
-                _buildTextField(_needsController, l10n.needsLabel),
+                _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint),
                 const SizedBox(height: 16),
                 _buildTextField(
                   _durationController,
@@ -429,19 +563,15 @@ class _LocationListItemState extends State<LocationListItem> {
                 ),
                 const SizedBox(height: 16),
                 _buildGroupDropdown(),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.googleMapsNameLabel,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(widget.location.geoName),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.map, color: Colors.blue),
-                      tooltip: l10n.showOnMap,
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.map),
+                      label: Text(l10n.showOnMap),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -452,9 +582,9 @@ class _LocationListItemState extends State<LocationListItem> {
                         );
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.copy, color: Colors.orange),
-                      tooltip: l10n.copyLocationInfo,
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.copy),
+                      label: Text(l10n.copyLocationInfo),
                       onPressed: () {
                         final lat = widget.location.latitude;
                         final lon = widget.location.longitude;
@@ -467,15 +597,23 @@ class _LocationListItemState extends State<LocationListItem> {
                         );
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.save, color: Colors.green),
-                      tooltip: l10n.saveChanges,
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: Text(l10n.saveChanges),
                       onPressed: _saveChanges,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: l10n.deleteLocation,
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.delete),
+                      label: Text(l10n.deleteLocation),
                       onPressed: () => _deleteLocation(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.error,
+                        foregroundColor: theme.colorScheme.onError,
+                      ),
                     ),
                   ],
                 ),
@@ -491,11 +629,13 @@ class _LocationListItemState extends State<LocationListItem> {
     TextEditingController controller,
     String label, {
     TextInputType inputType = TextInputType.text,
+    String? hint,
   }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
+        hintText: hint,
         border: const OutlineInputBorder(),
       ),
       keyboardType: inputType,
@@ -512,7 +652,7 @@ class _LocationListItemState extends State<LocationListItem> {
         : null;
 
     return DropdownButtonFormField<String>(
-      initialValue: validSelectedGroupId,
+      value: validSelectedGroupId,
       decoration: InputDecoration(
         labelText: l10n.groupLabel,
         border: const OutlineInputBorder(),
@@ -525,11 +665,25 @@ class _LocationListItemState extends State<LocationListItem> {
             child: Text(group.name),
           );
         }),
+        DropdownMenuItem<String>(
+          value: 'add_new_group',
+          child: Text(l10n.addNewGroup),
+        ),
       ],
-      onChanged: (value) {
-        setState(() {
-          _selectedGroupId = value;
-        });
+      onChanged: (value) async {
+        if (value == 'add_new_group') {
+          final newGroup = await _showAddNewGroupDialog(context);
+          if (newGroup != null) {
+            setState(() {
+              widget.allGroups.add(newGroup);
+              _selectedGroupId = newGroup.firestoreId;
+            });
+          }
+        } else {
+          setState(() {
+            _selectedGroupId = value;
+          });
+        }
       },
     );
   }

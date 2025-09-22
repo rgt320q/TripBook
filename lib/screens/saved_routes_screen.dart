@@ -154,66 +154,67 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
 
   void _showRouteDetailsDialog(TravelRoute route) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(route.name),
+          title: Text(route.name, style: theme.textTheme.headlineSmall),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.routeDetailsPlannedDistance(route.totalDistance)),
+                ListTile(
+                  title: Text(l10n.plannedDistance),
+                  subtitle: Text(route.totalDistance),
+                ),
                 if (route.actualDistance != null)
-                  Text(l10n.routeDetailsActualDistance(route.actualDistance!)),
-                const SizedBox(height: 8),
-                Text(l10n.routeDetailsPlannedTravelTime(route.totalTravelTime)),
-                if (route.totalStopDuration != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.routeDetailsPlannedStopTime(route.totalStopDuration!),
+                  ListTile(
+                    title: Text(l10n.actualDistance),
+                    subtitle: Text(route.actualDistance!),
                   ),
-                ],
-                if (route.totalTripDuration != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.routeDetailsPlannedTotalTime(route.totalTripDuration!),
+                const Divider(),
+                ListTile(
+                  title: Text(l10n.plannedTravelTime),
+                  subtitle: Text(route.totalTravelTime),
+                ),
+                if (route.totalStopDuration != null)
+                  ListTile(
+                    title: Text(l10n.totalBreakTime),
+                    subtitle: Text(route.totalStopDuration!),
                   ),
-                ],
+                if (route.totalTripDuration != null)
+                  ListTile(
+                    title: Text(l10n.plannedTotalTime),
+                    subtitle: Text(route.totalTripDuration!),
+                  ),
                 if (route.actualDuration != null &&
-                    route.actualDuration!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.routeDetailsActualTotalTime(route.actualDuration!),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
+                    route.actualDuration!.isNotEmpty)
+                  ListTile(
+                    title: Text(l10n.actualTotalTime),
+                    subtitle: Text(route.actualDuration!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                   ),
-                ],
                 if (route.needs != null && route.needs!.isNotEmpty) ...[
-                  const Divider(height: 20),
-                  Text(
-                    l10n.needsListTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(l10n.needsListTitle, style: theme.textTheme.titleLarge),
                   ),
-                  const SizedBox(height: 4),
-                  ...route.needs!.map((need) => Text('  • $need')),
+                  ...route.needs!.map((need) => ListTile(leading: const Icon(Icons.check_box_outline_blank), title: Text(need))),
                 ],
                 if (route.notes != null && route.notes!.isNotEmpty) ...[
-                  const Divider(height: 20),
-                  Text(
-                    l10n.privateNotesTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(l10n.privateNotesTitle, style: theme.textTheme.titleLarge),
                   ),
-                  const SizedBox(height: 4),
                   ...route.notes!.map(
-                    (note) => Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        '  • ${note['locationName']}: ${note['note']}',
-                      ),
+                    (note) => ListTile(
+                      leading: const Icon(Icons.note),
+                      title: Text(note['locationName']!),
+                      subtitle: Text(note['note']!),
                     ),
                   ),
                 ],
@@ -331,16 +332,18 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
           );
 
           return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
             itemCount: routes.length,
             itemBuilder: (context, index) {
               final route = routes[index];
               return Card(
-                margin: const EdgeInsets.all(8.0),
+                clipBehavior: Clip.antiAlias,
                 child: ListTile(
+                  leading: const Icon(Icons.route_outlined),
                   onTap: () => _showRouteDetailsDialog(route),
                   title: Text(
                     route.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +370,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                       IconButton(
                         icon: Icon(
                           route.isShared ? Icons.share : Icons.share_outlined,
-                          color: route.isShared ? Colors.green : null,
+                          color: route.isShared ? Colors.green : Theme.of(context).colorScheme.primary,
                         ),
                         tooltip: route.isShared
                             ? l10n.stopSharing
@@ -377,9 +380,9 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                             : () => _shareRoute(route),
                       ),
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.delete_outline,
-                          color: Colors.redAccent,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                         tooltip: l10n.deleteRoute,
                         onPressed: () => _deleteRoute(route),

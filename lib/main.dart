@@ -62,9 +62,50 @@ class MyApp extends StatelessWidget {
           navigatorKey: NavigationService().navigatorKey,
           title: 'Trip Book',
           theme: ThemeData(
-            primarySwatch: Colors.blue,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue.shade700,
+              brightness: Brightness.light,
+            ),
+            cardTheme: CardThemeData(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: Colors.blue.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.blue.shade700,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              titleTextStyle: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              iconTheme: const IconThemeData(color: Colors.white),
+            ),
           ),
           locale: provider.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,

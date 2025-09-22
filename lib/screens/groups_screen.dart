@@ -268,6 +268,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
           return AnimationLimiter(
             child: ListView.builder(
+              padding: const EdgeInsets.all(8.0),
               itemCount: groups.length,
               itemBuilder: (context, index) {
                 final group = groups[index];
@@ -277,92 +278,98 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   child: SlideAnimation(
                     verticalOffset: 50.0,
                     child: FadeInAnimation(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.circle,
-                          color: Color(group.color ?? Colors.blue.value),
-                        ),
-                        title: Text(group.name),
-                        trailing: widget.isForSelection
-                            ? const Icon(Icons.arrow_forward_ios)
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () {
-                                      _showGroupDialog(groupToEdit: group);
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () async {
-                                      final bool? confirmDelete =
-                                          await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                )!.deleteGroup,
-                                              ),
-                                              content: Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                )!.deleteGroupConfirmation(
-                                                  group.name,
-                                                ),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(
+                      child: Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Color(group.color ?? Colors.blue.value),
+                            radius: 15,
+                          ),
+                          title: Text(group.name, style: Theme.of(context).textTheme.titleMedium),
+                          trailing: widget.isForSelection
+                              ? const Icon(Icons.arrow_forward_ios)
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () {
+                                        _showGroupDialog(groupToEdit: group);
+                                      },
+                                      tooltip: AppLocalizations.of(context)!.editGroup,
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                                      onPressed: () async {
+                                        final bool? confirmDelete =
+                                            await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: Text(
+                                                  AppLocalizations.of(
                                                     context,
-                                                  ).pop(false),
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.cancel,
+                                                  )!.deleteGroup,
+                                                ),
+                                                content: Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.deleteGroupConfirmation(
+                                                    group.name,
                                                   ),
                                                 ),
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(
-                                                    context,
-                                                  ).pop(true),
-                                                  child: Text(
-                                                    AppLocalizations.of(
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(
                                                       context,
-                                                    )!.delete,
+                                                    ).pop(false),
+                                                    child: Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.cancel,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(
+                                                      context,
+                                                    ).pop(true),
+                                                    child: Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.delete,
+                                                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                        if (confirmDelete == true) {
+                                          await _firestoreService.deleteGroup(
+                                            group.firestoreId!,
                                           );
-                                      if (confirmDelete == true) {
-                                        await _firestoreService.deleteGroup(
-                                          group.firestoreId!,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                        onTap: () {
-                          if (widget.isForSelection) {
-                            Navigator.of(context).pop({
-                              'id': group.firestoreId!,
-                              'name': group.name,
-                            });
-                          } else {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => GroupDetailScreen(
-                                  groupId: group.firestoreId!,
-                                  groupName: group.name,
+                                        }
+                                      },
+                                      tooltip: AppLocalizations.of(context)!.deleteGroup,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            );
-                          }
-                        },
+                          onTap: () {
+                            if (widget.isForSelection) {
+                              Navigator.of(context).pop({
+                                'id': group.firestoreId!,
+                                'name': group.name,
+                              });
+                            } else {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => GroupDetailScreen(
+                                    groupId: group.firestoreId!,
+                                    groupName: group.name,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
                       ),
                     ),
                   ),
