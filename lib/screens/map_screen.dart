@@ -71,6 +71,29 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   CameraPosition? _cameraPosition;
   double _currentBearing = 0.0;
 
+  final List<Color> _groupColors = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
+  ];
+
   List<TravelLocation> _allLocations = [];
   List<LocationGroup> _allGroups = [];
   GeoPoint? _homeLocation;
@@ -109,6 +132,111 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _initializeScreen();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<LocationGroup?> _showAddNewGroupDialog(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final groupNameController = TextEditingController();
+    Color selectedColor = _groupColors.first;
+    final formKey = GlobalKey<FormState>();
+
+    return await showDialog<LocationGroup>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(l10n.newGroup),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: groupNameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.groupName,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.locationNameEmptyError;
+                          }
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.invalidGroupNameError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Text(l10n.selectGroupColor),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: _groupColors.map((color) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            },
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selectedColor == color
+                                      ? Colors.black
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final newGroup = LocationGroup(
+                        name: groupNameController.text.trim(),
+                        color: selectedColor.value,
+                        createdAt: DateTime.now(),
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                      );
+                      final docRef = await _firestoreService.addGroup(newGroup);
+                      final createdGroup = LocationGroup(
+                        firestoreId: docRef.id,
+                        name: newGroup.name,
+                        color: newGroup.color,
+                        createdAt: newGroup.createdAt,
+                        userId: newGroup.userId,
+                      );
+                      Navigator.of(dialogContext).pop(createdGroup);
+                    }
+                  },
+                  child: Text(l10n.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _initializeScreen() async {
@@ -2085,6 +2213,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final needsController = TextEditingController();
     final durationController = TextEditingController();
     String? selectedGroupId;
+    List<LocationGroup> dialogGroups = List.from(_allGroups);
 
     showDialog(
       context: context,
@@ -2180,17 +2309,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             value: null,
                             child: Text(l10n.groupNone),
                           ),
-                          ..._allGroups.map((group) {
+                          ...dialogGroups.map((group) {
                             return DropdownMenuItem<String>(
                               value: group.firestoreId,
                               child: Text(group.name),
                             );
                           }),
+                          DropdownMenuItem<String>(
+                            value: 'add_new_group',
+                            child: Text(l10n.addNewGroup),
+                          ),
                         ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedGroupId = value;
-                          });
+                        onChanged: (value) async {
+                          if (value == 'add_new_group') {
+                            final newGroup = await _showAddNewGroupDialog(context);
+                            if (newGroup != null) {
+                              setState(() {
+                                dialogGroups.add(newGroup);
+                                _allGroups.add(newGroup);
+                                selectedGroupId = newGroup.firestoreId;
+                              });
+                            }
+                          } else {
+                            setState(() {
+                              selectedGroupId = value;
+                            });
+                          }
                         },
                       ),
                     ],

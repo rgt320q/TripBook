@@ -864,4 +864,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get needsHint => 'örn. Su, Atıştırmalık, Bilet';
+
+  @override
+  String get addNewGroup => 'Yeni Grup Ekle...';
 }

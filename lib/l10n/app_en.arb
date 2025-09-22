@@ -479,5 +479,6 @@
   "usernameInvalidCharsError": "Username contains invalid characters.",
   "mySharedRoute": "This is a route I shared",
   "add": "Add",
-  "needsHint": "e.g. Water, Snacks, Tickets"
+  "needsHint": "e.g. Water, Snacks, Tickets",
+  "addNewGroup": "Add New Group..."
 }

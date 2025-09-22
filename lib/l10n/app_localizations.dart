@@ -1639,6 +1639,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. Water, Snacks, Tickets'**
   String get needsHint;
+
+  /// No description provided for @addNewGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Group...'**
+  String get addNewGroup;
 }
 
 class _AppLocalizationsDelegate

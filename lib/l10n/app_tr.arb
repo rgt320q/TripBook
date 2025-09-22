@@ -479,5 +479,6 @@
   "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor.",
   "mySharedRoute": "Bu benim paylaştığım bir rota",
   "add": "Ekle",
-  "needsHint": "örn. Su, Atıştırmalık, Bilet"
+  "needsHint": "örn. Su, Atıştırmalık, Bilet",
+  "addNewGroup": "Yeni Grup Ekle..."
 }

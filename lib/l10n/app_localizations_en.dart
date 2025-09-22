@@ -862,4 +862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get needsHint => 'e.g. Water, Snacks, Tickets';
+
+  @override
+  String get addNewGroup => 'Add New Group...';
 }
