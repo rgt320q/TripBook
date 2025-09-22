@@ -336,7 +336,7 @@ class _LocationListItemState extends State<LocationListItem> {
       notes: notes,
       needsList: needsList,
       estimatedDuration: int.tryParse(_durationController.text),
-      createdAt: widget.location.createdAt, userId: '',
+      createdAt: widget.location.createdAt, userId: widget.location.userId,
     );
 
     try {

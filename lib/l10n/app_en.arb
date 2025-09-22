@@ -468,11 +468,16 @@
   "invalidCommentError": "Comment contains invalid characters.",
   "invalidGroupNameError": "Group name contains invalid characters.",
   "locationNameEmptyError": "Location name cannot be empty.",
+  "locationNameLabel": "Location Name",
+  "estimatedDurationHint": "e.g. 30",
+  "selectGroupHint": "Select a group (Optional)",
+  "addNeedHint": "Add a need",
   "locationNameInvalidCharsError": "Location name contains invalid characters.",
   "descriptionInvalidCharsError": "Description contains invalid characters.",
   "notesInvalidCharsError": "Notes contain invalid characters.",
   "routeNameInvalidCharsError": "Route name contains invalid characters.",
   "usernameInvalidCharsError": "Username contains invalid characters.",
   "mySharedRoute": "This is a route I shared",
-  "add": "Add"
+  "add": "Add",
+  "needsHint": "e.g. Water, Snacks, Tickets"
 }

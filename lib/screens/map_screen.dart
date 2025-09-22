@@ -1691,7 +1691,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   _isSelectingEndpoint = false;
                 });
               } else {
-                _showAddLocationDialog(pos);
+                final geoName = await _directionsService.getPlaceName(pos) ??
+                    l10n.unknownLocation;
+                _showAddLocationDialog(pos, geoName);
               }
             },
             mapType: _currentMapType,
@@ -2073,74 +2075,170 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _showAddLocationDialog(LatLng pos) {
+  void _showAddLocationDialog(LatLng pos, String geoName) {
     final l10n = AppLocalizations.of(context)!;
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+
+    final nameController = TextEditingController(text: geoName);
+    final descriptionController = TextEditingController();
+    final notesController = TextEditingController();
+    final needsController = TextEditingController();
+    final durationController = TextEditingController();
+    String? selectedGroupId;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.addLocationDialogTitle),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.customLocationNameLabel,
-                    hintText: l10n.customLocationNameLabel,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(l10n.addLocationDialogTitle),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.googleMapsNameLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(geoName),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.customLocationNameLabel,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.locationNameEmptyError;
+                          }
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.locationNameInvalidCharsError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: descriptionController,
+                        decoration: InputDecoration(
+                          labelText: l10n.descriptionLabel,
+                        ),
+                        validator: (value) {
+                          if (value == null) return null;
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.descriptionInvalidCharsError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: notesController,
+                        decoration: InputDecoration(
+                          labelText: l10n.notesLabel,
+                        ),
+                        validator: (value) {
+                          if (value == null) return null;
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.notesInvalidCharsError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: needsController,
+                        decoration: InputDecoration(
+                          labelText: l10n.needsLabel,
+                          hintText: l10n.needsHint,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: durationController,
+                        decoration: InputDecoration(
+                          labelText: l10n.estimatedDurationLabel,
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedGroupId,
+                        decoration: InputDecoration(
+                          labelText: l10n.groupLabel,
+                          border: const OutlineInputBorder(),
+                        ),
+                        items: [
+                          DropdownMenuItem<String>(
+                            value: null,
+                            child: Text(l10n.groupNone),
+                          ),
+                          ..._allGroups.map((group) {
+                            return DropdownMenuItem<String>(
+                              value: group.firestoreId,
+                              child: Text(group.name),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedGroupId = value;
+                          });
+                        },
+                      ),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return l10n.locationNameEmptyError;
-                    }
-                    return null;
-                  },
                 ),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    labelText: l10n.descriptionLabel,
-                    hintText: l10n.descriptionLabel,
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) return;
+
+                      final needsList = needsController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .map((name) => {'name': name, 'checked': false})
+                          .toList();
+
+                      final newLocation = TravelLocation(
+                        name: nameController.text.trim(),
+                        geoName: geoName,
+                        description: descriptionController.text.trim(),
+                        latitude: pos.latitude,
+                        longitude: pos.longitude,
+                        notes: notesController.text.trim(),
+                        needsList: needsList,
+                        estimatedDuration:
+                            int.tryParse(durationController.text),
+                        groupId: selectedGroupId,
+                        userId: user.uid,
+                        createdAt: DateTime.now(),
+                      );
+
+                      await _firestoreService.addLocation(newLocation);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Text(l10n.add),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user == null) return;
-
-                  final geoName = await _directionsService.getPlaceName(pos) ??
-                      l10n.unknownLocation;
-
-                  final newLocation = TravelLocation(
-                    name: nameController.text,
-                    geoName: geoName,
-                    description: descriptionController.text,
-                    latitude: pos.latitude,
-                    longitude: pos.longitude,
-                    userId: user.uid,
-                  );
-                  await _firestoreService.addLocation(newLocation);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Text(l10n.add),
-            ),
-          ],
+            );
+          },
         );
       },
     );

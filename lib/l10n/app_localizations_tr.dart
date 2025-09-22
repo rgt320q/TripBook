@@ -826,6 +826,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get locationNameEmptyError => 'Konum adı boş olamaz.';
 
   @override
+  String get locationNameLabel => 'Konum Adı';
+
+  @override
+  String get estimatedDurationHint => 'örn. 30';
+
+  @override
+  String get selectGroupHint => 'Grup seç (İsteğe bağlı)';
+
+  @override
+  String get addNeedHint => 'İhtiyaç ekle';
+
+  @override
   String get locationNameInvalidCharsError =>
       'Konum adı geçersiz karakterler içeriyor.';
 
@@ -849,4 +861,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get add => 'Ekle';
+
+  @override
+  String get needsHint => 'örn. Su, Atıştırmalık, Bilet';
 }

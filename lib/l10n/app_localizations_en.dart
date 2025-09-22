@@ -824,6 +824,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationNameEmptyError => 'Location name cannot be empty.';
 
   @override
+  String get locationNameLabel => 'Location Name';
+
+  @override
+  String get estimatedDurationHint => 'e.g. 30';
+
+  @override
+  String get selectGroupHint => 'Select a group (Optional)';
+
+  @override
+  String get addNeedHint => 'Add a need';
+
+  @override
   String get locationNameInvalidCharsError =>
       'Location name contains invalid characters.';
 
@@ -847,4 +859,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get add => 'Add';
+
+  @override
+  String get needsHint => 'e.g. Water, Snacks, Tickets';
 }

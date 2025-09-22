@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -9,16 +10,19 @@ import 'package:tripbook/services/firestore_service.dart';
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // If you're going to use other Firebase services in the background, such as Firestore,
   // make sure you call `initializeApp` before using other Firebase services.
-  // await Firebase.initializeApp(); // Already initialized in main
+  await Firebase.initializeApp(); // THIS IS VITAL for background message handling
   if (kDebugMode) {
     print("Handling a background message: ${message.messageId}");
   }
 
-  // Use the local notification service to show the notification
+  // Use the local notification service to show the notification.
   // We create a new instance because this is a separate isolate.
+  final title = message.data['title'] ?? message.notification?.title ?? 'New Message';
+  final body = message.data['body'] ?? message.notification?.body ?? '';
+
   await NotificationService().showNotification(
-    message.notification?.title ?? 'New Message',
-    message.notification?.body ?? '',
+    title,
+    body,
     payload: message.data['payload'] as String?,
   );
 }
@@ -146,9 +150,9 @@ class NotificationService {
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'your_channel_id', // channel id
-      'your_channel_name', // channel name
-      channelDescription: 'your_channel_description',
+      'high_importance_channel', // channel id (matches AndroidManifest)
+      'High Importance Notifications', // channel name
+      channelDescription: 'This channel is used for important notifications.',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,

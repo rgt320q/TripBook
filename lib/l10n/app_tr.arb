@@ -468,11 +468,16 @@
   "invalidCommentError": "Yorum geçersiz karakterler içeriyor.",
   "invalidGroupNameError": "Grup adı geçersiz karakterler içeriyor.",
   "locationNameEmptyError": "Konum adı boş olamaz.",
+  "locationNameLabel": "Konum Adı",
+  "estimatedDurationHint": "örn. 30",
+  "selectGroupHint": "Grup seç (İsteğe bağlı)",
+  "addNeedHint": "İhtiyaç ekle",
   "locationNameInvalidCharsError": "Konum adı geçersiz karakterler içeriyor.",
   "descriptionInvalidCharsError": "Açıklama geçersiz karakterler içeriyor.",
   "notesInvalidCharsError": "Notlar geçersiz karakterler içeriyor.",
   "routeNameInvalidCharsError": "Rota adı geçersiz karakterler içeriyor.",
   "usernameInvalidCharsError": "Kullanıcı adı geçersiz karakterler içeriyor.",
   "mySharedRoute": "Bu benim paylaştığım bir rota",
-  "add": "Ekle"
+  "add": "Ekle",
+  "needsHint": "örn. Su, Atıştırmalık, Bilet"
 }

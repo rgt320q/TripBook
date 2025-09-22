@@ -1568,6 +1568,30 @@ abstract class AppLocalizations {
   /// **'Location name cannot be empty.'**
   String get locationNameEmptyError;
 
+  /// No description provided for @locationNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Name'**
+  String get locationNameLabel;
+
+  /// No description provided for @estimatedDurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 30'**
+  String get estimatedDurationHint;
+
+  /// No description provided for @selectGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a group (Optional)'**
+  String get selectGroupHint;
+
+  /// No description provided for @addNeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a need'**
+  String get addNeedHint;
+
   /// No description provided for @locationNameInvalidCharsError.
   ///
   /// In en, this message translates to:
@@ -1609,6 +1633,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add'**
   String get add;
+
+  /// No description provided for @needsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Water, Snacks, Tickets'**
+  String get needsHint;
 }
 
 class _AppLocalizationsDelegate

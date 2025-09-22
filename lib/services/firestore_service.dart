@@ -132,8 +132,8 @@ class FirestoreService {
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  Future<void> addGroup(LocationGroup group) async {
-    await _groupsCollection.add(group);
+  Future<DocumentReference<LocationGroup>> addGroup(LocationGroup group) async {
+    return await _groupsCollection.add(group);
   }
 
   Future<List<TravelLocation>> getLocationsForGroup(String groupId) async {

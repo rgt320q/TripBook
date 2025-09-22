@@ -40,7 +40,7 @@ class TravelLocation {
       if (description != null) "description": description,
       "latitude": latitude,
       "longitude": longitude,
-      if (groupId != null) "groupId": groupId,
+      "groupId": groupId,
       if (notes != null) "notes": notes,
       if (needsList != null) "needsList": needsList,
       if (estimatedDuration != null) "estimatedDuration": estimatedDuration,

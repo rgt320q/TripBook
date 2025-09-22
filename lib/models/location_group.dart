@@ -38,4 +38,20 @@ class LocationGroup {
       userId: firestoreMap['userId'] as String? ?? '', // Handle old data without userId
     );
   }
+
+  LocationGroup copyWith({
+    String? firestoreId,
+    String? name,
+    int? color,
+    DateTime? createdAt,
+    String? userId,
+  }) {
+    return LocationGroup(
+      firestoreId: firestoreId ?? this.firestoreId,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      createdAt: createdAt ?? this.createdAt,
+      userId: userId ?? this.userId,
+    );
+  }
 }
