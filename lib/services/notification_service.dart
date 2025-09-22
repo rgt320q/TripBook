@@ -15,9 +15,20 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print("Handling a background message: ${message.messageId}");
   }
 
+  // On Android, if the message has a notification payload, the system handles it.
+  // We should not show a second notification.
+  if (defaultTargetPlatform == TargetPlatform.android &&
+      message.notification != null) {
+    if (kDebugMode) {
+      print("Notification payload already present, system will handle it.");
+    }
+    return;
+  }
+
   // Use the local notification service to show the notification.
   // We create a new instance because this is a separate isolate.
-  final title = message.data['title'] ?? message.notification?.title ?? 'New Message';
+  final title =
+      message.data['title'] ?? message.notification?.title ?? 'New Message';
   final body = message.data['body'] ?? message.notification?.body ?? '';
 
   await NotificationService().showNotification(
