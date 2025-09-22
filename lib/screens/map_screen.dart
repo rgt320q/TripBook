@@ -1148,9 +1148,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
     final consolidatedNeeds = consolidatedNeedsMap.values.toList();
 
-    final privateNotes = locations
-        .where((loc) => loc.notes != null && loc.notes!.isNotEmpty)
-        .map((loc) => {'locationName': loc.name, 'note': loc.notes!})
+    final locationsWithInfo = locations
+        .where((loc) =>
+            (loc.notes != null && loc.notes!.isNotEmpty) ||
+            (loc.estimatedDuration != null && loc.estimatedDuration! > 0))
         .toList();
 
     final totalStopDuration = locations.fold<int>(
@@ -1164,144 +1165,167 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _activeRouteTotalStopDuration = _formatDuration(totalStopDuration);
     _activeRouteTotalTripDuration = _formatDuration(totalTripDuration);
     _activeRouteNeeds = consolidatedNeeds.map((e) => e.name).toList();
-    _activeRouteNotes = privateNotes;
+    _activeRouteNotes = locations
+        .where((loc) => loc.notes != null && loc.notes!.isNotEmpty)
+        .map((loc) => {'locationName': loc.name, 'note': loc.notes!})
+        .toList();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.routeSummaryTitle,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      if (!_isNavigationStarted)
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.save, color: Colors.blue),
-                              tooltip: l10n.saveRouteDialogTitle,
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _showSaveRouteDialog(
-                                  info,
-                                  locations,
-                                  totalStopDuration:
-                                      _activeRouteTotalStopDuration,
-                                  totalTripDuration:
-                                      _activeRouteTotalTripDuration,
-                                  needs: _activeRouteNeeds,
-                                  notes: _activeRouteNotes,
-                                );
-                              },
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _isNavigationStarted = true;
-                                });
-                                Navigator.pop(context);
-                                _launchGoogleMaps(locations);
-                              },
-                              icon: const Icon(Icons.navigation),
-                              label: Text(l10n.startNavigation),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  const Divider(),
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setModalState) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ListTile(
-                          title: Text(
-                            '${l10n.estimatedTravelTime}: ${info.totalDuration}',
-                          ),
+                        Text(
+                          l10n.routeSummaryTitle,
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        ListTile(
-                          title: Text(
-                            '${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}',
-                          ),
-                        ),
-                        ListTile(
-                          title: Text(
-                            '${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        ListTile(
-                          title: Text(
-                            '${l10n.totalDistance}: ${info.totalDistance}',
-                          ),
-                        ),
-                        const Divider(),
-                        if (consolidatedNeeds.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
-                            child: Text(
-                              l10n.needsForTrip,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          ...consolidatedNeeds.map((needItem) {
-                            return CheckboxListTile(
-                              title: Text(needItem.name),
-                              value: needItem.isChecked,
-                              onChanged: (bool? newValue) {
-                                if (newValue == null) return;
-
-                                setModalState(() {
-                                  needItem.isChecked = newValue;
-                                  _activeRouteNeedsState[needItem.name] =
-                                      newValue;
-                                });
-                              },
-                            );
-                          }),
-                          const Divider(),
-                        ],
-                        if (privateNotes.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
-                            child: Text(
-                              l10n.notesForTrip,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          ...privateNotes.map(
-                            (note) => ListTile(
-                              leading: const Icon(Icons.note),
-                              title: Text(
-                                '${note['locationName']}: ${note['note']}',
+                        if (!_isNavigationStarted)
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.save, color: Colors.blue),
+                                tooltip: l10n.saveRouteDialogTitle,
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _showSaveRouteDialog(
+                                    info,
+                                    locations,
+                                    totalStopDuration:
+                                        _activeRouteTotalStopDuration,
+                                    totalTripDuration:
+                                        _activeRouteTotalTripDuration,
+                                    needs: _activeRouteNeeds,
+                                    notes: _activeRouteNotes,
+                                  );
+                                },
                               ),
-                            ),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _isNavigationStarted = true;
+                                  });
+                                  Navigator.pop(context);
+                                  _launchGoogleMaps(locations);
+                                },
+                                icon: const Icon(Icons.navigation),
+                                label: Text(l10n.startNavigation),
+                              ),
+                            ],
                           ),
-                        ],
                       ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                    const Divider(),
+                    Flexible(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          ListTile(
+                            title: Text(
+                              '${l10n.estimatedTravelTime}: ${info.totalDuration}',
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(
+                              '${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}',
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(
+                              '${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(
+                              '${l10n.totalDistance}: ${info.totalDistance}',
+                            ),
+                          ),
+                          const Divider(),
+                          if (consolidatedNeeds.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              child: Text(
+                                l10n.needsForTrip,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                            ...consolidatedNeeds.map((needItem) {
+                              return CheckboxListTile(
+                                title: Text(needItem.name),
+                                value: needItem.isChecked,
+                                onChanged: (bool? newValue) {
+                                  if (newValue == null) return;
+
+                                  setModalState(() {
+                                    needItem.isChecked = newValue;
+                                    _activeRouteNeedsState[needItem.name] =
+                                        newValue;
+                                  });
+                                },
+                              );
+                            }),
+                            const Divider(),
+                          ],
+                          if (locationsWithInfo.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              child: Text(
+                                l10n.notesForTrip,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                            ...locationsWithInfo.map((loc) {
+                              return ListTile(
+                                leading: const Icon(Icons.note_alt_outlined),
+                                title: Text(loc.name),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (loc.notes != null &&
+                                        loc.notes!.isNotEmpty)
+                                      Text(loc.notes!),
+                                    if (loc.estimatedDuration != null &&
+                                        loc.estimatedDuration! > 0)
+                                      Text(
+                                        '${l10n.estimatedDurationLabel}: ${_formatDuration(loc.estimatedDuration!)}',
+                                        style: const TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
