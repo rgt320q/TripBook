@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -870,8 +871,25 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
 
     var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
-    final directionsInfo =
+    var directionsInfo =
         await _directionsService.getDirections(routeLocationsForApi);
+
+    if (kIsWeb && directionsInfo == null && routeLocationsForApi.length >= 2) {
+      // On web, if Directions API is skipped, create a dummy DirectionsInfo
+      // to allow saving the route with partial data.
+      final bounds = LatLngBounds(
+        southwest: LatLng(routeLocationsForApi.first.latitude,
+            routeLocationsForApi.first.longitude),
+        northeast: LatLng(
+            routeLocationsForApi.last.latitude, routeLocationsForApi.last.longitude),
+      );
+      directionsInfo = DirectionsInfo(
+        bounds: bounds,
+        legsPoints: [], // No polylines for web
+        totalDistance: l10n.notAvailable,
+        totalDuration: l10n.notAvailable,
+      );
+    }
 
     if (directionsInfo != null) {
       final activeRouteLocations = [...waypoints, finalDestination];
@@ -882,9 +900,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
       _updateMapElements();
 
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
-      );
+      // Don't animate camera on web if we don't have real bounds
+      if (!kIsWeb) {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
+        );
+      }
 
       _showRouteSummary(directionsInfo, activeRouteLocations);
       _startRouteTracking();
@@ -1013,7 +1034,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
                 final newRoute = TravelRoute(
                   name: routeName,
-                  locationIds: locations.map((l) => l.firestoreId!).toList(),
+                  locationIds: locations
+                      .where((l) => l.firestoreId != null && l.firestoreId!.isNotEmpty)
+                      .map((l) => l.firestoreId!)
+                      .toList(),
                   totalTravelTime: info.totalDuration,
                   totalDistance: info.totalDistance,
                   totalStopDuration:

@@ -31,17 +31,15 @@
 
   <title>TripBook</title>
   <link rel="manifest" href="manifest.json">
-  <!-- Google Maps API key should be loaded securely at runtime, not hardcoded here -->
-  <script>
-    // Example: Load API key from a secure endpoint or environment variable
-    // fetch('/config/maps-api-key').then(response => response.text()).then(key => {
-    //   const script = document.createElement('script');
-    //   script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
-    //   document.head.appendChild(script);
-    // });
-  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFQGLeeVXkaI7WzVzOqe9KVZLHR7Sd_B8"></script>
 </head>
 <body>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

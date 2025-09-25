@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -38,6 +39,12 @@ class DirectionsService {
   }
 
   Future<DirectionsInfo?> getDirections(List<TravelLocation> locations) async {
+    if (kIsWeb) {
+      // On web, don't call the Directions API to avoid CORS issues.
+      // Return null to prevent route drawing, as requested by the user.
+      return null;
+    }
+
     if (locations.length < 2) return null;
 
     final origin = locations.first;

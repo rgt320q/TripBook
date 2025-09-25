@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:tripbook/models/travel_location.dart';
@@ -10,7 +11,10 @@ class DatabaseService {
 
   DatabaseService._init();
 
-  Future<Database> get database async {
+  Future<Database?> get database async {
+    if (kIsWeb) {
+      return null;
+    }
     if (_database != null) return _database!;
     _database = await _initDB('travel_log.db');
     return _database!;
@@ -62,6 +66,10 @@ CREATE TABLE locations (
 
   Future<TravelLocation> create(TravelLocation location) async {
     final db = await instance.database;
+    if (db == null) {
+      // Web: Return location without saving, maybe with a temp ID if needed.
+      return location.copyWith(id: DateTime.now().millisecondsSinceEpoch);
+    }
     final id = await db.insert('locations', {
       'name': location.name,
       'description': location.description,
@@ -79,6 +87,10 @@ CREATE TABLE locations (
 
   Future<List<TravelLocation>> readAllLocations() async {
     final db = await instance.database;
+    if (db == null) {
+      // Web: Return an empty list as there's no local DB.
+      return [];
+    }
     final result = await db.query('locations');
     return result.map((json) {
       final needsListString = json['needsList'] as String?;
@@ -119,6 +131,10 @@ CREATE TABLE locations (
 
   Future<int> update(TravelLocation location) async {
     final db = await instance.database;
+    if (db == null) {
+      // Web: Return 0 indicating no rows were updated.
+      return 0;
+    }
     return db.update(
       'locations',
       {
@@ -140,11 +156,18 @@ CREATE TABLE locations (
 
   Future<int> delete(int id) async {
     final db = await instance.database;
+    if (db == null) {
+      // Web: Return 0 indicating no rows were deleted.
+      return 0;
+    }
     return await db.delete('locations', where: 'id = ?', whereArgs: [id]);
   }
 
   Future close() async {
     final db = await instance.database;
+    if (db == null) {
+      return;
+    }
     db.close();
   }
 }
