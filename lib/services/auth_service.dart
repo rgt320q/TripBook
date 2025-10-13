@@ -2,8 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tripbook/services/notification_service.dart';
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final NotificationService _notificationService = NotificationService();
+  final FirebaseAuth _firebaseAuth;
+  final NotificationService _notificationService;
+
+  AuthService({FirebaseAuth? firebaseAuth, NotificationService? notificationService})
+      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+        _notificationService = notificationService ?? NotificationService();
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 

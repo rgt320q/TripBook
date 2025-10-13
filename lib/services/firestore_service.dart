@@ -1,3 +1,5 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tripbook/models/reached_location_log.dart';
@@ -14,10 +16,15 @@ class FirestoreService {
     return _instance;
   }
 
-  FirestoreService._internal();
+  final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
 
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirestoreService._internal({FirebaseFirestore? db, FirebaseAuth? auth})
+      : _db = db ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
+
+  @visibleForTesting
+  FirestoreService.internal(this._db, this._auth);
 
   User? get _currentUser => _auth.currentUser;
 
@@ -272,8 +279,12 @@ class FirestoreService {
         await communityRouteRef.delete();
 
         await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
-      } catch (e) {
-        print('Error un-sharing route: $e');
+      } catch (e, s) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          s,
+          reason: 'Error un-sharing route: $routeId',
+        );
         // Re-throw the exception to be handled by the caller if needed
         rethrow;
       }
@@ -358,8 +369,12 @@ class FirestoreService {
         return ratingDoc.data()?['rating'] as double?;
       }
       return null;
-    } catch (e) {
-      print('Error getting user rating: $e');
+    } catch (e, s) {
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        s,
+        reason: 'Error getting user rating for route: $routeId',
+      );
       return null;
     }
   }
@@ -418,8 +433,12 @@ class FirestoreService {
     try {
       final docRef = await _reachedLogsCollection.add(log);
       return docRef.id;
-    } catch (e) {
-      // TODO: Add proper logging for database errors
+    } catch (e, s) {
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        s,
+        reason: 'Error adding reached location log',
+      );
       return null;
     }
   }
@@ -494,8 +513,6 @@ class FirestoreService {
   }
 
   Future<void> updateUserProfile(UserProfile profile) async {
-    final dataToSave = profile.toFirestore();
-    print('Saving user profile data: $dataToSave'); // DEBUG PRINT
     await _userProfileDoc.set(profile, SetOptions(merge: true));
   }
 
@@ -506,8 +523,12 @@ class FirestoreService {
         return UserProfile.fromFirestore(docSnapshot);
       }
       return null;
-    } catch (e) {
-      print('Error getting user profile by ID: $e');
+    } catch (e, s) {
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        s,
+        reason: 'Error getting user profile by ID: $userId',
+      );
       return null;
     }
   }
@@ -543,8 +564,12 @@ class FirestoreService {
         }
       }
       return profiles;
-    } catch (e) {
-      print('Error getting user profiles by IDs: $e');
+    } catch (e, s) {
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        s,
+        reason: 'Error getting user profiles by IDs',
+      );
       return {};
     }
   }

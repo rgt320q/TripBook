@@ -652,7 +652,7 @@ class _LocationListItemState extends State<LocationListItem> {
         : null;
 
     return DropdownButtonFormField<String>(
-      value: validSelectedGroupId,
+      initialValue: validSelectedGroupId,
       decoration: InputDecoration(
         labelText: l10n.groupLabel,
         border: const OutlineInputBorder(),

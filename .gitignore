@@ -33,7 +33,19 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 firebase.json
 firebase_options.dart
+firebase.indexes.json
+firebase.rules
+google-services.json
+GoogleService-Info.plist
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase.json
+**/firebase_options.dart
+**/firebase.indexes.json
+**/firebase.rules
+**/google_
 client_secret*.json
+**\assets\.env
 
 
 # Flutter repo-specific
@@ -149,3 +161,4 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+assets/.env

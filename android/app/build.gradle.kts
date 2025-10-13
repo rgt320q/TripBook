@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -6,6 +9,14 @@ plugins {
     id("com.google.gms.google-services")
     
 }
+
+// Read the .env file
+val envFile = rootProject.file("../assets/.env")
+val properties = Properties()
+if (envFile.exists()) {
+    properties.load(FileInputStream(envFile))
+}
+
 
 android {
     namespace = "com.example.tripbook"
@@ -31,6 +42,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resValue("string", "google_maps_api_key", properties.getProperty("GOOGLE_MAPS_API_KEY_ANDROID"))
     }
 
     buildTypes {

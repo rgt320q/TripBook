@@ -61,8 +61,9 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
 
   void _zoomToFitBounds() {
     final locations = widget.route.locations;
-    if (_mapController == null || locations == null || locations.length < 2)
+    if (_mapController == null || locations == null || locations.length < 2) {
       return;
+    }
 
     final latLngList = locations
         .map((l) => LatLng(l['latitude'], l['longitude']))

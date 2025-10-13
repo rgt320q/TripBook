@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,40 +30,54 @@ class DirectionsService {
     return _instance;
   }
 
-  final String _apiKey =
-      dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'YOUR_API_KEY_HERE';
+  late final String _apiKey;
   String? _sessionToken;
   final Uuid _uuid = const Uuid();
 
   DirectionsService._internal() {
+    _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+    if (_apiKey.isEmpty) {
+      FirebaseCrashlytics.instance.recordError(
+        'FATAL ERROR: GOOGLE_MAPS_API_KEY is not set in the .env file.',
+        null,
+        fatal: true,
+      );
+    }
     _sessionToken = _uuid.v4();
   }
 
   Future<DirectionsInfo?> getDirections(List<TravelLocation> locations) async {
-    if (kIsWeb) {
-      // On web, don't call the Directions API to avoid CORS issues.
-      // Return null to prevent route drawing, as requested by the user.
-      return null;
-    }
-
-    if (locations.length < 2) return null;
-
-    final origin = locations.first;
-    final destination = locations.last;
-    final waypoints = locations.length > 2
-        ? locations
-              .sublist(1, locations.length - 1)
-              .map((loc) => '${loc.latitude},${loc.longitude}')
-              .join('|')
-        : '';
-
-    final url =
-        'https://maps.googleapis.com/maps/api/directions/json?'
-        'origin=${origin.latitude},${origin.longitude}&'
-        'destination=${destination.latitude},${destination.longitude}'
-        '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&'
-        'key=$_apiKey';
-
+      // For web, ensure the Google Maps API key in the Google Cloud Console
+      // has HTTP referrers set to allow requests from your domain to prevent CORS errors.
+  
+      if (locations.length < 2) return null;
+  
+      final origin = locations.first;
+      final destination = locations.last;
+      final waypoints = locations.length > 2
+          ? locations
+                .sublist(1, locations.length - 1)
+                .map((loc) => '${loc.latitude},${loc.longitude}')
+                .join('|')
+          : '';
+  
+      var url = '';
+      if (kIsWeb) {
+        // Use the Firebase Function as a proxy on the web to avoid CORS issues.
+        // IMPORTANT: Replace YOUR_PROJECT_ID with your actual Firebase project ID.
+        const functionUrl = 'https://us-central1-tripbook-68238.cloudfunctions.net/getDirections';
+        url = '$functionUrl?'
+            'origin=${origin.latitude},${origin.longitude}&'
+            'destination=${destination.latitude},${destination.longitude}'
+            '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
+      } else {
+        // Use the direct API on mobile.
+        url = 'https://maps.googleapis.com/maps/api/directions/json?'
+            'origin=${origin.latitude},${origin.longitude}&'
+            'destination=${destination.latitude},${destination.longitude}'
+            '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&'
+            'key=$_apiKey';
+      }
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -123,6 +138,11 @@ class DirectionsService {
         totalDuration: totalDurationText.trim(),
       );
     } else {
+      FirebaseCrashlytics.instance.recordError(
+        'Failed to get directions',
+        null,
+        reason: 'API call failed with status code ${response.statusCode}',
+      );
       return null;
     }
   }
@@ -145,7 +165,11 @@ class DirectionsService {
         return "Bilinmeyen Konum";
       }
     } else {
-      // TODO: Add proper logging for failed API calls
+      FirebaseCrashlytics.instance.recordError(
+        'Failed to get place name for position: $position',
+        null,
+        reason: 'API call failed with status code ${response.statusCode}',
+      );
       return null;
     }
   }

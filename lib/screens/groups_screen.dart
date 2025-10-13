@@ -4,7 +4,6 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/screens/group_detail_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 enum GroupSortBy { nameAsc, nameDesc, dateNewest, dateOldest }
 

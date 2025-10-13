@@ -9,7 +9,7 @@ admin.initializeApp();
 // for example, using Firebase environment variables:
 // firebase functions:config:set google.maps_api_key="YOUR_API_KEY"
 // Then, you can access it like this: functions.config().google.maps_api_key
-const GOOGLE_MAPS_API_KEY = "AIzaSyCFQGLeeVXkaI7WzVzOqe9KVZLHR7Sd_B8";
+const GOOGLE_MAPS_API_KEY = functions.config().google.maps_api_key;
 
 exports.getDirections = functions.https.onRequest((req, res) => {
   // Use the cors middleware to automatically handle CORS preflight requests

@@ -507,7 +507,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final l10n = AppLocalizations.of(context)!;
     if (_activeRouteLocations == null ||
         FirebaseAuth.instance.currentUser == null ||
-        _isRouteCompleted) return;
+        _isRouteCompleted) {
+      return;
+    }
 
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
@@ -2347,7 +2349,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: selectedGroupId,
+                        initialValue: selectedGroupId,
                         decoration: InputDecoration(
                           labelText: l10n.groupLabel,
                           border: const OutlineInputBorder(),

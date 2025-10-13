@@ -11,6 +11,11 @@ class DatabaseService {
 
   DatabaseService._init();
 
+  @visibleForTesting
+  void setDatabase(Database db) {
+    _database = db;
+  }
+
   Future<Database?> get database async {
     if (kIsWeb) {
       return null;

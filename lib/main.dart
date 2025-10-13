@@ -1,6 +1,8 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,6 +12,7 @@ import 'package:tripbook/providers/locale_provider.dart';
 import 'package:tripbook/services/navigation_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/widgets/auth_wrapper.dart';
+import 'package:tripbook/non_web_script_loader.dart' if (dart.library.html) 'package:tripbook/web_script_loader.dart';
 
 // This needs to be a top-level function for background isolate registration.
 @pragma('vm:entry-point')
@@ -23,7 +26,33 @@ void notificationTapBackground(NotificationResponse response) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
+
+  if (kIsWeb) {
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (apiKey != null) {
+      loadGoogleMapsScript(apiKey);
+    }
+  }
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set up Crashlytics
+  if (kDebugMode) {
+    // Force enable Crashlytics collection for debugging purposes
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+  } else {
+    // Handle Crashlytics collection in release mode
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+  }
+
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   // Set up the navigation service to listen for navigation events.
   final navigationService = NavigationService();
