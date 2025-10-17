@@ -47,6 +47,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get delete => 'Sil';
 
   @override
+  String get groups => 'Gruplar';
+
+  @override
   String get groupName => 'Grup Adı';
 
   @override
@@ -210,12 +213,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get unknownLocation => 'Bilinmeyen Konum';
 
   @override
-  String get currentLocationError =>
-      'Mevcut konumunuz alınamadı. Lütfen konum servislerini kontrol edin.';
-
-  @override
   String get drawRouteError =>
       'Rota çizilemedi. API anahtarınızı kontrol edin veya daha sonra tekrar deneyin.';
+
+  @override
+  String get currentLocationError =>
+      'Mevcut konumunuz alınamadı. Lütfen konum servislerini kontrol edin.';
 
   @override
   String get saveRouteDialogTitle => 'Rotayı Kaydet';
@@ -280,6 +283,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get notesForTrip => 'Bu gezi için aldığınız özel notlar:';
+
+  @override
+  String get consolidate => 'Konsolide Et';
+
+  @override
+  String get expand => 'Genişlet';
 
   @override
   String get launchMapsError => 'Google Haritalar uygulaması başlatılamadı.';
@@ -818,6 +827,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get invalidCommentError => 'Yorum geçersiz karakterler içeriyor.';
+
+  @override
+  String get apiKeyWarning =>
+      'Google Haritalar yüklenemedi. Web için API anahtarı eksik veya geçersiz. Lütfen .env dosyasını ve Google Cloud proje yapılandırmanızı kontrol edin.';
 
   @override
   String get invalidGroupNameError => 'Grup adı geçersiz karakterler içeriyor.';

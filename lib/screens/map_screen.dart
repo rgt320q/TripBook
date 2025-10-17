@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -27,20 +28,6 @@ import 'package:tripbook/services/notification_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
-class NeedItem {
-  final String name;
-  bool isChecked;
-  final String locationId;
-  final int originalIndex;
-
-  NeedItem({
-    required this.name,
-    required this.isChecked,
-    required this.locationId,
-    required this.originalIndex,
-  });
-}
-
 class MapScreen extends StatefulWidget {
   final TravelLocation? initialLocation;
   final bool isChangingEndPoint;
@@ -56,6 +43,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   bool _isLoading = true;
+  bool _showApiKeyWarning = false;
 
   GoogleMapController? _mapController;
   Position? _currentPosition;
@@ -111,6 +99,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final List<LatLng> _userPathHistory = [];
   double _actualDistanceMeters = 0.0;
   bool _isNavigationStarted = false;
+  bool _isNeedsListConsolidated = false;
   // --------------------------
 
   final Map<String, bool> _activeRouteNeedsState = {};
@@ -130,6 +119,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        setState(() {
+          _showApiKeyWarning = true;
+        });
+      }
+    }
     WidgetsBinding.instance.addObserver(this);
     _initializeScreen();
     _searchController.addListener(_onSearchChanged);
@@ -215,6 +212,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     if (formKey.currentState!.validate()) {
                       final newGroup = LocationGroup(
                         name: groupNameController.text.trim(),
+                        // ignore: deprecated_member_use
                         color: selectedColor.value,
                         createdAt: DateTime.now(),
                         userId: FirebaseAuth.instance.currentUser!.uid,
@@ -421,6 +419,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _userPathHistory.clear();
       _actualDistanceMeters = 0.0;
       _isNavigationStarted = false;
+      _isNeedsListConsolidated = false; // Reset the consolidation state
     });
     _startLiveLocationTracking();
     _waypointTimers.forEach((key, timer) => timer.cancel());
@@ -501,7 +500,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     });
   }
 
-  String? _notificationSound;
+
 
   void _checkAllWaypointsProximity(Position userPosition) {
     final l10n = AppLocalizations.of(context)!;
@@ -656,6 +655,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
           infoWindow: InfoWindow(title: l10n.myLocationTooltip),
           icon: icon,
+          // ignore: deprecated_member_use
           zIndex: 2,
           anchor: const Offset(0.5, 0.5),
         ),
@@ -670,6 +670,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           position: LatLng(_homeLocation!.latitude, _homeLocation!.longitude),
           infoWindow: InfoWindow(title: l10n.homeLocation),
           icon: icon,
+          // ignore: deprecated_member_use
           zIndex: 1,
         ),
       );
@@ -710,6 +711,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           position: LatLng(loc.latitude, loc.longitude),
           infoWindow: InfoWindow(title: loc.name, snippet: loc.description),
           icon: icon,
+          // ignore: deprecated_member_use
           zIndex: isEndpoint ? 4 : (isVisited ? 1 : 2),
           onTap: () {
             if (loc.firestoreId != 'end') {
@@ -718,6 +720,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 MaterialPageRoute(
                   builder: (context) => ManageLocationsScreen(
                     initiallyExpandedLocationId: loc.firestoreId,
+                    isReadOnly: _activeRouteLocations != null,
                   ),
                 ),
               );
@@ -828,6 +831,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _activeRouteNeedsState.clear();
     _visitedWaypoints.clear();
     _triggeredWikipediaNotifications.clear();
+    _isNeedsListConsolidated = false; // Reset for new route
 
     final userLocation = TravelLocation(
       name: l10n.currentLocation,
@@ -873,8 +877,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
 
     var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
-    var directionsInfo =
-        await _directionsService.getDirections(routeLocationsForApi);
+    DirectionsInfo? directionsInfo;
+    try {
+      directionsInfo = await _directionsService.getDirections(routeLocationsForApi);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.drawRouteError),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
 
     if (kIsWeb && directionsInfo == null && routeLocationsForApi.length >= 2) {
       // On web, if Directions API is skipped, create a dummy DirectionsInfo
@@ -1148,31 +1163,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   void _showRouteSummary(DirectionsInfo info, List<TravelLocation> locations) {
     final l10n = AppLocalizations.of(context)!;
-    final List<NeedItem> allNeeds = [];
-    for (var loc in locations) {
-      if (loc.needsList != null && loc.firestoreId != null) {
-        for (var i = 0; i < loc.needsList!.length; i++) {
-          final needMap = loc.needsList![i];
-          if (needMap['name'] is String) {
-            final needName = needMap['name']!;
-            allNeeds.add(
-              NeedItem(
-                name: needName,
-                isChecked: _activeRouteNeedsState[needName] ?? false,
-                locationId: loc.firestoreId!,
-                originalIndex: i,
-              ),
-            );
-          }
-        }
-      }
-    }
-
-    final Map<String, NeedItem> consolidatedNeedsMap = {};
-    for (final needItem in allNeeds) {
-      consolidatedNeedsMap.putIfAbsent(needItem.name, () => needItem);
-    }
-    final consolidatedNeeds = consolidatedNeedsMap.values.toList();
 
     final locationsWithInfo = locations
         .where((loc) =>
@@ -1190,7 +1180,28 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     _activeRouteTotalStopDuration = _formatDuration(totalStopDuration);
     _activeRouteTotalTripDuration = _formatDuration(totalTripDuration);
-    _activeRouteNeeds = consolidatedNeeds.map((e) => e.name).toList();
+
+    // Consolidate needs for saving
+    final groupedNeedsForSaving = <String>{};
+    String normalize(String name) {
+      if (name.isEmpty) return '';
+      final trimmed = name.trim();
+      if (trimmed.isEmpty) return '';
+      return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
+    }
+
+    for (var location in locations) {
+      if (location.needsList != null) {
+        for (var need in location.needsList!) {
+          final normalizedName = normalize(need['name'] as String? ?? '');
+          if (normalizedName.isNotEmpty) {
+            groupedNeedsForSaving.add(normalizedName);
+          }
+        }
+      }
+    }
+    _activeRouteNeeds = groupedNeedsForSaving.toList();
+
     _activeRouteNotes = locations
         .where((loc) => loc.notes != null && loc.notes!.isNotEmpty)
         .map((loc) => {'locationName': loc.name, 'note': loc.notes!})
@@ -1281,34 +1292,61 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             ),
                           ),
                           const Divider(),
-                          if (consolidatedNeeds.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 8.0,
-                              ),
-                              child: Text(
-                                l10n.needsForTrip,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                            ),
-                            ...consolidatedNeeds.map((needItem) {
-                              return CheckboxListTile(
-                                title: Text(needItem.name),
-                                value: needItem.isChecked,
-                                onChanged: (bool? newValue) {
-                                  if (newValue == null) return;
+                          Builder(
+                            builder: (context) {
+                              final allRawNeeds = locations
+                                  .expand((loc) => loc.needsList ?? [])
+                                  .toList();
 
-                                  setModalState(() {
-                                    needItem.isChecked = newValue;
-                                    _activeRouteNeedsState[needItem.name] =
-                                        newValue;
-                                  });
-                                },
+                              if (allRawNeeds.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                      vertical: 8.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            l10n.needsForTrip,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleLarge,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            setModalState(() {
+                                              _activeRouteNeedsState.clear();
+                                              _isNeedsListConsolidated = !_isNeedsListConsolidated;
+                                            });
+                                          },
+                                          child: Text(_isNeedsListConsolidated
+                                              ? l10n.expand
+                                              : l10n.consolidate),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (_isNeedsListConsolidated)
+                                    ..._buildConsolidatedNeeds(
+                                        locations, setModalState)
+                                  else
+                                    ..._buildRawNeeds(
+                                        locations, setModalState),
+                                  const Divider(),
+                                ],
                               );
-                            }),
-                            const Divider(),
-                          ],
+                            },
+                          ),
                           if (locationsWithInfo.isNotEmpty) ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(
@@ -1355,6 +1393,84 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  List<Widget> _buildRawNeeds(
+      List<TravelLocation> locations, StateSetter setModalState) {
+    final List<Widget> rawNeedsWidgets = [];
+    int rawIndex = 0;
+
+    for (var location in locations) {
+      if (location.needsList != null) {
+        for (var need in location.needsList!) {
+          final String rawNeedName = need['name'] as String? ?? '';
+          final String uniqueKey = 'raw_$rawIndex';
+
+          rawNeedsWidgets.add(
+            CheckboxListTile(
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(rawNeedName),
+              value: _activeRouteNeedsState[uniqueKey] ?? false,
+              onChanged: (bool? newValue) {
+                setModalState(() {
+                  _activeRouteNeedsState[uniqueKey] = newValue ?? false;
+                });
+              },
+            ),
+          );
+          rawIndex++;
+        }
+      }
+    }
+    return rawNeedsWidgets;
+  }
+
+  List<Widget> _buildConsolidatedNeeds(
+      List<TravelLocation> locations, StateSetter setModalState) {
+    String normalize(String name) {
+      if (name.isEmpty) return '';
+      final trimmed = name.trim();
+      if (trimmed.isEmpty) return '';
+      return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
+    }
+
+    final groupedNeeds = <String, List<Map<String, dynamic>>>{};
+
+    for (var location in locations) {
+      if (location.needsList != null) {
+        for (var need in location.needsList!) {
+          final normalizedName = normalize(need['name'] as String? ?? '');
+          if (normalizedName.isNotEmpty) {
+            (groupedNeeds[normalizedName] ??= []).add(need);
+          }
+        }
+      }
+    }
+
+    if (groupedNeeds.isEmpty) {
+      return [const SizedBox.shrink()];
+    }
+
+    final sortedKeys = groupedNeeds.keys.toList()..sort();
+
+    return sortedKeys.map((key) {
+      final needs = groupedNeeds[key]!;
+      final bool isChecked = needs.every(
+          (n) => _activeRouteNeedsState[normalize(n['name'] ?? '')] == true);
+
+      return CheckboxListTile(
+        title: Text(key),
+        value: isChecked,
+        onChanged: (bool? newValue) {
+          if (newValue == null) return;
+          setModalState(() {
+            for (var need in needs) {
+              _activeRouteNeedsState[normalize(need['name'] ?? '')] = newValue;
+            }
+          });
+        },
+      );
+    }).toList();
   }
 
   Future<void> _launchGoogleMaps(List<TravelLocation> locations) async {
@@ -1801,6 +1917,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       body: Stack(
         children: [
           GoogleMap(
+            key: const ValueKey('google_map'),
             onMapCreated: (GoogleMapController controller) async {
               _mapController = controller;
               if (widget.initialLocation != null) {
@@ -1813,6 +1930,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             markers: _markers,
             polylines: _polylines,
             onLongPress: (pos) async {
+              if (_activeRouteLocations != null) return;
+
               if (_isSelectingEndpoint) {
                 final geoName =
                     await _directionsService.getPlaceName(pos) ??
@@ -1885,6 +2004,26 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               });
             },
           ),
+          if (_showApiKeyWarning)
+            Positioned.fill(
+              child: Container(
+              color: Colors.grey.withAlpha(26),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      l10n.apiKeyWarning,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             top: 10,
             left: 15,

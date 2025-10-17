@@ -1,19 +1,21 @@
-import "package:firebase_auth/firebase_auth.dart";
-import "package:tripbook/l10n/app_localizations.dart";
-import "package:flutter/material.dart";
-import "package:flutter/services.dart";
-import "package:tripbook/models/location_group.dart";
-import "package:tripbook/models/travel_location.dart";
-import "package:tripbook/screens/map_screen.dart";
-import "package:tripbook/services/firestore_service.dart";
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/models/location_group.dart';
+import 'package:tripbook/models/travel_location.dart';
+import 'package:tripbook/screens/map_screen.dart';
+import 'package:tripbook/services/firestore_service.dart';
 
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
   final bool isForSelection;
+  final bool isReadOnly;
   const ManageLocationsScreen({
     super.key,
     this.initiallyExpandedLocationId,
     this.isForSelection = false,
+    this.isReadOnly = false,
   });
 
   @override
@@ -162,6 +164,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     firestoreService: _firestoreService,
                     isInitiallyExpanded: isTarget,
                     isSelected: _selectedLocations.contains(location),
+                    isReadOnly: widget.isReadOnly, // Pass down
                     onSelected: widget.isForSelection
                         ? (location, selected) {
                             setState(() {
@@ -196,6 +199,7 @@ class LocationListItem extends StatefulWidget {
   final FirestoreService firestoreService;
   final bool isInitiallyExpanded;
   final bool isSelected;
+  final bool isReadOnly;
   final Function(TravelLocation, bool)? onSelected;
 
   const LocationListItem({
@@ -206,6 +210,7 @@ class LocationListItem extends StatefulWidget {
     required this.firestoreService,
     this.isInitiallyExpanded = false,
     this.isSelected = false,
+    this.isReadOnly = false,
     this.onSelected,
   });
 
@@ -326,6 +331,7 @@ class _LocationListItemState extends State<LocationListItem> {
                     if (formKey.currentState!.validate()) {
                       final newGroup = LocationGroup(
                         name: groupNameController.text.trim(),
+                        // ignore: deprecated_member_use
                         color: selectedColor.value,
                         createdAt: DateTime.now(),
                         userId: FirebaseAuth.instance.currentUser!.uid,
@@ -540,7 +546,7 @@ class _LocationListItemState extends State<LocationListItem> {
             ? null
             : IconButton(
                 icon: Icon(Icons.delete, color: theme.colorScheme.error),
-                onPressed: () => _deleteLocation(context),
+                onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
               ),
         children: [
           Padding(
@@ -548,18 +554,19 @@ class _LocationListItemState extends State<LocationListItem> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTextField(_nameController, l10n.customLocationNameLabel),
+                _buildTextField(_nameController, l10n.customLocationNameLabel, readOnly: widget.isReadOnly),
                 const SizedBox(height: 16),
-                _buildTextField(_descriptionController, l10n.descriptionLabel),
+                _buildTextField(_descriptionController, l10n.descriptionLabel, readOnly: widget.isReadOnly),
                 const SizedBox(height: 16),
-                _buildTextField(_notesController, l10n.notesLabel),
+                _buildTextField(_notesController, l10n.notesLabel, readOnly: widget.isReadOnly),
                 const SizedBox(height: 16),
-                _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint),
+                _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint, readOnly: widget.isReadOnly),
                 const SizedBox(height: 16),
                 _buildTextField(
                   _durationController,
                   l10n.estimatedDurationLabel,
                   inputType: TextInputType.number,
+                  readOnly: widget.isReadOnly,
                 ),
                 const SizedBox(height: 16),
                 _buildGroupDropdown(),
@@ -572,20 +579,22 @@ class _LocationListItemState extends State<LocationListItem> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.map),
                       label: Text(l10n.showOnMap),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MapScreen(initialLocation: widget.location),
-                          ),
-                        );
-                      },
+                      onPressed: widget.isReadOnly
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MapScreen(initialLocation: widget.location),
+                                ),
+                              );
+                            },
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.copy),
                       label: Text(l10n.copyLocationInfo),
-                      onPressed: () {
+                      onPressed: widget.isReadOnly ? null : () {
                         final lat = widget.location.latitude;
                         final lon = widget.location.longitude;
                         Clipboard.setData(ClipboardData(text: '$lat,$lon'));
@@ -598,23 +607,23 @@ class _LocationListItemState extends State<LocationListItem> {
                       },
                     ),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.save),
-                      label: Text(l10n.saveChanges),
-                      onPressed: _saveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
+                        icon: const Icon(Icons.save),
+                        label: Text(l10n.saveChanges),
+                        onPressed: widget.isReadOnly ? null : _saveChanges,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
                       ),
-                    ),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.delete),
-                      label: Text(l10n.deleteLocation),
-                      onPressed: () => _deleteLocation(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.error,
-                        foregroundColor: theme.colorScheme.onError,
+                        icon: const Icon(Icons.delete),
+                        label: Text(l10n.deleteLocation),
+                        onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -630,9 +639,11 @@ class _LocationListItemState extends State<LocationListItem> {
     String label, {
     TextInputType inputType = TextInputType.text,
     String? hint,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -647,9 +658,8 @@ class _LocationListItemState extends State<LocationListItem> {
     final allGroupIds = widget.allGroups.map((g) => g.firestoreId).toSet();
     allGroupIds.add(null);
 
-    final String? validSelectedGroupId = allGroupIds.contains(_selectedGroupId)
-        ? _selectedGroupId
-        : null;
+    final String? validSelectedGroupId =
+        allGroupIds.contains(_selectedGroupId) ? _selectedGroupId : null;
 
     return DropdownButtonFormField<String>(
       initialValue: validSelectedGroupId,
@@ -670,21 +680,23 @@ class _LocationListItemState extends State<LocationListItem> {
           child: Text(l10n.addNewGroup),
         ),
       ],
-      onChanged: (value) async {
-        if (value == 'add_new_group') {
-          final newGroup = await _showAddNewGroupDialog(context);
-          if (newGroup != null) {
-            setState(() {
-              widget.allGroups.add(newGroup);
-              _selectedGroupId = newGroup.firestoreId;
-            });
-          }
-        } else {
-          setState(() {
-            _selectedGroupId = value;
-          });
-        }
-      },
+      onChanged: widget.isReadOnly
+          ? null
+          : (value) async {
+              if (value == 'add_new_group') {
+                final newGroup = await _showAddNewGroupDialog(context);
+                if (newGroup != null) {
+                  setState(() {
+                    widget.allGroups.add(newGroup);
+                    _selectedGroupId = newGroup.firestoreId;
+                  });
+                }
+              } else {
+                setState(() {
+                  _selectedGroupId = value;
+                });
+              }
+            },
     );
   }
 
@@ -708,16 +720,28 @@ class _LocationListItemState extends State<LocationListItem> {
       ),
     );
     if (confirmDelete == true && widget.location.firestoreId != null) {
-      await widget.firestoreService.deleteLocation(
-        widget.location.firestoreId!,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.locationDeletedSuccess),
-          backgroundColor: Colors.red,
-        ),
-      );
+      try {
+        await widget.firestoreService.deleteLocation(
+          widget.location.firestoreId!,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.locationDeletedSuccess),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.error(e.toString())),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
     }
   }
 }

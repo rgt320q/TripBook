@@ -221,12 +221,11 @@ class _CommunityRouteDetailScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // TODO: WillPopScope is deprecated, but PopScope is not yet flexible enough to handle this case.
-    // This should be migrated to PopScope when possible.
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, _madeChanges);
-        return true;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_madeChanges);
       },
       child: Scaffold(
         appBar: AppBar(

@@ -9,10 +9,10 @@ import 'package:tripbook/screens/home_location_picker_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tripbook/widgets/auth_wrapper.dart';
-import 'package:tripbook/services/navigation_service.dart';
+
+
 import 'package:tripbook/services/auth_service.dart';
-import 'package:tripbook/screens/auth_screen.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

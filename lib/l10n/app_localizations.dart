@@ -170,6 +170,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get delete;
 
+  /// No description provided for @groups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get groups;
+
   /// No description provided for @groupName.
   ///
   /// In en, this message translates to:
@@ -476,17 +482,17 @@ abstract class AppLocalizations {
   /// **'Unknown Location'**
   String get unknownLocation;
 
-  /// No description provided for @currentLocationError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not get current location. Please check location services.'**
-  String get currentLocationError;
-
   /// No description provided for @drawRouteError.
   ///
   /// In en, this message translates to:
   /// **'Could not draw route. Check your API key or try again later.'**
   String get drawRouteError;
+
+  /// No description provided for @currentLocationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get current location. Please check location services.'**
+  String get currentLocationError;
 
   /// No description provided for @saveRouteDialogTitle.
   ///
@@ -607,6 +613,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your private notes for this trip:'**
   String get notesForTrip;
+
+  /// No description provided for @consolidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Consolidate'**
+  String get consolidate;
+
+  /// No description provided for @expand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expand;
 
   /// No description provided for @launchMapsError.
   ///
@@ -1556,10 +1574,16 @@ abstract class AppLocalizations {
   /// **'Comment contains invalid characters.'**
   String get invalidCommentError;
 
+  /// No description provided for @apiKeyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Maps could not be loaded. The API key for the web is missing or invalid. Please check the .env file and your Google Cloud project configuration.'**
+  String get apiKeyWarning;
+
   /// No description provided for @invalidGroupNameError.
   ///
   /// In en, this message translates to:
-  /// **'Group name contains invalid characters.'**
+  /// **'Group name cannot contain < or > characters.'**
   String get invalidGroupNameError;
 
   /// No description provided for @locationNameEmptyError.

@@ -79,7 +79,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   void _showGroupDialog({LocationGroup? groupToEdit}) {
     _groupNameController.text = groupToEdit?.name ?? '';
     _selectedColor = groupToEdit != null
-        ? Color(groupToEdit.color ?? Colors.blue.value)
+        ? Color(groupToEdit.color ?? 0xFF2196F3)
         : Colors.blue;
 
     showDialog(
@@ -170,6 +170,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     final group = LocationGroup(
                       firestoreId: groupToEdit?.firestoreId,
                       name: groupName,
+                      // ignore: deprecated_member_use
                       color: _selectedColor?.value,
                       createdAt: groupToEdit
                           ?.createdAt, userId: '', // Preserve original creation date
@@ -281,7 +282,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         clipBehavior: Clip.antiAlias,
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Color(group.color ?? Colors.blue.value),
+                            backgroundColor: Color(group.color ?? 0xFF2196F3),
                             radius: 15,
                           ),
                           title: Text(group.name, style: Theme.of(context).textTheme.titleMedium),

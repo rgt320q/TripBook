@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+
+
 Future<BitmapDescriptor> getHomeMarkerIcon({double size = 30}) async {
   final PictureRecorder pictureRecorder = PictureRecorder();
   final Canvas canvas = Canvas(
@@ -72,7 +74,8 @@ Future<BitmapDescriptor> getCustomMarkerIcon(
   // Yolu istenen boyuta ölçeklendirelim
   final double scale =
       size / 24.0; // Orijinal yol 24x24 bir alana göre tanımlanmıştır
-  final Matrix4 matrix = Matrix4.identity()..scale(scale);
+  // ignore: deprecated_member_use
+  final Matrix4 matrix = Matrix4.identity()..scale(scale, scale, scale);
   final Path scaledPath = path.transform(matrix.storage);
 
   // --- Çizim ---

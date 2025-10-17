@@ -47,6 +47,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
+  String get groups => 'Groups';
+
+  @override
   String get groupName => 'Group Name';
 
   @override
@@ -209,12 +212,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknownLocation => 'Unknown Location';
 
   @override
-  String get currentLocationError =>
-      'Could not get current location. Please check location services.';
-
-  @override
   String get drawRouteError =>
       'Could not draw route. Check your API key or try again later.';
+
+  @override
+  String get currentLocationError =>
+      'Could not get current location. Please check location services.';
 
   @override
   String get saveRouteDialogTitle => 'Save Route';
@@ -279,6 +282,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesForTrip => 'Your private notes for this trip:';
+
+  @override
+  String get consolidate => 'Consolidate';
+
+  @override
+  String get expand => 'Expand';
 
   @override
   String get launchMapsError => 'Could not launch Google Maps.';
@@ -818,7 +827,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidCommentError => 'Comment contains invalid characters.';
 
   @override
-  String get invalidGroupNameError => 'Group name contains invalid characters.';
+  String get apiKeyWarning =>
+      'Google Maps could not be loaded. The API key for the web is missing or invalid. Please check the .env file and your Google Cloud project configuration.';
+
+  @override
+  String get invalidGroupNameError =>
+      'Group name cannot contain < or > characters.';
 
   @override
   String get locationNameEmptyError => 'Location name cannot be empty.';

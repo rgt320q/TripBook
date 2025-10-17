@@ -33,7 +33,6 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final provider = context.watch<CommunityRoutesProvider>();
 
     return Scaffold(
       appBar: AppBar(

@@ -44,7 +44,7 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Lütfen $fieldName alanını doldurun.';
     }
-    final RegExp specialChars = RegExp(r'[!@#<>?":_`~;[\\]|=+)(*&^%$]');
+    final RegExp specialChars = RegExp(r'[!@#<>?":_`~;\[\]|=+)(*&^%$\\]');
     if (specialChars.hasMatch(value.trim())) {
       return '$fieldName özel karakterler içeremez.';
     }
