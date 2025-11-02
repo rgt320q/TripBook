@@ -45,6 +45,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   bool _isLoading = true;
   bool _showApiKeyWarning = false;
+  bool _isMapInitialized = false;
 
   GoogleMapController? _mapController;
   Position? _currentPosition;
@@ -107,6 +108,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final Set<String> _visitedWaypoints = {};
   final Set<String> _triggeredWikipediaNotifications = {};
   final Map<String, Timer> _waypointTimers = {};
+  Timer? _mapUpdateDebounce;
+  
+  // Icon cache for performance
+  BitmapDescriptor? _currentLocationIcon;
+  BitmapDescriptor? _homeLocationIcon;
+  final Map<String, BitmapDescriptor> _markerIconCache = {};
 
   final FirestoreService _firestoreService = FirestoreService();
   final DirectionsService _directionsService = DirectionsService();
@@ -268,16 +275,69 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && _mapController != null) {
+      // Uygulama foreground'a döndüğünde haritayı refresh et
+      _refreshMapAfterResume();
+    }
+  }
+
+  Future<void> _refreshMapAfterResume() async {
+    // Kısa bir delay ile haritayı refresh et
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (_mapController != null && mounted) {
+      try {
+        // Mevcut kamera pozisyonunu al ve yeniden set et
+        if (_cameraPosition != null) {
+          await _mapController!.animateCamera(
+            CameraUpdate.newCameraPosition(_cameraPosition!),
+          );
+        } else {
+          // Eğer kamera pozisyonu yoksa hafif bir zoom yaparak refresh et
+          final currentPos = await _mapController!.getLatLng(
+            const ScreenCoordinate(x: 0, y: 0),
+          );
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(currentPos, await _mapController!.getZoomLevel()),
+          );
+        }
+        
+        // Markerları ve polylineları güncelle
+        _updateMapElements();
+      } catch (e) {
+        // Hata durumunda log
+        if (kDebugMode) {
+          print('Map refresh error after resume: $e');
+        }
+      }
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    
+    // Map controller'ı temizle
+    _mapController?.dispose();
+    _mapController = null;
+    _isMapInitialized = false;
+    
     _locationsSubscription?.cancel();
     _groupsSubscription?.cancel();
     _profileSubscription?.cancel();
     _positionStreamSubscription?.cancel();
-    _waypointTimers.forEach((_, timer) => timer.cancel());
+    
+    // Safely dispose all timers
+    for (final timer in _waypointTimers.values) {
+      timer.cancel();
+    }
+    _waypointTimers.clear();
+    
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _debounce?.cancel();
+    _mapUpdateDebounce?.cancel();
     
     // Dispose connectivity service
     ConnectivityService().dispose();
@@ -411,6 +471,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           setState(() {
             _currentPosition = position;
           });
+          // Debounced map update to reduce performance impact
           _updateMapElements();
         }
       });
@@ -453,7 +514,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _isNeedsListConsolidated = false; // Reset the consolidation state
     });
     _startLiveLocationTracking();
-    _waypointTimers.forEach((key, timer) => timer.cancel());
+    
+    // Efficiently cancel and clear all timers
+    for (final timer in _waypointTimers.values) {
+      timer.cancel();
+    }
     _waypointTimers.clear();
     _triggeredWikipediaNotifications.clear();
   }
@@ -641,7 +706,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     _locationsSubscription = _firestoreService.getLocations().listen(
       (locations) {
-        if (mounted) {
+        if (mounted && _allLocations != locations) {
           setState(() => _allLocations = locations);
           _updateMapElements();
         }
@@ -669,7 +734,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     _groupsSubscription = _firestoreService.getGroups().listen(
       (groups) {
-        if (mounted) {
+        if (mounted && _allGroups != groups) {
           setState(() => _allGroups = groups);
           _updateMapElements();
         }
@@ -720,7 +785,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _scheduleMapUpdate() {
+    _mapUpdateDebounce?.cancel();
+    _mapUpdateDebounce = Timer(const Duration(milliseconds: 100), () {
+      _updateMapElementsInternal();
+    });
+  }
+
   Future<void> _updateMapElements() async {
+    _scheduleMapUpdate();
+  }
+
+  Future<void> _updateMapElementsInternal() async {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
 
@@ -728,7 +804,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final Set<Marker> newMarkers = {};
 
     if (_currentPosition != null) {
-      final icon = await marker_utils.getCurrentLocationMarkerIcon();
+      _currentLocationIcon ??= await marker_utils.getCurrentLocationMarkerIcon();
       newMarkers.add(
         Marker(
           markerId: const MarkerId('currentLocation'),
@@ -737,7 +813,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             _currentPosition!.longitude,
           ),
           infoWindow: InfoWindow(title: l10n.myLocationTooltip),
-          icon: icon,
+          icon: _currentLocationIcon!,
           // ignore: deprecated_member_use
           zIndex: 2,
           anchor: const Offset(0.5, 0.5),
@@ -746,13 +822,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
 
     if (_homeLocation != null) {
-      final icon = await marker_utils.getHomeMarkerIcon();
+      _homeLocationIcon ??= await marker_utils.getHomeMarkerIcon();
       newMarkers.add(
         Marker(
           markerId: const MarkerId('homeLocation'),
           position: LatLng(_homeLocation!.latitude, _homeLocation!.longitude),
           infoWindow: InfoWindow(title: l10n.homeLocation),
-          icon: icon,
+          icon: _homeLocationIcon!,
           // ignore: deprecated_member_use
           zIndex: 1,
         ),
@@ -783,10 +859,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         color = group?.color != null ? Color(group!.color!) : Colors.red;
       }
 
-      final icon = await marker_utils.getCustomMarkerIcon(
-        color,
-        isEndpoint: isEndpoint,
-      );
+      // Create cache key for icon
+      final iconKey = '${color.value}_${isEndpoint ? 'endpoint' : 'normal'}';
+      
+      BitmapDescriptor icon;
+      if (_markerIconCache.containsKey(iconKey)) {
+        icon = _markerIconCache[iconKey]!;
+      } else {
+        icon = await marker_utils.getCustomMarkerIcon(
+          color,
+          isEndpoint: isEndpoint,
+        );
+        _markerIconCache[iconKey] = icon;
+      }
 
       newMarkers.add(
         Marker(
@@ -1071,50 +1156,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return "$hours:$minutes:$seconds";
-  }
-
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String content,
-    required MaterialColor color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color[600], size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: color[800],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildStatCard({
@@ -2114,8 +2155,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         body: Stack(
           children: [
             GoogleMap(
+              key: const ValueKey('endpoint_google_map'),
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller;
+                _isMapInitialized = true;
               },
               initialCameraPosition: CameraPosition(
                 target: LatLng(
@@ -2528,6 +2571,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             key: const ValueKey('google_map'),
             onMapCreated: (GoogleMapController controller) async {
               _mapController = controller;
+              _isMapInitialized = true;
               if (widget.initialLocation != null) {
                 await _goToInitialLocation();
               } else if (_currentPosition != null) {
