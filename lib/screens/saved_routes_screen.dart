@@ -154,150 +154,485 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
 
   void _showRouteDetailsDialog(TravelRoute route) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final parentContext = context; // Ana context'i sakla
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(route.name, style: theme.textTheme.headlineSmall),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  title: Text(l10n.plannedDistance),
-                  subtitle: Text(route.totalDistance),
-                ),
-                if (route.actualDistance != null)
-                  ListTile(
-                    title: Text(l10n.actualDistance),
-                    subtitle: Text(route.actualDistance!),
-                  ),
-                const Divider(),
-                ListTile(
-                  title: Text(l10n.plannedTravelTime),
-                  subtitle: Text(route.totalTravelTime),
-                ),
-                if (route.totalStopDuration != null)
-                  ListTile(
-                    title: Text(l10n.totalBreakTime),
-                    subtitle: Text(route.totalStopDuration!),
-                  ),
-                if (route.totalTripDuration != null)
-                  ListTile(
-                    title: Text(l10n.plannedTotalTime),
-                    subtitle: Text(route.totalTripDuration!),
-                  ),
-                if (route.actualDuration != null &&
-                    route.actualDuration!.isNotEmpty)
-                  ListTile(
-                    title: Text(l10n.actualTotalTime),
-                    subtitle: Text(route.actualDuration!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                  ),
-                if (route.needs != null && route.needs!.isNotEmpty) ...[
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(l10n.needsListTitle, style: theme.textTheme.titleLarge),
-                  ),
-                  ...route.needs!.map((need) => ListTile(leading: const Icon(Icons.check_box_outline_blank), title: Text(need))),
-                ],
-                if (route.notes != null && route.notes!.isNotEmpty) ...[
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(l10n.privateNotesTitle, style: theme.textTheme.titleLarge),
-                  ),
-                  ...route.notes!.map(
-                    (note) => ListTile(
-                      leading: const Icon(Icons.note),
-                      title: Text(note['locationName']!),
-                      subtitle: Text(note['note']!),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.close),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.directions),
-              label: Text(l10n.start),
-              onPressed: () async {
-                Navigator.of(dialogContext).pop(); // Close details dialog
-
-                final userProfile = await _firestoreService
-                    .getUserProfile()
-                    .first;
-                TravelLocation? endLocation;
-
-                if (userProfile?.homeLocation != null) {
-                  endLocation = TravelLocation(
-                    name: l10n.homeLocation,
-                    geoName:
-                        '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
-                    latitude: userProfile.homeLocation!.latitude,
-                    longitude: userProfile.homeLocation!.longitude,
-                    firestoreId: 'home_end_location',
-                    userId: userProfile.uid,
-                  );
-                } else {
-                  try {
-                    final position = await Geolocator.getCurrentPosition();
-                    final geoName =
-                        await DirectionsService().getPlaceName(
-                          LatLng(position.latitude, position.longitude),
-                        ) ??
-                        l10n.unknownLocation;
-                    endLocation = TravelLocation(
-                      name: l10n.currentLocation,
-                      geoName: geoName,
-                      latitude: position.latitude,
-                      longitude: position.longitude,
-                      firestoreId: 'end', userId: '',
-                    );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.currentLocationError)),
-                    );
-                    return;
-                  }
-                }
-
-                final allLocations = await _firestoreService.getLocationsByIds(
-                  route.locationIds,
-                );
-                if (!mounted) return;
-
-                if (allLocations.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.noLocationsInRoute)),
-                  );
-                  return;
-                }
-
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => LocationSelectionScreen(
-                      initialLocations: allLocations,
-                      endLocation: endLocation,
-                    ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Gradient Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue[600]!,
+                      Colors.blue[800]!,
+                    ],
                   ),
-                );
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.route,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            route.name,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Rota Detayları',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(modalContext).pop(),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                if (result != null && mounted) {
-                  Navigator.of(context).pop(result); // Go back to map
-                }
-              },
-            ),
-          ],
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Distance and Time Stats
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              icon: Icons.straighten,
+                              label: l10n.plannedDistance,
+                              value: route.totalDistance,
+                              color: Colors.blue,
+                              isHighlighted: true,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              icon: Icons.access_time,
+                              label: l10n.plannedTravelTime,
+                              value: route.totalTravelTime,
+                              color: Colors.green,
+                              isHighlighted: true,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      if (route.actualDistance != null || route.actualDuration != null) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            if (route.actualDistance != null)
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.straighten,
+                                  label: l10n.actualDistance,
+                                  value: route.actualDistance!,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            if (route.actualDistance != null && route.actualDuration != null)
+                              const SizedBox(width: 12),
+                            if (route.actualDuration != null)
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.timer,
+                                  label: l10n.actualTotalTime,
+                                  value: route.actualDuration!,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+
+                      if (route.totalStopDuration != null || route.totalTripDuration != null) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            if (route.totalStopDuration != null)
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.pause_circle,
+                                  label: l10n.totalBreakTime,
+                                  value: route.totalStopDuration!,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            if (route.totalStopDuration != null && route.totalTripDuration != null)
+                              const SizedBox(width: 12),
+                            if (route.totalTripDuration != null)
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.schedule,
+                                  label: l10n.plannedTotalTime,
+                                  value: route.totalTripDuration!,
+                                  color: Colors.indigo,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+
+                      // Needs Section
+                      if (route.needs != null && route.needs!.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.green[200]!,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.checklist,
+                                      color: Colors.green[600],
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    l10n.needsListTitle,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ...route.needs!.map(
+                                (need) => Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline,
+                                        color: Colors.green[600],
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          need,
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      
+                      // Notes Section
+                      if (route.notes != null && route.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.blue[200]!,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.note,
+                                      color: Colors.blue[600],
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    l10n.privateNotesTitle,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ...route.notes!.map(
+                                (note) => Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[25],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.blue[100]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        note['locationName']!,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue[700],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        note['note']!,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Action Buttons
+                      const SizedBox(height: 30),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.green[400]!,
+                              Colors.green[600]!,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () async {
+                              // Modal'ı kapat
+                              Navigator.of(modalContext).pop();
+
+                              try {
+                                final userProfile = await _firestoreService
+                                    .getUserProfile()
+                                    .first;
+                                TravelLocation? endLocation;
+
+                                if (userProfile?.homeLocation != null) {
+                                  endLocation = TravelLocation(
+                                    name: l10n.homeLocation,
+                                    geoName:
+                                        '${userProfile!.homeLocation!.latitude.toStringAsFixed(4)}, ${userProfile.homeLocation!.longitude.toStringAsFixed(4)}',
+                                    latitude: userProfile.homeLocation!.latitude,
+                                    longitude: userProfile.homeLocation!.longitude,
+                                    firestoreId: 'home_end_location',
+                                    userId: userProfile.uid,
+                                  );
+                                } else {
+                                  try {
+                                    final position = await Geolocator.getCurrentPosition();
+                                    final geoName =
+                                        await DirectionsService().getPlaceName(
+                                          LatLng(position.latitude, position.longitude),
+                                        ) ??
+                                        l10n.unknownLocation;
+                                    endLocation = TravelLocation(
+                                      name: l10n.currentLocation,
+                                      geoName: geoName,
+                                      latitude: position.latitude,
+                                      longitude: position.longitude,
+                                      firestoreId: 'end', userId: '',
+                                    );
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                                        SnackBar(content: Text(l10n.currentLocationError)),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                }
+
+                                final allLocations = await _firestoreService.getLocationsByIds(
+                                  route.locationIds,
+                                );
+                                if (!mounted) return;
+
+                                if (allLocations.isEmpty) {
+                                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                                    SnackBar(content: Text(l10n.noLocationsInRoute)),
+                                  );
+                                  return;
+                                }
+
+                                final result = await Navigator.of(parentContext).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => LocationSelectionScreen(
+                                      initialLocations: allLocations,
+                                      endLocation: endLocation,
+                                    ),
+                                  ),
+                                );
+
+                                if (result != null && mounted) {
+                                  // LocationSelectionScreen'den dönen sonuç tüm lokasyonları içeriyor
+                                  if (result is List<TravelLocation> && result.isNotEmpty) {
+                                    // MapScreen'e uygun format ile gönder
+                                    final routeData = {
+                                      'locations': result,
+                                      'endLocation': endLocation,
+                                    };
+                                    Navigator.of(parentContext).pop(routeData);
+                                  } else {
+                                    // Beklenmeyen format
+                                    Navigator.of(parentContext).pop(result);
+                                  }
+                                }
+                              } catch (e) {
+                                // Herhangi bir hata durumunda kullanıcıyı bilgilendir
+                                if (mounted) {
+                                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                                    SnackBar(content: Text('Hata: ${e.toString()}')),
+                                  );
+                                }
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.directions,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    l10n.start,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -394,6 +729,76 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    bool isHighlighted = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isHighlighted ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isHighlighted ? color : Colors.grey[200]!,
+          width: isHighlighted ? 2 : 1,
+        ),
+        boxShadow: isHighlighted ? [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isHighlighted ? color : Colors.grey[800],
+            ),
+          ),
+        ],
       ),
     );
   }

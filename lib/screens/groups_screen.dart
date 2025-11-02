@@ -187,8 +187,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
                     _groupNameController.clear();
                     _selectedColor = null;
-                    if (!mounted) return;
-                    Navigator.of(context).pop();
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                    }
                   },
                   child: Text(AppLocalizations.of(context)!.save),
                 ),
@@ -208,18 +209,46 @@ class _GroupsScreenState extends State<GroupsScreen> {
           widget.isForSelection
               ? AppLocalizations.of(context)!.selectGroup
               : AppLocalizations.of(context)!.travelGroups,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           if (!widget.isForSelection)
-            PopupMenuButton<GroupSortBy>(
-              icon: const Icon(Icons.sort),
-              onSelected: (GroupSortBy result) {
-                setState(() {
-                  _currentSortBy = result;
-                });
-              },
-              itemBuilder: (BuildContext context) =>
-                  <PopupMenuEntry<GroupSortBy>>[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: PopupMenuButton<GroupSortBy>(
+                  icon: const Icon(Icons.sort, color: Colors.white),
+                  onSelected: (GroupSortBy result) {
+                    setState(() {
+                      _currentSortBy = result;
+                    });
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<GroupSortBy>>[
                     PopupMenuItem<GroupSortBy>(
                       value: GroupSortBy.nameAsc,
                       child: Text(AppLocalizations.of(context)!.sortByNameAsc),
@@ -241,8 +270,22 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
             ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue[700]!,
+                Colors.blue[900]!,
+              ],
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<List<LocationGroup>>(
         stream: _firestoreService.getGroups(),

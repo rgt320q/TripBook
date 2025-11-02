@@ -25,6 +25,7 @@ import 'package:tripbook/services/database_service.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/services/notification_service.dart';
+import 'package:tripbook/services/connectivity_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
@@ -128,6 +129,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       }
     }
     WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize connectivity service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ConnectivityService().initialize(context);
+    });
+    
     _initializeScreen();
     _searchController.addListener(_onSearchChanged);
   }
@@ -243,8 +250,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final UserProfile? profile = await _firestoreService.getUserProfile().first;
     if (mounted && profile != null) {
       final langCode = profile.languageCode ?? 'tr';
-      Provider.of<LocaleProvider>(context, listen: false)
-          .setLocale(Locale(langCode));
+      if (mounted) {
+        Provider.of<LocaleProvider>(context, listen: false)
+            .setLocale(Locale(langCode));
+      }
     }
 
     // Now determine position and setup data sync
@@ -269,6 +278,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _debounce?.cancel();
+    
+    // Dispose connectivity service
+    ConnectivityService().dispose();
+    
     super.dispose();
   }
 
@@ -354,7 +367,25 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       }
       await _updateMapElements();
     } catch (e) {
-      // Handle error
+      // Log error for debugging
+      if (kDebugMode) {
+        print('Location error: $e');
+      }
+      
+      // Show user-friendly error message
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.currentLocationError),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: l10n.save, // Retry yerine save kullanıyoruz
+              onPressed: () => _determinePosition(),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -616,25 +647,77 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         }
       },
       onError: (error) {
+        // Log error for debugging
+        if (kDebugMode) {
+          print('Locations stream error: $error');
+        }
+        
+        // Fall back to local database
         _loadMarkersFromLocalDb();
+        
+        // Show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Connection lost. Using offline data.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       },
     );
 
-    _groupsSubscription = _firestoreService.getGroups().listen((groups) {
-      if (mounted) {
-        setState(() => _allGroups = groups);
-        _updateMapElements();
-      }
-    });
+    _groupsSubscription = _firestoreService.getGroups().listen(
+      (groups) {
+        if (mounted) {
+          setState(() => _allGroups = groups);
+          _updateMapElements();
+        }
+      },
+      onError: (error) {
+        // Log error for debugging
+        if (kDebugMode) {
+          print('Groups stream error: $error');
+        }
+        
+        // Show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Groups sync failed. Some features may be limited.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      },
+    );
 
-    _profileSubscription = _firestoreService.getUserProfile().listen((profile) {
-      if (mounted && profile != null) {
-        setState(() {
-          _homeLocation = profile.homeLocation;
-        });
-        _updateMapElements();
-      }
-    });
+    _profileSubscription = _firestoreService.getUserProfile().listen(
+      (profile) {
+        if (mounted && profile != null) {
+          setState(() {
+            _homeLocation = profile.homeLocation;
+          });
+          _updateMapElements();
+        }
+      },
+      onError: (error) {
+        // Log error for debugging
+        if (kDebugMode) {
+          print('Profile stream error: $error');
+        }
+        
+        // Show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile sync failed. Home location may not be available.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      },
+    );
   }
 
   Future<void> _updateMapElements() async {
@@ -881,14 +964,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     try {
       directionsInfo = await _directionsService.getDirections(routeLocationsForApi);
     } catch (e) {
+      // Log error for debugging
+      if (kDebugMode) {
+        print('Route calculation error: $e');
+      }
+      
       if (mounted) {
+        // Show specific error message based on error type
+        String errorMessage = l10n.drawRouteError;
+        
+        if (e.toString().contains('network') || e.toString().contains('timeout')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (e.toString().contains('quota') || e.toString().contains('limit')) {
+          errorMessage = 'Service limit reached. Please try again later.';
+        } else if (e.toString().contains('location') || e.toString().contains('address')) {
+          errorMessage = 'Invalid location. Please check your waypoints.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.drawRouteError),
+            content: Text(errorMessage),
             backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
+      return; // Exit early on error
     }
 
     if (kIsWeb && directionsInfo == null && routeLocationsForApi.length >= 2) {
@@ -927,8 +1028,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _showRouteSummary(directionsInfo, activeRouteLocations);
       _startRouteTracking();
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.drawRouteError)));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.drawRouteError)));
+      }
     }
   }
 
@@ -968,6 +1071,120 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return "$hours:$minutes:$seconds";
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String content,
+    required MaterialColor color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color[600], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    bool isHighlighted = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isHighlighted ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isHighlighted ? color : Colors.grey[200]!,
+          width: isHighlighted ? 2 : 1,
+        ),
+        boxShadow: isHighlighted ? [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isHighlighted ? color : Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSaveRouteDialog(
@@ -1026,7 +1243,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 );
 
                 bool shouldProceed = true;
-                if (conflictingRoute.firestoreId != null) {
+                if (conflictingRoute.firestoreId != null && mounted) {
                   shouldProceed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
@@ -1070,25 +1287,60 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       actualDistance ?? conflictingRoute.actualDistance,
                 );
 
-                if (conflictingRoute.firestoreId != null) {
-                  await _firestoreService.updateRoute(
-                    conflictingRoute.firestoreId!,
-                    newRoute,
-                  );
-                } else {
-                  await _firestoreService.addRoute(newRoute);
+                try {
+                  if (conflictingRoute.firestoreId != null) {
+                    await _firestoreService.updateRoute(
+                      conflictingRoute.firestoreId!,
+                      newRoute,
+                    );
+                  } else {
+                    await _firestoreService.addRoute(newRoute);
+                  }
+
+                  if (!mounted) return;
+
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.routeSavedSuccess(routeName)),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                  _clearRoute();
+                } catch (e) {
+                  // Log error for debugging
+                  if (kDebugMode) {
+                    print('Route save error: $e');
+                  }
+                  
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to save route. Please try again.'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        action: SnackBarAction(
+                          label: l10n.save,
+                          onPressed: () {
+                            // Re-show the save dialog
+                            _showSaveRouteDialog(
+                              _activeRouteInfo!,
+                              _activeRouteLocations!,
+                              actualDuration: actualDuration,
+                              actualDistance: actualDistance,
+                              totalStopDuration: totalStopDuration,
+                              totalTripDuration: totalTripDuration,
+                              needs: needs,
+                              notes: notes,
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }
                 }
-
-                if (!mounted) return;
-
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.routeSavedSuccess(routeName)),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                _clearRoute();
               },
               child: Text(l10n.save),
             ),
@@ -1210,88 +1462,223 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
           ),
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setModalState) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue[600]!, Colors.blue[800]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          l10n.routeSummaryTitle,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.route,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                        if (!_isNavigationStarted)
-                          Row(
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.save, color: Colors.blue),
-                                tooltip: l10n.saveRouteDialogTitle,
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _showSaveRouteDialog(
-                                    info,
-                                    locations,
-                                    totalStopDuration:
-                                        _activeRouteTotalStopDuration,
-                                    totalTripDuration:
-                                        _activeRouteTotalTripDuration,
-                                    needs: _activeRouteNeeds,
-                                    notes: _activeRouteNotes,
-                                  );
-                                },
+                              Text(
+                                l10n.routeSummaryTitle,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              ElevatedButton.icon(
-                                onPressed: () {
+                              Text(
+                                '${locations.length} ${locations.length == 1 ? 'konum' : 'konum'}',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!_isNavigationStarted) ...[
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.bookmark, color: Colors.white),
+                              tooltip: l10n.saveRouteDialogTitle,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showSaveRouteDialog(
+                                  info,
+                                  locations,
+                                  totalStopDuration: _activeRouteTotalStopDuration,
+                                  totalTripDuration: _activeRouteTotalTripDuration,
+                                  needs: _activeRouteNeeds,
+                                  notes: _activeRouteNotes,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
                                   setState(() {
                                     _isNavigationStarted = true;
                                   });
                                   Navigator.pop(context);
                                   _launchGoogleMaps(locations);
                                 },
-                                icon: const Icon(Icons.navigation),
-                                label: Text(l10n.startNavigation),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.navigation,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        l10n.startNavigation,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Route Stats Cards
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.access_time,
+                                  label: l10n.estimatedTravelTime,
+                                  value: info.totalDuration,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.straighten,
+                                  label: l10n.totalDistance,
+                                  value: info.totalDistance,
+                                  color: Colors.blue,
+                                ),
                               ),
                             ],
                           ),
-                      ],
-                    ),
-                    const Divider(),
-                    Flexible(
-                      child: ListView(
-                        shrinkWrap: true,
-                        children: [
-                          ListTile(
-                            title: Text(
-                              '${l10n.estimatedTravelTime}: ${info.totalDuration}',
-                            ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.pause_circle,
+                                  label: l10n.totalTimeAtStops,
+                                  value: _formatDuration(totalStopDuration),
+                                  color: Colors.purple,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.schedule,
+                                  label: l10n.totalTripTime,
+                                  value: _formatDuration(totalTripDuration),
+                                  color: Colors.green,
+                                  isHighlighted: true,
+                                ),
+                              ),
+                            ],
                           ),
-                          ListTile(
-                            title: Text(
-                              '${l10n.totalTimeAtStops}: ${_formatDuration(totalStopDuration)}',
-                            ),
-                          ),
-                          ListTile(
-                            title: Text(
-                              '${l10n.totalTripTime}: ${_formatDuration(totalTripDuration)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          ListTile(
-                            title: Text(
-                              '${l10n.totalDistance}: ${info.totalDistance}',
-                            ),
-                          ),
-                          const Divider(),
+                          
+                          const SizedBox(height: 24),
+                          
+                          // Needs Section
                           Builder(
                             builder: (context) {
                               final allRawNeeds = locations
@@ -1302,91 +1689,184 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 return const SizedBox.shrink();
                               }
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 8.0,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.blue[200]!),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       children: [
+                                        Icon(Icons.shopping_cart, 
+                                             color: Colors.blue[600], size: 20),
+                                        const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             l10n.needsForTrip,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.blue[800],
+                                            ),
                                           ),
                                         ),
-                                        TextButton(
-                                          onPressed: () {
-                                            setModalState(() {
-                                              _activeRouteNeedsState.clear();
-                                              _isNeedsListConsolidated = !_isNeedsListConsolidated;
-                                            });
-                                          },
-                                          child: Text(_isNeedsListConsolidated
-                                              ? l10n.expand
-                                              : l10n.consolidate),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue[100],
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(16),
+                                              onTap: () {
+                                                setModalState(() {
+                                                  _activeRouteNeedsState.clear();
+                                                  _isNeedsListConsolidated = !_isNeedsListConsolidated;
+                                                });
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 12, vertical: 6),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      _isNeedsListConsolidated 
+                                                        ? Icons.expand_more 
+                                                        : Icons.compress,
+                                                      size: 16,
+                                                      color: Colors.blue[700],
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      _isNeedsListConsolidated
+                                                          ? l10n.expand
+                                                          : l10n.consolidate,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: Colors.blue[700],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  if (_isNeedsListConsolidated)
-                                    ..._buildConsolidatedNeeds(
-                                        locations, setModalState)
-                                  else
-                                    ..._buildRawNeeds(
-                                        locations, setModalState),
-                                  const Divider(),
-                                ],
-                              );
-                            },
-                          ),
-                          if (locationsWithInfo.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 8.0,
-                              ),
-                              child: Text(
-                                l10n.notesForTrip,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                            ),
-                            ...locationsWithInfo.map((loc) {
-                              return ListTile(
-                                leading: const Icon(Icons.note_alt_outlined),
-                                title: Text(loc.name),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (loc.notes != null &&
-                                        loc.notes!.isNotEmpty)
-                                      Text(loc.notes!),
-                                    if (loc.estimatedDuration != null &&
-                                        loc.estimatedDuration! > 0)
-                                      Text(
-                                        '${l10n.estimatedDurationLabel}: ${_formatDuration(loc.estimatedDuration!)}',
-                                        style: const TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
+                                    const SizedBox(height: 12),
+                                    if (_isNeedsListConsolidated)
+                                      ..._buildConsolidatedNeeds(locations, setModalState)
+                                    else
+                                      ..._buildRawNeeds(locations, setModalState),
                                   ],
                                 ),
                               );
-                            }),
+                            },
+                          ),
+                          
+                          // Notes Section
+                          if (locationsWithInfo.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.amber[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.note_alt, 
+                                           color: Colors.amber[700], size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        l10n.notesForTrip,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.amber[800],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...locationsWithInfo.map((loc) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.amber[200]!),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.location_on, 
+                                                   color: Colors.amber[700], size: 16),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  loc.name,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (loc.notes != null && loc.notes!.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              loc.notes!,
+                                              style: TextStyle(color: Colors.grey[700]),
+                                            ),
+                                          ],
+                                          if (loc.estimatedDuration != null && 
+                                              loc.estimatedDuration! > 0) ...[
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.schedule, 
+                                                     color: Colors.grey[600], size: 14),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${l10n.estimatedDurationLabel}: ${_formatDuration(loc.estimatedDuration!)}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontStyle: FontStyle.italic,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
                           ],
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               );
             },
           ),
@@ -1507,8 +1987,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.launchMapsError)));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.launchMapsError)));
+      }
     }
   }
 
@@ -1590,12 +2072,43 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
       return Scaffold(
         appBar: AppBar(
-          title: Text(l10n.selectEndpointTitle),
+          title: Text(
+            l10n.selectEndpointTitle,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Theme.of(context).primaryColor,
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.cancel),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
             onPressed: () {
               Navigator.of(context).pop();
             },
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+                ],
+              ),
+            ),
           ),
         ),
         body: Stack(
@@ -1752,11 +2265,29 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ),
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 90.0),
-          child: FloatingActionButton(
-            heroTag: 'myLocationFabEndPoint',
-            onPressed: () => _goToCurrentLocation(isInitial: false),
-            tooltip: l10n.myLocationTooltip,
-            child: const Icon(Icons.my_location),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: 'myLocationFabEndPoint',
+              onPressed: () => _goToCurrentLocation(isInitial: false),
+              tooltip: l10n.myLocationTooltip,
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.my_location, size: 24),
+            ),
           ),
         ),
       );
@@ -1793,7 +2324,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   ),
                 );
                 if (!mounted) return;
-                if (result is List<TravelLocation> && result.isNotEmpty) {
+                
+                // SavedRoutesScreen'den gelen sonucu kontrol et
+                if (result is Map<String, dynamic>) {
+                  // SavedRoutesScreen format: locations ve endLocation
+                  final locations = result['locations'] as List<TravelLocation>?;
+                  final endLocation = result['endLocation'] as TravelLocation?;
+                  
+                  // Alternatif format: waypoints ve endLocation (diğer ekranlar için)
+                  final waypoints = result['waypoints'] as List<TravelLocation>?;
+                  
+                  // SavedRoutesScreen formatını kontrol et
+                  if (locations != null && endLocation != null) {
+                    _drawRoute(locations, endLocation: endLocation);
+                  }
+                  // Alternatif format kontrolü 
+                  else if (waypoints != null && endLocation != null) {
+                    _drawRoute(waypoints, endLocation: endLocation);
+                  } else if (waypoints != null && waypoints.isNotEmpty) {
+                    _drawRoute(waypoints);
+                  } else if (locations != null && locations.isNotEmpty) {
+                    _drawRoute(locations);
+                  }
+                } else if (result is List<TravelLocation> && result.isNotEmpty) {
+                  // Eski format: tüm lokasyonlar liste halinde
                   if (result.length >= 2) {
                     _drawRoute(result);
                   } else {
@@ -1903,16 +2457,70 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         title: GestureDetector(
           onTap: _showAboutDialog,
-          child: SizedBox(
-            height: 50,
-            child: Image.asset(
-              'assets/icon/icon.png',
-              fit: BoxFit.contain,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SizedBox(
+                  height: 32,
+                  width: 32,
+                  child: Image.asset(
+                    'assets/icon/icon.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'TripBook',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: appBarActions.map((action) {
+          if (action is IconButton) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: action.icon,
+                  onPressed: action.onPressed,
+                  tooltip: action.tooltip,
+                  color: Colors.white,
+                ),
+              ),
+            );
+          }
+          return action;
+        }).toList(),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue[700]!,
+                Colors.blue[900]!,
+              ],
             ),
           ),
         ),
-        actions: appBarActions,
-        backgroundColor: Colors.blue[700],
       ),
       body: Stack(
         children: [
@@ -1979,9 +2587,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     setState(() {
                       _isSelectingEndpoint = true;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.selectNewEndpoint)),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.selectNewEndpoint)),
+                      );
+                    }
                   }
                 }
                 setState(() {
@@ -2031,109 +2641,187 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             child: Column(
               children: [
                 Container(
-                  height: 50,
+                  height: 56,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(16),
                     color: Colors.white,
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.search, color: Colors.grey),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Icon(
+                          Icons.search,
+                          color: Colors.grey[600],
+                          size: 24,
+                        ),
                       ),
                       Expanded(
                         child: TextField(
                           controller: _searchController,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
                           decoration: InputDecoration(
                             hintText: l10n.searchHint,
+                            hintStyle: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
                             border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          _searchController.clear();
-                          FocusScope.of(context).unfocus();
-                          setState(() {
-                            _placePredictions = [];
-                            _searchResultMarker = null;
-                          });
-                        },
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _placePredictions = [];
+                              _searchResultMarker = null;
+                            });
+                          },
+                        ),
                       ),
                     ],
                   ),
                 ),
                 if (_placePredictions.isNotEmpty)
-                  Material(
-                    elevation: 4.0,
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(10),
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.3,
                       ),
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        itemCount: _placePredictions.length,
-                        itemBuilder: (context, index) {
-                          final prediction = _placePredictions[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on),
-                            title: Text(
-                              prediction['description'] ??
-                                  l10n.unknownLocation,
-                            ),
-                            onTap: () async {
-                              final placeId = prediction['place_id'];
-                              if (placeId == null) return;
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shrinkWrap: true,
+                          itemCount: _placePredictions.length,
+                          separatorBuilder: (context, index) => Divider(
+                            height: 1,
+                            color: Colors.grey[200],
+                            indent: 56,
+                          ),
+                          itemBuilder: (context, index) {
+                            final prediction = _placePredictions[index];
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  final placeId = prediction['place_id'];
+                                  if (placeId == null) return;
 
-                              final details = await _directionsService
-                                  .getPlaceDetails(placeId);
-                              if (details == null || !mounted) return;
+                                  final details = await _directionsService
+                                      .getPlaceDetails(placeId);
+                                  if (details == null || !mounted) return;
 
-                              final location =
-                                  details['geometry']?['location'];
-                              if (location == null) return;
+                                  final location =
+                                      details['geometry']?['location'];
+                                  if (location == null) return;
 
-                              final lat = location['lat'];
-                              final lng = location['lng'];
-                              final latLng = LatLng(lat, lng);
+                                  final lat = location['lat'];
+                                  final lng = location['lng'];
+                                  final latLng = LatLng(lat, lng);
 
-                              _mapController?.animateCamera(
-                                CameraUpdate.newLatLngZoom(latLng, 15),
-                              );
+                                  _mapController?.animateCamera(
+                                    CameraUpdate.newLatLngZoom(latLng, 15),
+                                  );
 
-                              setState(() {
-                                _searchResultMarker = Marker(
-                                  markerId:
-                                      const MarkerId('searchResult'),
-                                  position: latLng,
-                                  infoWindow: InfoWindow(
-                                    title: prediction['description'],
+                                  setState(() {
+                                    _searchResultMarker = Marker(
+                                      markerId: const MarkerId('search_result'),
+                                      position: latLng,
+                                      infoWindow: InfoWindow(
+                                        title: prediction['description'] ??
+                                            l10n.unknownLocation,
+                                      ),
+                                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                                        BitmapDescriptor.hueAzure,
+                                      ),
+                                    );
+                                    _placePredictions = [];
+                                    _searchController.clear();
+                                    FocusScope.of(context).unfocus();
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
                                   ),
-                                  icon:
-                                      BitmapDescriptor.defaultMarkerWithHue(
-                                    BitmapDescriptor.hueAzure,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[50],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.location_on,
+                                          color: Colors.blue[600],
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          prediction['description'] ??
+                                              l10n.unknownLocation,
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Colors.grey[400],
+                                        size: 16,
+                                      ),
+                                    ],
                                   ),
-                                );
-                                _placePredictions = [];
-                                _searchController.clear();
-                                FocusScope.of(context).unfocus();
-                              });
-                            },
-                          );
-                        },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -2143,38 +2831,95 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           Positioned(
             top: 70,
             right: 15,
-            child: FloatingActionButton(
-              heroTag: 'mapTypeFab', // Unique tag
-              mini: true,
-              onPressed: _toggleMapType,
-              tooltip: l10n.mapTypeTooltip,
-              backgroundColor: Colors.white,
-              child: const Icon(Icons.layers, color: Colors.black),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                heroTag: 'mapTypeFab',
+                mini: true,
+                onPressed: _toggleMapType,
+                tooltip: l10n.mapTypeTooltip,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.layers,
+                  color: Colors.grey[700],
+                  size: 20,
+                ),
+              ),
             ),
           ),
           if (_currentBearing != 0)
             Positioned(
               top: 125,
               right: 15,
-              child: FloatingActionButton(
-                heroTag: 'resetBearingFab', // Unique tag
-                mini: true,
-                onPressed: _resetBearing,
-                tooltip: l10n.resetBearingTooltip,
-                backgroundColor: Colors.white,
-                child:
-                    const Icon(Icons.explore_outlined, color: Colors.black),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  heroTag: 'resetBearingFab',
+                  mini: true,
+                  onPressed: _resetBearing,
+                  tooltip: l10n.resetBearingTooltip,
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.explore_outlined,
+                    color: Colors.grey[700],
+                    size: 20,
+                  ),
+                ),
               ),
             ),
         ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
-        child: FloatingActionButton(
-          heroTag: 'myLocationFab', // Unique tag
-          onPressed: () => _goToCurrentLocation(isInitial: false),
-          tooltip: l10n.myLocationTooltip,
-          child: const Icon(Icons.my_location),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            heroTag: 'myLocationFab',
+            onPressed: () => _goToCurrentLocation(isInitial: false),
+            tooltip: l10n.myLocationTooltip,
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.my_location, size: 24),
+          ),
         ),
       ),
     );
@@ -2277,14 +3022,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     locations,
                     _currentPosition!,
                   );
-                  final defaultEndLocationGeoName =
-                      await _directionsService.getPlaceName(
-                            LatLng(
-                              _currentPosition!.latitude,
-                              _currentPosition!.longitude,
-                            ),
-                          ) ??
-                          l10n.unknownLocation;
+                  String defaultEndLocationGeoName;
+                  try {
+                    defaultEndLocationGeoName =
+                        await _directionsService.getPlaceName(
+                              LatLng(
+                                _currentPosition!.latitude,
+                                _currentPosition!.longitude,
+                              ),
+                            ) ??
+                            l10n.unknownLocation;
+                  } catch (e) {
+                    defaultEndLocationGeoName = l10n.unknownLocation;
+                  }
                   final defaultEndLocation = TravelLocation(
                     name: l10n.endPoint,
                     geoName: defaultEndLocationGeoName,
@@ -2346,14 +3096,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   selectedLocations,
                   _currentPosition!,
                 );
-                final defaultEndLocationGeoName =
-                    await _directionsService.getPlaceName(
-                          LatLng(
-                            _currentPosition!.latitude,
-                            _currentPosition!.longitude,
-                          ),
-                        ) ??
-                        l10n.unknownLocation;
+                String defaultEndLocationGeoName;
+                try {
+                  defaultEndLocationGeoName =
+                      await _directionsService.getPlaceName(
+                            LatLng(
+                              _currentPosition!.latitude,
+                              _currentPosition!.longitude,
+                            ),
+                          ) ??
+                          l10n.unknownLocation;
+                } catch (e) {
+                  defaultEndLocationGeoName = l10n.unknownLocation;
+                }
                 final defaultEndLocation = TravelLocation(
                   name: l10n.endPoint,
                   geoName: defaultEndLocationGeoName,

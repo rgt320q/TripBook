@@ -70,60 +70,232 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
     }
   }
 
+  String _getSortLabel() {
+    switch (_currentSortBy) {
+      case SortBy.nameAsc:
+        return 'A-Z';
+      case SortBy.nameDesc:
+        return 'Z-A';
+      case SortBy.dateNewest:
+        return 'Yeni';
+      case SortBy.dateOldest:
+        return 'Eski';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(l10n.manageLocationsScreenTitle),
+        title: Text(
+          l10n.manageLocationsScreenTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           if (widget.isForSelection)
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: () {
-                Navigator.of(context).pop(_selectedLocations);
-              },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  onPressed: () {
+                    Navigator.of(context).pop(_selectedLocations);
+                  },
+                ),
+              ),
             ),
-          PopupMenuButton<SortBy>(
-            icon: const Icon(Icons.sort),
-            onSelected: (SortBy result) {
-              setState(() {
-                _currentSortBy = result;
-              });
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<SortBy>>[
-              PopupMenuItem<SortBy>(
-                value: SortBy.nameAsc,
-                child: Text(l10n.sortByNameAsc),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              PopupMenuItem<SortBy>(
-                value: SortBy.nameDesc,
-                child: Text(l10n.sortByNameDesc),
+              child: PopupMenuButton<SortBy>(
+                icon: const Icon(Icons.sort, color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (SortBy result) {
+                  setState(() {
+                    _currentSortBy = result;
+                  });
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<SortBy>>[
+                  PopupMenuItem<SortBy>(
+                    value: SortBy.nameAsc,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.sort_by_alpha, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.sortByNameAsc),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<SortBy>(
+                    value: SortBy.nameDesc,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.sort_by_alpha, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.sortByNameDesc),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<SortBy>(
+                    value: SortBy.dateNewest,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.sortByDateNewest),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<SortBy>(
+                    value: SortBy.dateOldest,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.sortByDateOldest),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              PopupMenuItem<SortBy>(
-                value: SortBy.dateNewest,
-                child: Text(l10n.sortByDateNewest),
-              ),
-              PopupMenuItem<SortBy>(
-                value: SortBy.dateOldest,
-                child: Text(l10n.sortByDateOldest),
-              ),
-            ],
+            ),
           ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<List<TravelLocation>>(
         stream: _firestoreService.getLocations(),
         builder: (context, locationSnapshot) {
           if (locationSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
           if (!locationSnapshot.hasData || locationSnapshot.data!.isEmpty) {
-            return Center(child: Text(l10n.noSavedLocations));
+            return Container(
+              margin: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        Icons.location_off,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.noSavedLocations,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Harita üzerinden konumlar ekleyebilirsiniz',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
           if (locationSnapshot.hasError) {
-            return Center(
-              child: Text(l10n.error(locationSnapshot.error.toString())),
+            return Container(
+              margin: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red[400],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Bir hata oluştu',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red[600],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.error(locationSnapshot.error.toString()),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -150,39 +322,120 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
               groups.sort((a, b) => a.name.compareTo(b.name));
               final groupMap = {for (var g in groups) g.firestoreId: g.name};
 
-              return ListView.builder(
-                itemCount: locations.length,
-                itemBuilder: (context, index) {
-                  final location = locations[index];
-                  final bool isTarget = index == targetLocationIndex;
+              return Container(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue[50]!, Colors.blue[100]!],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[600],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${locations.length} Konum',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue[800],
+                                  ),
+                                ),
+                                Text(
+                                  'Kaydedilmiş konumlarınız',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.blue[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[600],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              _getSortLabel(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Locations list
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: locations.length,
+                        itemBuilder: (context, index) {
+                          final location = locations[index];
+                          final bool isTarget = index == targetLocationIndex;
 
-                  Widget listItem = LocationListItem(
-                    key: ValueKey(location.firestoreId ?? location.hashCode),
-                    location: location,
-                    groupName: groupMap[location.groupId] ?? l10n.groupNone,
-                    allGroups: groups,
-                    firestoreService: _firestoreService,
-                    isInitiallyExpanded: isTarget,
-                    isSelected: _selectedLocations.contains(location),
-                    isReadOnly: widget.isReadOnly, // Pass down
-                    onSelected: widget.isForSelection
-                        ? (location, selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedLocations.add(location);
-                              } else {
-                                _selectedLocations.remove(location);
-                              }
-                            });
-                          }
-                        : null,
-                  );
+                          Widget listItem = LocationListItem(
+                            key: ValueKey(location.firestoreId ?? location.hashCode),
+                            location: location,
+                            groupName: groupMap[location.groupId] ?? l10n.groupNone,
+                            allGroups: groups,
+                            firestoreService: _firestoreService,
+                            isInitiallyExpanded: isTarget,
+                            isSelected: _selectedLocations.contains(location),
+                            isReadOnly: widget.isReadOnly,
+                            onSelected: widget.isForSelection
+                                ? (location, selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedLocations.add(location);
+                                      } else {
+                                        _selectedLocations.remove(location);
+                                      }
+                                    });
+                                  }
+                                : null,
+                          );
 
-                  if (isTarget) {
-                    return Container(key: _scrollKey, child: listItem);
-                  }
-                  return listItem;
-                },
+                          return Container(
+                            key: isTarget ? _scrollKey : null,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: listItem,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           );
@@ -262,94 +515,228 @@ class _LocationListItemState extends State<LocationListItem> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: Text(l10n.newGroup),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextFormField(
-                        controller: groupNameController,
-                        decoration: InputDecoration(
-                          labelText: l10n.groupName,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.locationNameEmptyError;
-                          }
-                          final invalidChars = RegExp(r'[<>]');
-                          if (invalidChars.hasMatch(value)) {
-                            return l10n.invalidGroupNameError;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Text(l10n.selectGroupColor),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: _groupColors.map((color) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedColor = color;
-                              });
-                            },
-                            child: Container(
-                              width: 30,
-                              height: 30,
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: selectedColor == color
-                                      ? Colors.black
-                                      : Colors.transparent,
-                                  width: 2,
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.add,
+                                color: Colors.blue[600],
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                l10n.newGroup,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Group name input
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: TextFormField(
+                            controller: groupNameController,
+                            decoration: InputDecoration(
+                              labelText: l10n.groupName,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(16),
+                              labelStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return l10n.locationNameEmptyError;
+                              }
+                              final invalidChars = RegExp(r'[<>]');
+                              if (invalidChars.hasMatch(value)) {
+                                return l10n.invalidGroupNameError;
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Color selection
+                        Text(
+                          l10n.selectGroupColor,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Wrap(
+                            spacing: 12.0,
+                            runSpacing: 12.0,
+                            children: _groupColors.map((color) {
+                              final isSelected = selectedColor == color;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedColor = color;
+                                  });
+                                },
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected ? Colors.white : Colors.transparent,
+                                      width: 3,
+                                    ),
+                                    boxShadow: [
+                                      if (isSelected) 
+                                        BoxShadow(
+                                          color: color.withOpacity(0.3),
+                                          spreadRadius: 2,
+                                          blurRadius: 8,
+                                        ),
+                                    ],
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 20,
+                                        )
+                                      : null,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Action buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey[300]!),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TextButton(
+                                  onPressed: () => Navigator.of(dialogContext).pop(),
+                                  style: TextButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l10n.cancel,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.blue[600]!, Colors.blue[800]!],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    if (formKey.currentState!.validate()) {
+                                      final newGroup = LocationGroup(
+                                        name: groupNameController.text.trim(),
+                                        // ignore: deprecated_member_use
+                                        color: selectedColor.value,
+                                        createdAt: DateTime.now(),
+                                        userId: FirebaseAuth.instance.currentUser!.uid,
+                                      );
+                                      final docRef = await widget.firestoreService.addGroup(newGroup);
+                                      final createdGroup = LocationGroup(
+                                        firestoreId: docRef.id,
+                                        name: newGroup.name,
+                                        color: newGroup.color,
+                                        createdAt: newGroup.createdAt,
+                                        userId: newGroup.userId,
+                                      );
+                                      Navigator.of(dialogContext).pop(createdGroup);
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    foregroundColor: Colors.white,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l10n.save,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final newGroup = LocationGroup(
-                        name: groupNameController.text.trim(),
-                        // ignore: deprecated_member_use
-                        color: selectedColor.value,
-                        createdAt: DateTime.now(),
-                        userId: FirebaseAuth.instance.currentUser!.uid,
-                      );
-                      final docRef = await widget.firestoreService.addGroup(newGroup);
-                      final createdGroup = LocationGroup(
-                        firestoreId: docRef.id,
-                        name: newGroup.name,
-                        color: newGroup.color,
-                        createdAt: newGroup.createdAt,
-                        userId: newGroup.userId,
-                      );
-                      Navigator.of(dialogContext).pop(createdGroup);
-                    }
-                  },
-                  child: Text(l10n.save),
-                ),
-              ],
             );
           },
         );
@@ -506,130 +893,304 @@ class _LocationListItemState extends State<LocationListItem> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        leading: widget.onSelected != null
-            ? Checkbox(
-                value: widget.isSelected,
-                onChanged: (value) {
-                  widget.onSelected!(widget.location, value!);
-                },
-              )
-            : Icon(Icons.location_on, color: theme.colorScheme.primary),
-        initiallyExpanded: _isExpanded,
-        onExpansionChanged: (expanded) {
-          setState(() {
-            _isExpanded = expanded;
-          });
-        },
-        title: Text(
-          widget.location.name,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+    // Group color for the location
+    final groupColor = widget.allGroups
+        .where((g) => g.firestoreId == widget.location.groupId)
+        .map((g) => Color(g.color!))
+        .firstOrNull ?? Colors.grey[400]!;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: _isExpanded ? theme.primaryColor : Colors.grey[200]!,
+          width: _isExpanded ? 2 : 1,
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${l10n.groupLabel}: ${widget.groupName}',
-              style: theme.textTheme.bodySmall,
-            ),
-            Text(
-              widget.location.geoName,
-              style: theme.textTheme.bodySmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        trailing: _isExpanded
-            ? null
-            : IconButton(
-                icon: Icon(Icons.delete, color: theme.colorScheme.error),
-                onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
-              ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTextField(_nameController, l10n.customLocationNameLabel, readOnly: widget.isReadOnly),
-                const SizedBox(height: 16),
-                _buildTextField(_descriptionController, l10n.descriptionLabel, readOnly: widget.isReadOnly),
-                const SizedBox(height: 16),
-                _buildTextField(_notesController, l10n.notesLabel, readOnly: widget.isReadOnly),
-                const SizedBox(height: 16),
-                _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint, readOnly: widget.isReadOnly),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  _durationController,
-                  l10n.estimatedDurationLabel,
-                  inputType: TextInputType.number,
-                  readOnly: widget.isReadOnly,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ExpansionTile(
+          leading: widget.onSelected != null
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: widget.isSelected ? theme.primaryColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: widget.isSelected ? theme.primaryColor : Colors.grey[300]!,
+                      width: 2,
+                    ),
+                  ),
+                  child: Checkbox(
+                    value: widget.isSelected,
+                    activeColor: Colors.transparent,
+                    checkColor: Colors.white,
+                    side: BorderSide.none,
+                    onChanged: (value) {
+                      widget.onSelected!(widget.location, value!);
+                    },
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: groupColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.location_on,
+                    color: groupColor,
+                    size: 24,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                _buildGroupDropdown(),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
+          initiallyExpanded: _isExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _isExpanded = expanded;
+            });
+          },
+          title: Text(
+            widget.location.name,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: groupColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: groupColor.withOpacity(0.3)),
+                ),
+                child: Text(
+                  widget.groupName,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: groupColor.computeLuminance() > 0.5 
+                        ? Colors.grey[800] 
+                        : groupColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      widget.location.geoName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.location.estimatedDuration != null && widget.location.estimatedDuration! > 0) ...[
+                const SizedBox(height: 4),
+                Row(
                   children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.map),
-                      label: Text(l10n.showOnMap),
-                      onPressed: widget.isReadOnly
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MapScreen(initialLocation: widget.location),
-                                ),
-                              );
-                            },
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.copy),
-                      label: Text(l10n.copyLocationInfo),
-                      onPressed: widget.isReadOnly ? null : () {
-                        final lat = widget.location.latitude;
-                        final lon = widget.location.longitude;
-                        Clipboard.setData(ClipboardData(text: '$lat,$lon'));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.locationCopiedSuccess),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                    ),
-                    ElevatedButton.icon(
-                        icon: const Icon(Icons.save),
-                        label: Text(l10n.saveChanges),
-                        onPressed: widget.isReadOnly ? null : _saveChanges,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
+                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${widget.location.estimatedDuration} dakika',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
                       ),
-                    ElevatedButton.icon(
-                        icon: const Icon(Icons.delete),
-                        label: Text(l10n.deleteLocation),
-                        onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.error,
-                          foregroundColor: theme.colorScheme.onError,
-                        ),
-                      ),
+                    ),
                   ],
                 ),
               ],
-            ),
+            ],
           ),
-        ],
+          trailing: _isExpanded
+              ? null
+              : Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: widget.isReadOnly ? Colors.grey[200] : Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: widget.isReadOnly ? Colors.grey[400] : Colors.red[600],
+                    size: 20,
+                  ),
+                ),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTextField(_nameController, l10n.customLocationNameLabel, readOnly: widget.isReadOnly),
+                  const SizedBox(height: 16),
+                  _buildTextField(_descriptionController, l10n.descriptionLabel, readOnly: widget.isReadOnly),
+                  const SizedBox(height: 16),
+                  _buildTextField(_notesController, l10n.notesLabel, readOnly: widget.isReadOnly),
+                  const SizedBox(height: 16),
+                  _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint, readOnly: widget.isReadOnly),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _durationController,
+                    l10n.estimatedDurationLabel,
+                    inputType: TextInputType.number,
+                    readOnly: widget.isReadOnly,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGroupDropdown(),
+                  const SizedBox(height: 24),
+                  
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.blue[600]!, Colors.blue[800]!],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.map, size: 20),
+                            label: Text(l10n.showOnMap),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: widget.isReadOnly
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MapScreen(initialLocation: widget.location),
+                                      ),
+                                    );
+                                  },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.copy, size: 20),
+                            label: Text(l10n.copyLocationInfo),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.grey[700],
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: widget.isReadOnly ? null : () {
+                              final lat = widget.location.latitude;
+                              final lon = widget.location.longitude;
+                              Clipboard.setData(ClipboardData(text: '$lat,$lon'));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.locationCopiedSuccess),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.green[600]!, Colors.green[800]!],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.save, size: 20),
+                            label: Text(l10n.saveChanges),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: widget.isReadOnly ? null : _saveChanges,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.red[600]!, Colors.red[800]!],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.delete, size: 20),
+                            label: Text(l10n.deleteLocation),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -641,15 +1202,37 @@ class _LocationListItemState extends State<LocationListItem> {
     String? hint,
     bool readOnly = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      readOnly: readOnly,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: const OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
-      keyboardType: inputType,
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          suffixIcon: readOnly 
+              ? Icon(Icons.lock, color: Colors.grey[400], size: 20)
+              : null,
+        ),
+        keyboardType: inputType,
+        style: TextStyle(
+          color: readOnly ? Colors.grey[600] : Colors.grey[800],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
@@ -661,42 +1244,113 @@ class _LocationListItemState extends State<LocationListItem> {
     final String? validSelectedGroupId =
         allGroupIds.contains(_selectedGroupId) ? _selectedGroupId : null;
 
-    return DropdownButtonFormField<String>(
-      initialValue: validSelectedGroupId,
-      decoration: InputDecoration(
-        labelText: l10n.groupLabel,
-        border: const OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
-      items: [
-        DropdownMenuItem<String>(value: null, child: Text(l10n.groupNone)),
-        ...widget.allGroups.map((group) {
-          return DropdownMenuItem<String>(
-            value: group.firestoreId,
-            child: Text(group.name),
-          );
-        }),
-        DropdownMenuItem<String>(
-          value: 'add_new_group',
-          child: Text(l10n.addNewGroup),
+      child: DropdownButtonFormField<String>(
+        value: validSelectedGroupId,
+        decoration: InputDecoration(
+          labelText: l10n.groupLabel,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+          suffixIcon: widget.isReadOnly 
+              ? Icon(Icons.lock, color: Colors.grey[400], size: 20)
+              : Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
         ),
-      ],
-      onChanged: widget.isReadOnly
-          ? null
-          : (value) async {
-              if (value == 'add_new_group') {
-                final newGroup = await _showAddNewGroupDialog(context);
-                if (newGroup != null) {
+        style: TextStyle(
+          color: widget.isReadOnly ? Colors.grey[600] : Colors.grey[800],
+          fontWeight: FontWeight.w500,
+        ),
+        dropdownColor: Colors.white,
+        items: [
+          DropdownMenuItem<String>(
+            value: null, 
+            child: Row(
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(l10n.groupNone),
+              ],
+            ),
+          ),
+          ...widget.allGroups.map((group) {
+            return DropdownMenuItem<String>(
+              value: group.firestoreId,
+              child: Row(
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Color(group.color!),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(group.name),
+                ],
+              ),
+            );
+          }),
+          DropdownMenuItem<String>(
+            value: 'add_new_group',
+            child: Row(
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 12),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  l10n.addNewGroup,
+                  style: TextStyle(
+                    color: Colors.blue[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        onChanged: widget.isReadOnly
+            ? null
+            : (value) async {
+                if (value == 'add_new_group') {
+                  final newGroup = await _showAddNewGroupDialog(context);
+                  if (newGroup != null) {
+                    setState(() {
+                      widget.allGroups.add(newGroup);
+                      _selectedGroupId = newGroup.firestoreId;
+                    });
+                  }
+                } else {
                   setState(() {
-                    widget.allGroups.add(newGroup);
-                    _selectedGroupId = newGroup.firestoreId;
+                    _selectedGroupId = value;
                   });
                 }
-              } else {
-                setState(() {
-                  _selectedGroupId = value;
-                });
-              }
-            },
+              },
+      ),
     );
   }
 

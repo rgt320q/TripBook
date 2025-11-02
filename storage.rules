@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Profile images: Her kullanıcı sadece kendi profil resmini değiştirebilir
+    match /profile_images/{userId}.jpg {
+      allow read: if true; // Herkes okuyabilir (profil resimleri public)
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Profile images with timestamp: Her kullanıcı sadece kendi profil resmini değiştirebilir
+    match /profile_images/{userId}_{timestamp}.jpg {
+      allow read: if true; // Herkes okuyabilir (profil resimleri public)
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Diğer dosyalar için varsayılan kural
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
+import 'package:tripbook/services/connectivity_service.dart';
 
 import 'package:tripbook/models/travel_location.dart';
 
@@ -47,37 +48,42 @@ class DirectionsService {
   }
 
   Future<DirectionsInfo?> getDirections(List<TravelLocation> locations) async {
-      // For web, ensure the Google Maps API key in the Google Cloud Console
-      // has HTTP referrers set to allow requests from your domain to prevent CORS errors.
-  
-      if (locations.length < 2) return null;
-  
-      final origin = locations.first;
-      final destination = locations.last;
-      final waypoints = locations.length > 2
-          ? locations
-                .sublist(1, locations.length - 1)
-                .map((loc) => '${loc.latitude},${loc.longitude}')
-                .join('|')
-          : '';
-  
-      var url = '';
-      if (kIsWeb) {
-        // Use the Firebase Function as a proxy on the web to avoid CORS issues.
-        // IMPORTANT: Replace YOUR_PROJECT_ID with your actual Firebase project ID.
-        const functionUrl = 'https://us-central1-tripbook-68238.cloudfunctions.net/getDirections';
-        url = '$functionUrl?'
-            'origin=${origin.latitude},${origin.longitude}&'
-            'destination=${destination.latitude},${destination.longitude}'
-            '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
-      } else {
-        // Use the direct API on mobile.
-        url = 'https://maps.googleapis.com/maps/api/directions/json?'
-            'origin=${origin.latitude},${origin.longitude}&'
-            'destination=${destination.latitude},${destination.longitude}'
-            '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&'
-            'key=$_apiKey';
-      }
+    // Check internet connectivity first
+    if (!await ConnectivityService().checkConnection()) {
+      return null;
+    }
+    
+    // For web, ensure the Google Maps API key in the Google Cloud Console
+    // has HTTP referrers set to allow requests from your domain to prevent CORS errors.
+
+    if (locations.length < 2) return null;
+
+    final origin = locations.first;
+    final destination = locations.last;
+    final waypoints = locations.length > 2
+        ? locations
+              .sublist(1, locations.length - 1)
+              .map((loc) => '${loc.latitude},${loc.longitude}')
+              .join('|')
+        : '';
+
+    var url = '';
+    if (kIsWeb) {
+      // Use the Firebase Function as a proxy on the web to avoid CORS issues.
+      // IMPORTANT: Replace YOUR_PROJECT_ID with your actual Firebase project ID.
+      const functionUrl = 'https://us-central1-tripbook-68238.cloudfunctions.net/getDirections';
+      url = '$functionUrl?'
+          'origin=${origin.latitude},${origin.longitude}&'
+          'destination=${destination.latitude},${destination.longitude}'
+          '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
+    } else {
+      // Use the direct API on mobile.
+      url = 'https://maps.googleapis.com/maps/api/directions/json?'
+          'origin=${origin.latitude},${origin.longitude}&'
+          'destination=${destination.latitude},${destination.longitude}'
+          '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&'
+          'key=$_apiKey';
+    }
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -148,27 +154,40 @@ class DirectionsService {
   }
 
   Future<String?> getPlaceName(LatLng position) async {
-    final url =
-        'https://maps.googleapis.com/maps/api/geocode/json?'
-        'latlng=${position.latitude},${position.longitude}&'
-        'key=$_apiKey&'
-        'language=tr';
+    // Check internet connectivity first
+    if (!await ConnectivityService().checkConnection()) {
+      return "Bağlantı hatası - Bilinmeyen Konum";
+    }
+    
+    try {
+      final url =
+          'https://maps.googleapis.com/maps/api/geocode/json?'
+          'latlng=${position.latitude},${position.longitude}&'
+          'key=$_apiKey&'
+          'language=tr';
 
-    final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url));
 
-    if (response.statusCode == 200) {
-      final json = convert.jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final json = convert.jsonDecode(response.body);
 
-      if ((json["results"] as List).isNotEmpty) {
-        return json["results"][0]["formatted_address"];
+        if ((json["results"] as List).isNotEmpty) {
+          return json["results"][0]["formatted_address"];
+        } else {
+          return "Bilinmeyen Konum";
+        }
       } else {
-        return "Bilinmeyen Konum";
+        FirebaseCrashlytics.instance.recordError(
+          'Failed to get place name for position: $position',
+          null,
+          reason: 'API call failed with status code ${response.statusCode}',
+        );
+        return null;
       }
-    } else {
+    } catch (e) {
       FirebaseCrashlytics.instance.recordError(
-        'Failed to get place name for position: $position',
+        'Error getting place name for position: $position - $e',
         null,
-        reason: 'API call failed with status code ${response.statusCode}',
       );
       return null;
     }
@@ -179,34 +198,60 @@ class DirectionsService {
       return [];
     }
 
-    final url =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_apiKey&sessiontoken=$_sessionToken&language=tr&components=country:tr';
+    // Check internet connectivity first
+    if (!await ConnectivityService().checkConnection()) {
+      return [];
+    }
 
-    final response = await http.get(Uri.parse(url));
+    try {
+      final url =
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_apiKey&sessiontoken=$_sessionToken&language=tr&components=country:tr';
 
-    if (response.statusCode == 200) {
-      final json = convert.jsonDecode(response.body);
-      if (json['predictions'] != null) {
-        return json['predictions'];
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final json = convert.jsonDecode(response.body);
+        if (json['predictions'] != null) {
+          return json['predictions'];
+        }
       }
+    } catch (e) {
+      FirebaseCrashlytics.instance.recordError(
+        'Error getting autocomplete for input: $input - $e',
+        null,
+      );
     }
     return [];
   }
 
   Future<Map<String, dynamic>?> getPlaceDetails(String placeId) async {
-    final url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey&sessiontoken=$_sessionToken&language=tr&fields=geometry';
+    // Check internet connectivity first
+    if (!await ConnectivityService().checkConnection()) {
+      return null;
+    }
+    
+    try {
+      final url =
+          'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey&sessiontoken=$_sessionToken&language=tr&fields=geometry';
 
-    final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url));
 
-    // Reset session token after use
-    _sessionToken = _uuid.v4();
+      // Reset session token after use
+      _sessionToken = _uuid.v4();
 
-    if (response.statusCode == 200) {
-      final json = convert.jsonDecode(response.body);
-      if (json['result'] != null) {
-        return json['result'];
+      if (response.statusCode == 200) {
+        final json = convert.jsonDecode(response.body);
+        if (json['result'] != null) {
+          return json['result'];
+        }
       }
+    } catch (e) {
+      // Reset session token even on error
+      _sessionToken = _uuid.v4();
+      FirebaseCrashlytics.instance.recordError(
+        'Error getting place details for place_id: $placeId - $e',
+        null,
+      );
     }
     return null;
   }

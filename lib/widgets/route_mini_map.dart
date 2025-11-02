@@ -5,8 +5,9 @@ import 'package:tripbook/models/travel_route.dart';
 
 class RouteMiniMap extends StatefulWidget {
   final TravelRoute route;
+  final VoidCallback? onTap;
 
-  const RouteMiniMap({super.key, required this.route});
+  const RouteMiniMap({super.key, required this.route, this.onTap});
 
   @override
   State<RouteMiniMap> createState() => _RouteMiniMapState();
@@ -44,6 +45,7 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
         Marker(
           markerId: MarkerId(loc.firestoreId!),
           position: LatLng(loc.latitude, loc.longitude),
+          onTap: widget.onTap, // Marker tıklamalarını da ana callback'e yönlendir
         ),
       );
     }
@@ -99,16 +101,20 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
       child: Container(
         height: 150,
         color: Colors.grey[300],
-        child: GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: _initialCameraPosition,
-          markers: _markers,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
-          scrollGesturesEnabled: false,
-          zoomGesturesEnabled: false,
-          rotateGesturesEnabled: false,
-          tiltGesturesEnabled: false,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: _initialCameraPosition,
+            markers: _markers,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            scrollGesturesEnabled: false,
+            zoomGesturesEnabled: false,
+            rotateGesturesEnabled: false,
+            tiltGesturesEnabled: false,
+            onTap: widget.onTap != null ? (_) => widget.onTap!() : null,
+          ),
         ),
       ),
     );

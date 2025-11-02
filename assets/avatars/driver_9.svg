@@ -1,0 +1,51 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pixel Art Road Trip Driver -->
+  <!-- Background -->
+  <rect width="64" height="64" fill="#87CEEB"/>
+  
+  <!-- Road -->
+  <rect x="0" y="45" width="64" height="19" fill="#696969"/>
+  <rect x="0" y="53" width="64" height="2" fill="#FFF"/>
+  
+  <!-- Car -->
+  <rect x="8" y="40" width="32" height="12" fill="#FF0000"/>
+  <rect x="6" y="44" width="36" height="8" fill="#8B0000"/>
+  
+  <!-- Car windows -->
+  <rect x="12" y="42" width="8" height="6" fill="#87CEEB"/>
+  <rect x="28" y="42" width="8" height="6" fill="#87CEEB"/>
+  
+  <!-- Car wheels -->
+  <circle cx="14" cy="54" r="4" fill="#000"/>
+  <circle cx="34" cy="54" r="4" fill="#000"/>
+  <circle cx="14" cy="54" r="2" fill="#696969"/>
+  <circle cx="34" cy="54" r="2" fill="#696969"/>
+  
+  <!-- Head in car -->
+  <rect x="30" y="36" width="16" height="12" fill="#FDBCB4"/>
+  
+  <!-- Hair -->
+  <rect x="28" y="32" width="20" height="6" fill="#8B4513"/>
+  
+  <!-- Eyes -->
+  <rect x="32" y="40" width="3" height="3" fill="#000"/>
+  <rect x="41" y="40" width="3" height="3" fill="#000"/>
+  
+  <!-- Mouth -->
+  <rect x="36" y="44" width="4" height="2" fill="#8B0000"/>
+  
+  <!-- Steering wheel -->
+  <circle cx="24" cy="44" r="3" fill="#000"/>
+  <circle cx="24" cy="44" r="1" fill="#696969"/>
+  
+  <!-- Arms on wheel -->
+  <rect x="20" y="42" width="8" height="4" fill="#FDBCB4"/>
+  
+  <!-- Mountains in distance -->
+  <polygon points="45,35 55,25 65,35" fill="#8B7D6B"/>
+  <polygon points="50,38 58,28 66,38" fill="#A0522D"/>
+  
+  <!-- Luggage on roof -->
+  <rect x="16" y="36" width="12" height="4" fill="#8B4513"/>
+  <rect x="18" y="34" width="8" height="2" fill="#654321"/>
+</svg>

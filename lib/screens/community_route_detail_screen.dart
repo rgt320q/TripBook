@@ -88,6 +88,83 @@ class _CommunityRouteDetailScreenState
     super.dispose();
   }
 
+  void _showUserProfileInfo() {
+    if (_sharedByUserProfile == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Paylaşan: ${_sharedByUserProfile!.getPublicDisplayName()}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_sharedByUserProfile!.showBioInPublic && 
+                  _sharedByUserProfile!.bio?.isNotEmpty == true) ...[
+                Text(
+                  'Hakkında:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(_sharedByUserProfile!.bio!),
+                const SizedBox(height: 12),
+              ],
+              if (_sharedByUserProfile!.showPhoneInPublic && 
+                  _sharedByUserProfile!.phone?.isNotEmpty == true) ...[
+                Text(
+                  'Telefon:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(_sharedByUserProfile!.phone!),
+                const SizedBox(height: 12),
+              ],
+              if (_sharedByUserProfile!.showGenderInPublic && 
+                  _sharedByUserProfile!.gender?.isNotEmpty == true) ...[
+                Text(
+                  'Cinsiyet:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(_sharedByUserProfile!.gender!),
+                const SizedBox(height: 12),
+              ],
+              if (_sharedByUserProfile!.showBirthDateInPublic && 
+                  _sharedByUserProfile!.birthDate != null) ...[
+                Text(
+                  'Doğum Tarihi:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_sharedByUserProfile!.birthDate!.toDate().day}/'
+                  '${_sharedByUserProfile!.birthDate!.toDate().month}/'
+                  '${_sharedByUserProfile!.birthDate!.toDate().year}',
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!_sharedByUserProfile!.showBioInPublic && 
+                  !_sharedByUserProfile!.showPhoneInPublic &&
+                  !_sharedByUserProfile!.showGenderInPublic &&
+                  !_sharedByUserProfile!.showBirthDateInPublic)
+                Text(
+                  'Bu kullanıcı profil bilgilerini paylaşmayı tercih etmemiş.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Kapat'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _submitComment() {
     final l10n = AppLocalizations.of(context)!;
     final commentText = _commentController.text.trim();
@@ -228,79 +305,311 @@ class _CommunityRouteDetailScreenState
         Navigator.of(context).pop(_madeChanges);
       },
       child: Scaffold(
+        backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: Text(widget.route.name),
+          title: Text(
+            widget.route.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            onPressed: () => Navigator.of(context).pop(_madeChanges),
+          ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.save_alt),
-              tooltip: l10n.saveRoute,
-              onPressed: _saveRoute,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    _isSaved ? Icons.download_done : Icons.save_alt,
+                    color: Colors.white,
+                  ),
+                  tooltip: l10n.saveRoute,
+                  onPressed: _saveRoute,
+                ),
+              ),
             ),
           ],
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+                ],
+              ),
+            ),
+          ),
         ),
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (widget.route.locations != null &&
-                  widget.route.locations!.isNotEmpty)
-                RouteMiniMap(route: widget.route),
+              // Route Map
+              if (widget.route.locations != null && widget.route.locations!.isNotEmpty)
+                Stack(
+                  children: [
+                    RouteMiniMap(route: widget.route),
+                    if (_isSaved)
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green[600],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.download_done,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Kaydedildi',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Basic Route Info
-                    Text(
-                      l10n.sharedBy(
-                        _sharedByUserProfile?.name ?? l10n.unknownUser,
+                    // Route info header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      style: Theme.of(context).textTheme.bodySmall,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Author info
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.blue[600],
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  l10n.sharedBy(
+                                    _sharedByUserProfile?.getPublicDisplayName() ?? l10n.unknownUser,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue[600],
+                                  ),
+                                ),
+                              ),
+                              if (_sharedByUserProfile != null)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.info_outline,
+                                      size: 20,
+                                      color: Colors.blue[600],
+                                    ),
+                                    onPressed: () => _showUserProfileInfo(),
+                                    tooltip: 'Paylaşan kişinin profil bilgileri',
+                                  ),
+                                ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          
+                          // Route stats
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.route,
+                                  label: l10n.distance,
+                                  value: widget.route.totalDistance,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
+                                  icon: Icons.access_time,
+                                  label: l10n.duration,
+                                  value: widget.route.totalTravelTime,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          if (widget.route.totalStopDuration != null || widget.route.totalTripDuration != null) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                if (widget.route.totalStopDuration != null)
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      icon: Icons.pause_circle,
+                                      label: l10n.totalBreakTime,
+                                      value: widget.route.totalStopDuration!,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                if (widget.route.totalStopDuration != null && widget.route.totalTripDuration != null)
+                                  const SizedBox(width: 12),
+                                if (widget.route.totalTripDuration != null)
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      icon: Icons.schedule,
+                                      label: l10n.totalTripTime,
+                                      value: widget.route.totalTripDuration!,
+                                      color: Colors.purple,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${l10n.distance}: ${widget.route.totalDistance} | ${l10n.duration}: ${widget.route.totalTravelTime}',
-                    ),
-                    if (widget.route.totalStopDuration != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          '${l10n.totalBreakTime}: ${widget.route.totalStopDuration}',
-                        ),
-                      ),
-                    if (widget.route.totalTripDuration != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          '${l10n.totalTripTime}: ${widget.route.totalTripDuration}',
-                        ),
-                      ),
-                    const Divider(height: 30),
+                    
+                    const SizedBox(height: 20),
 
                     // Needs Section
-                    if (widget.route.needs != null &&
-                        widget.route.needs!.isNotEmpty)
+                    if (widget.route.needs != null && widget.route.needs!.isNotEmpty)
                       _buildNeedsSection(),
 
                     // Notes Section
-                    if (widget.route.notes != null &&
-                        widget.route.notes!.isNotEmpty)
+                    if (widget.route.notes != null && widget.route.notes!.isNotEmpty)
                       _buildNotesSection(),
 
                     // Rating Section
                     _buildRatingSection(),
 
-                    const Divider(height: 30),
+                    const SizedBox(height: 20),
 
                     // Comments Section
-                    Text(
-                      l10n.commentsTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.comment,
+                                  color: Colors.purple[600],
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                l10n.commentsTitle,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildCommentInput(),
+                          const SizedBox(height: 16),
+                          _buildCommentsList(),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    _buildCommentInput(),
-                    const SizedBox(height: 16),
-                    _buildCommentsList(),
                   ],
                 ),
               ),
@@ -316,148 +625,561 @@ class _CommunityRouteDetailScreenState
     final currentUser = FirebaseAuth.instance.currentUser;
     final isMyRoute = currentUser != null && currentUser.uid == widget.route.sharedBy;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.rate,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        if (isMyRoute)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
-            child: Text(
-              l10n.mySharedRoute,
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Theme.of(context).colorScheme.primary,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.star,
+                  color: Colors.amber[600],
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.rate,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (isMyRoute)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l10n.mySharedRoute,
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber[25],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.amber[100]!,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    child: GestureDetector(
+                      onTap: () => _submitRating(index + 1.0),
+                      child: Icon(
+                        (_userRating ?? 0) >= index + 1
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: Colors.amber[600],
+                        size: 32,
+                      ),
+                    ),
+                  );
+                }),
               ),
             ),
-          )
-        else
-          Row(
-            children: List.generate(5, (index) {
-              return IconButton(
-                icon: Icon(
-                  (_userRating ?? 0) >= index + 1
-                      ? Icons.star
-                      : Icons.star_border,
-                  color: Colors.amber,
-                ),
-                onPressed: () => _submitRating(index + 1.0),
-              );
-            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required MaterialColor color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color[200]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color[600],
+            size: 24,
           ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color[600],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              color: color[700],
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildNeedsSection() {
     final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.routeNeeds, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 4.0,
-          children: widget.route.needs!
-              .map((need) => Chip(label: Text(need)))
-              .toList(),
-        ),
-        const Divider(height: 30),
-      ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.shopping_bag,
+                  color: Colors.orange[600],
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.routeNeeds,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: widget.route.needs!
+                .map((need) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.orange[200]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        need,
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildNotesSection() {
     final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.routeNotes, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        ...widget.route.notes!.map((note) {
-          final title = note['title'];
-          final content = note['content'];
-          if (title == null || content == null) {
-            return const SizedBox.shrink(); // Or some other placeholder
-          }
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8.0),
-            child: ListTile(title: Text(title), subtitle: Text(content)),
-          );
-        }),
-        const Divider(height: 30),
-      ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.note,
+                  color: Colors.blue[600],
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.routeNotes,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...widget.route.notes!.map((note) {
+            final title = note['title'];
+            final content = note['content'];
+            if (title == null || content == null) {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[25],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.blue[100]!,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    content,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue[600],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
   Widget _buildCommentInput() {
     final l10n = AppLocalizations.of(context)!;
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            decoration: InputDecoration(
-              hintText: l10n.addCommentHint,
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _submitComment(),
-          ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.purple[25],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.purple[100]!,
+          width: 1,
         ),
-        IconButton(icon: const Icon(Icons.send), onPressed: _submitComment),
-      ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              decoration: InputDecoration(
+                hintText: l10n.addCommentHint,
+                hintStyle: TextStyle(
+                  color: Colors.purple[400],
+                  fontSize: 14,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _submitComment(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.purple[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.send,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: _submitComment,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildCommentsList() {
     final l10n = AppLocalizations.of(context)!;
     if (widget.route.firestoreId == null) {
-      return Center(child: Text(l10n.commentsLoadingError));
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.red[200]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.red[600],
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.commentsLoadingError,
+                style: TextStyle(
+                  color: Colors.red[600],
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     return StreamBuilder<List<RouteComment>>(
       stream: _firestoreService.getComments(widget.route.firestoreId!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: CircularProgressIndicator(
+                color: Colors.purple[600],
+              ),
+            ),
+          );
         }
         if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              l10n.commentsLoadingErrorDescription(snapshot.error.toString()),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.red[200]!,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Colors.red[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.commentsLoadingErrorDescription(snapshot.error.toString()),
+                    style: TextStyle(
+                      color: Colors.red[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text(l10n.noCommentsYet));
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey[200]!,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  color: Colors.grey[400],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.noCommentsYet,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         final comments = snapshot.data!;
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: comments.length,
-          itemBuilder: (context, index) {
-            final comment = comments[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              child: ListTile(
-                title: Text(
-                  comment.userName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(comment.comment),
-                trailing: Text(
-                  '${comment.timestamp.toDate().day}/${comment.timestamp.toDate().month}/${comment.timestamp.toDate().year}',
-                  style: Theme.of(context).textTheme.bodySmall,
+        return Column(
+          children: comments.map((comment) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple[25],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.purple[100]!,
+                  width: 1,
                 ),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.purple[100],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.purple[600],
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          comment.userName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${comment.timestamp.toDate().day}/${comment.timestamp.toDate().month}/${comment.timestamp.toDate().year}',
+                        style: TextStyle(
+                          color: Colors.purple[400],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    comment.comment,
+                    style: TextStyle(
+                      color: Colors.purple[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             );
-          },
+          }).toList(),
         );
       },
     );

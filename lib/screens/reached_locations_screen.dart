@@ -59,47 +59,98 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(l10n.reachedLocationsLog),
-            backgroundColor: Colors.blue[700],
+            title: Text(
+              l10n.reachedLocationsLog,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.done_all),
-                tooltip: areAllRead ? l10n.unselectAll : l10n.selectAll,
-                onPressed: () async {
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.done_all, color: Colors.white),
+                    tooltip: areAllRead ? l10n.unselectAll : l10n.selectAll,
+                    onPressed: () async {
                   if (areAllRead) {
                     await _firestoreService.markAllLogsAsUnread();
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.allLogsMarkedAsUnread)),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.allLogsMarkedAsUnread)),
+                      );
+                    }
                   } else {
                     await _firestoreService.markAllLogsAsRead();
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.allLogsMarkedAsRead)),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.allLogsMarkedAsRead)),
+                      );
+                    }
                   }
                 },
+                  ),
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_sweep),
-                tooltip: l10n.deleteRead,
-                onPressed: () async {
-                  await _firestoreService.deleteReadLogs();
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(l10n.readLogsDeleted)));
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_sweep, color: Colors.white),
+                    tooltip: l10n.deleteRead,
+                    onPressed: () async {
+                      await _firestoreService.deleteReadLogs();
+                      if (mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(l10n.readLogsDeleted)));
+                      }
+                    },
+                  ),
+                ),
               ),
-              PopupMenuButton<SortOrder>(
-                onSelected: (SortOrder result) {
-                  setState(() {
-                    _sortOrder = result;
-                  });
-                },
-                itemBuilder: (BuildContext context) =>
-                    <PopupMenuEntry<SortOrder>>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: PopupMenuButton<SortOrder>(
+                    icon: const Icon(Icons.sort, color: Colors.white),
+                    onSelected: (SortOrder result) {
+                      setState(() {
+                        _sortOrder = result;
+                      });
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<SortOrder>>[
                       PopupMenuItem<SortOrder>(
                         value: SortOrder.dateDescending,
                         child: Text(l10n.sortByDateNew),
@@ -117,9 +168,22 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
                         child: Text(l10n.sortByNameDesc),
                       ),
                     ],
-                icon: const Icon(Icons.sort),
+                  ),
+                ),
               ),
             ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue[700]!,
+                    Colors.blue[900]!,
+                  ],
+                ),
+              ),
+            ),
           ),
           body: ListView.builder(
             itemCount: logs.length,

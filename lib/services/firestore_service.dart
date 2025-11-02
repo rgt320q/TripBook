@@ -45,24 +45,33 @@ class FirestoreService {
   }
 
   Future<void> addLocation(TravelLocation location) async {
-    await _locationsCollection.add(location);
+    try {
+      await _locationsCollection.add(location);
+    } catch (e) {
+      throw Exception('Failed to add location: ${e.toString()}');
+    }
   }
 
   Future<List<String>> addLocations(List<TravelLocation> locations) async {
     if (_currentUser == null) {
       throw Exception('User not logged in');
     }
-    final WriteBatch batch = _db.batch();
-    final List<String> newIds = [];
+    
+    try {
+      final WriteBatch batch = _db.batch();
+      final List<String> newIds = [];
 
-    for (final location in locations) {
-      final newDocRef = _locationsCollection.doc();
-      batch.set(newDocRef, location);
-      newIds.add(newDocRef.id);
+      for (final location in locations) {
+        final newDocRef = _locationsCollection.doc();
+        batch.set(newDocRef, location);
+        newIds.add(newDocRef.id);
+      }
+
+      await batch.commit();
+      return newIds;
+    } catch (e) {
+      throw Exception('Failed to add locations: ${e.toString()}');
     }
-
-    await batch.commit();
-    return newIds;
   }
 
   Stream<List<TravelLocation>> getLocations() {
@@ -86,29 +95,46 @@ class FirestoreService {
   }
 
   Future<void> updateLocation(String id, TravelLocation location) async {
-    await _locationsCollection.doc(id).update(location.toFirestore());
+    try {
+      await _locationsCollection.doc(id).update(location.toFirestore());
+    } catch (e) {
+      throw Exception('Failed to update location: ${e.toString()}');
+    }
   }
 
   Future<void> updateLocationNeeds(
     String docId,
     List<Map<String, dynamic>> needs,
   ) async {
-    await _locationsCollection.doc(docId).update({'needsList': needs});
+    try {
+      await _locationsCollection.doc(docId).update({'needsList': needs});
+    } catch (e) {
+      throw Exception('Failed to update location needs: ${e.toString()}');
+    }
   }
 
   Future<void> deleteLocation(String id) async {
-    await _locationsCollection.doc(id).delete();
+    try {
+      await _locationsCollection.doc(id).delete();
+    } catch (e) {
+      throw Exception('Failed to delete location: ${e.toString()}');
+    }
   }
 
   Future<void> deleteLocations(List<String> ids) async {
     if (_currentUser == null || ids.isEmpty) {
       return;
     }
-    final WriteBatch batch = _db.batch();
-    for (final id in ids) {
-      batch.delete(_locationsCollection.doc(id));
+    
+    try {
+      final WriteBatch batch = _db.batch();
+      for (final id in ids) {
+        batch.delete(_locationsCollection.doc(id));
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to delete locations: ${e.toString()}');
     }
-    await batch.commit();
   }
 
   // GROUPS
@@ -252,7 +278,7 @@ class FirestoreService {
         final locationMaps = locations.map((loc) => loc.toFirestore()).toList();
 
         final userProfile = await getUserProfile().first;
-        final userName = userProfile?.name ?? 'Anonymous';
+        final userName = userProfile?.getPublicDisplayName() ?? 'Anonymous';
 
         final sharedRoute = routeData.copyWith(
           isShared: true,
@@ -310,11 +336,19 @@ class FirestoreService {
   }
 
   Future<DocumentReference<TravelRoute>> addRoute(TravelRoute route) async {
-    return await _routesCollection.add(route);
+    try {
+      return await _routesCollection.add(route);
+    } catch (e) {
+      throw Exception('Failed to save route: ${e.toString()}');
+    }
   }
 
   Future<void> updateRoute(String routeId, TravelRoute route) async {
-    await _routesCollection.doc(routeId).update(route.toFirestore());
+    try {
+      await _routesCollection.doc(routeId).update(route.toFirestore());
+    } catch (e) {
+      throw Exception('Failed to update route: ${e.toString()}');
+    }
   }
 
   Future<void> deleteRoute(String routeId) async {
