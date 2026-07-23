@@ -70,16 +70,16 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
     }
   }
 
-  String _getSortLabel() {
+  String _getSortLabel(AppLocalizations l10n) {
     switch (_currentSortBy) {
       case SortBy.nameAsc:
         return 'A-Z';
       case SortBy.nameDesc:
         return 'Z-A';
       case SortBy.dateNewest:
-        return 'Yeni';
+        return l10n.newLabel;
       case SortBy.dateOldest:
-        return 'Eski';
+        return l10n.oldLabel;
     }
   }
 
@@ -244,7 +244,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Harita üzerinden konumlar ekleyebilirsiniz',
+                      l10n.addLocationsFromMapHint,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[500],
@@ -277,7 +277,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Bir hata oluştu',
+                      l10n.errorOccurred(""),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -360,7 +360,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${locations.length} Konum',
+                                  '${locations.length} ${l10n.locationsLabel}',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -368,7 +368,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Kaydedilmiş konumlarınız',
+                                  l10n.savedLocationsHeader,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.blue[600],
@@ -384,7 +384,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              _getSortLabel(),
+                              _getSortLabel(l10n),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -1011,7 +1011,7 @@ class _LocationListItemState extends State<LocationListItem> {
                     Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
-                      '${widget.location.estimatedDuration} dakika',
+                      '${widget.location.estimatedDuration} ${l10n.minutes}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -1251,7 +1251,7 @@ class _LocationListItemState extends State<LocationListItem> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: DropdownButtonFormField<String>(
-        value: validSelectedGroupId,
+        initialValue: validSelectedGroupId,
         decoration: InputDecoration(
           labelText: l10n.groupLabel,
           border: InputBorder.none,

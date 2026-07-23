@@ -26,6 +26,7 @@ import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/services/connectivity_service.dart';
+import 'package:tripbook/widgets/loading_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
@@ -722,9 +723,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         
         // Show error to user
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Connection lost. Using offline data.'),
+              content: Text(l10n.connectionLost),
               backgroundColor: Colors.orange,
             ),
           );
@@ -747,9 +749,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         
         // Show error to user
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Groups sync failed. Some features may be limited.'),
+              content: Text(l10n.groupsSyncFailed),
               backgroundColor: Colors.orange,
             ),
           );
@@ -774,9 +777,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         
         // Show error to user
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Profile sync failed. Home location may not be available.'),
+              content: Text(l10n.profileSyncFailed),
               backgroundColor: Colors.orange,
             ),
           );
@@ -1059,11 +1063,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         String errorMessage = l10n.drawRouteError;
         
         if (e.toString().contains('network') || e.toString().contains('timeout')) {
-          errorMessage = 'Network error. Please check your internet connection.';
+          errorMessage = l10n.networkError;
         } else if (e.toString().contains('quota') || e.toString().contains('limit')) {
-          errorMessage = 'Service limit reached. Please try again later.';
+          errorMessage = l10n.quotaLimitError;
         } else if (e.toString().contains('location') || e.toString().contains('address')) {
-          errorMessage = 'Invalid location. Please check your waypoints.';
+          errorMessage = l10n.invalidLocationError;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1091,6 +1095,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         legsPoints: [], // No polylines for web
         totalDistance: l10n.notAvailable,
         totalDuration: l10n.notAvailable,
+        duration: Duration.zero,
       );
     }
 
@@ -1138,16 +1143,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   String _formatDuration(int totalMinutes) {
-    if (totalMinutes < 0) return '0 dakika';
+    final l10n = AppLocalizations.of(context)!;
+    if (totalMinutes < 0) return '0 ${l10n.minutes}';
     if (totalMinutes < 60) {
-      return '$totalMinutes dakika';
+      return '$totalMinutes ${l10n.minutes}';
     }
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     if (minutes == 0) {
-      return '$hours saat';
+      return '$hours ${l10n.hours}';
     }
-    return '$hours saat $minutes dakika';
+    return '$hours ${l10n.hours} $minutes ${l10n.minutes}';
   }
 
   String _formatElapsedDuration(Duration duration) {
@@ -1360,7 +1366,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to save route. Please try again.'),
+                        content: Text(l10n.failedToSaveRoute),
                         backgroundColor: Theme.of(context).colorScheme.error,
                         action: SnackBarAction(
                           label: l10n.save,
@@ -1577,7 +1583,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                               Text(
-                                '${locations.length} ${locations.length == 1 ? 'konum' : 'konum'}',
+                                '${locations.length} ${l10n.locationsLabel}',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
@@ -1678,7 +1684,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 child: _buildStatCard(
                                   icon: Icons.access_time,
                                   label: l10n.estimatedTravelTime,
-                                  value: info.totalDuration,
+                                  value: _formatDuration(info.duration.inMinutes),
                                   color: Colors.orange,
                                 ),
                               ),
@@ -3051,19 +3057,106 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               final selectedGroupId = result['id'];
 
               if (selectedGroupId != null) {
-                final locations =
-                    await _firestoreService.getLocationsForGroup(
-                  selectedGroupId,
-                );
-                if (locations.isNotEmpty) {
+                if (mounted) LoadingOverlay.show(context);
+                try {
+                  final locations =
+                      await _firestoreService.getLocationsForGroup(
+                    selectedGroupId,
+                  );
+                  if (locations.isNotEmpty) {
+                    if (_currentPosition == null) {
+                      if (mounted) LoadingOverlay.hide(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.currentLocationError)),
+                      );
+                      return;
+                    }
+                    final optimizedLocations = _optimizeRouteByProximity(
+                      locations,
+                      _currentPosition!,
+                    );
+                    String defaultEndLocationGeoName;
+                    try {
+                      defaultEndLocationGeoName =
+                          await _directionsService.getPlaceName(
+                                LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                              ) ??
+                              l10n.unknownLocation;
+                    } catch (e) {
+                      defaultEndLocationGeoName = l10n.unknownLocation;
+                    }
+                    final defaultEndLocation = TravelLocation(
+                      name: l10n.endPoint,
+                      geoName: defaultEndLocationGeoName,
+                      description: l10n.routeEnd,
+                      latitude: _currentPosition!.latitude,
+                      longitude: _currentPosition!.longitude,
+                      firestoreId: 'end',
+                      userId: '',
+                    );
+
+                    if (mounted) LoadingOverlay.hide(context);
+
+                    final result = await Navigator.push<dynamic>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LocationSelectionScreen(
+                          initialLocations: optimizedLocations,
+                          endLocation: homeEndLocation ?? defaultEndLocation,
+                        ),
+                      ),
+                    );
+                    if (result is List<TravelLocation>) {
+                      _drawRoute(result);
+                    } else if (result == 'change_end_location') {
+                      setState(() {
+                        _isSelectingEndpoint = true;
+                        _locationsForRoute = optimizedLocations;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.selectNewEndpoint)),
+                      );
+                    }
+                  } else {
+                    if (mounted) LoadingOverlay.hide(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.minTwoLocationsError)),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) LoadingOverlay.hide(context);
+                  rethrow;
+                }
+              }
+            },
+          ),
+          TextButton(
+            child: Text(l10n.manualSelection),
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final List<TravelLocation>? selectedLocations =
+                  await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const ManageLocationsScreen(isForSelection: true),
+                ),
+              );
+              if (selectedLocations != null && selectedLocations.isNotEmpty) {
+                if (mounted) LoadingOverlay.show(context);
+                try {
                   if (_currentPosition == null) {
+                    if (mounted) LoadingOverlay.hide(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(l10n.currentLocationError)),
                     );
                     return;
                   }
                   final optimizedLocations = _optimizeRouteByProximity(
-                    locations,
+                    selectedLocations,
                     _currentPosition!,
                   );
                   String defaultEndLocationGeoName;
@@ -3089,6 +3182,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     userId: '',
                   );
 
+                  if (mounted) LoadingOverlay.hide(context);
+
                   final result = await Navigator.push<dynamic>(
                     context,
                     MaterialPageRoute(
@@ -3109,79 +3204,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       SnackBar(content: Text(l10n.selectNewEndpoint)),
                     );
                   }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.minTwoLocationsError)),
-                  );
-                }
-              }
-            },
-          ),
-          TextButton(
-            child: Text(l10n.manualSelection),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final List<TravelLocation>? selectedLocations =
-                  await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const ManageLocationsScreen(isForSelection: true),
-                ),
-              );
-              if (selectedLocations != null && selectedLocations.isNotEmpty) {
-                if (_currentPosition == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.currentLocationError)),
-                  );
-                  return;
-                }
-                final optimizedLocations = _optimizeRouteByProximity(
-                  selectedLocations,
-                  _currentPosition!,
-                );
-                String defaultEndLocationGeoName;
-                try {
-                  defaultEndLocationGeoName =
-                      await _directionsService.getPlaceName(
-                            LatLng(
-                              _currentPosition!.latitude,
-                              _currentPosition!.longitude,
-                            ),
-                          ) ??
-                          l10n.unknownLocation;
                 } catch (e) {
-                  defaultEndLocationGeoName = l10n.unknownLocation;
-                }
-                final defaultEndLocation = TravelLocation(
-                  name: l10n.endPoint,
-                  geoName: defaultEndLocationGeoName,
-                  description: l10n.routeEnd,
-                  latitude: _currentPosition!.latitude,
-                  longitude: _currentPosition!.longitude,
-                  firestoreId: 'end',
-                  userId: '',
-                );
-
-                final result = await Navigator.push<dynamic>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LocationSelectionScreen(
-                      initialLocations: optimizedLocations,
-                      endLocation: homeEndLocation ?? defaultEndLocation,
-                    ),
-                  ),
-                );
-                if (result is List<TravelLocation>) {
-                  _drawRoute(result);
-                } else if (result == 'change_end_location') {
-                  setState(() {
-                    _isSelectingEndpoint = true;
-                    _locationsForRoute = optimizedLocations;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.selectNewEndpoint)),
-                  );
+                  if (mounted) LoadingOverlay.hide(context);
+                  rethrow;
                 }
               }
             },

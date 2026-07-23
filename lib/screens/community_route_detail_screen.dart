@@ -94,8 +94,9 @@ class _CommunityRouteDetailScreenState
     showDialog(
       context: context,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
-          title: Text('Paylaşan: ${_sharedByUserProfile!.getPublicDisplayName()}'),
+          title: Text('${l10n.sharedBy("")} ${_sharedByUserProfile!.getPublicDisplayName()}'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,8 +104,8 @@ class _CommunityRouteDetailScreenState
               if (_sharedByUserProfile!.showBioInPublic && 
                   _sharedByUserProfile!.bio?.isNotEmpty == true) ...[
                 Text(
-                  'Hakkında:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  l10n.aboutLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(_sharedByUserProfile!.bio!),
@@ -113,8 +114,8 @@ class _CommunityRouteDetailScreenState
               if (_sharedByUserProfile!.showPhoneInPublic && 
                   _sharedByUserProfile!.phone?.isNotEmpty == true) ...[
                 Text(
-                  'Telefon:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  l10n.profileEmailLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(_sharedByUserProfile!.phone!),
@@ -123,8 +124,8 @@ class _CommunityRouteDetailScreenState
               if (_sharedByUserProfile!.showGenderInPublic && 
                   _sharedByUserProfile!.gender?.isNotEmpty == true) ...[
                 Text(
-                  'Cinsiyet:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  l10n.genderLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(_sharedByUserProfile!.gender!),
@@ -133,8 +134,8 @@ class _CommunityRouteDetailScreenState
               if (_sharedByUserProfile!.showBirthDateInPublic && 
                   _sharedByUserProfile!.birthDate != null) ...[
                 Text(
-                  'Doğum Tarihi:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  l10n.birthDateLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -149,15 +150,15 @@ class _CommunityRouteDetailScreenState
                   !_sharedByUserProfile!.showGenderInPublic &&
                   !_sharedByUserProfile!.showBirthDateInPublic)
                 Text(
-                  'Bu kullanıcı profil bilgilerini paylaşmayı tercih etmemiş.',
-                  style: TextStyle(fontStyle: FontStyle.italic),
+                  l10n.privacyNotShared,
+                  style: const TextStyle(fontStyle: FontStyle.italic),
                 ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Kapat'),
+              child: Text(l10n.close),
             ),
           ],
         );
@@ -395,16 +396,16 @@ class _CommunityRouteDetailScreenState
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
+                            children: [
+                              const Icon(
                                 Icons.download_done,
                                 color: Colors.white,
                                 size: 16,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                'Kaydedildi',
-                                style: TextStyle(
+                                l10n.saved,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -481,7 +482,7 @@ class _CommunityRouteDetailScreenState
                                       color: Colors.blue[600],
                                     ),
                                     onPressed: () => _showUserProfileInfo(),
-                                    tooltip: 'Paylaşan kişinin profil bilgileri',
+                                    tooltip: l10n.authorProfileTooltip,
                                   ),
                                 ),
                             ],

@@ -47,4 +47,13 @@ class AuthService {
     await _notificationService.onUserLogout(); // Clear FCM token
     await _firebaseAuth.signOut();
   }
+
+  Future<String?> resetPassword({required String email}) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      return e.message; // Return error message
+    }
+  }
 }

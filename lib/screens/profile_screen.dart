@@ -224,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Şifre Değiştir'),
+        title: Text(l10n.changePassword),
         content: StatefulBuilder(
           builder: (context, setState) => Form(
             key: formKey,
@@ -235,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: _currentPasswordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Mevcut Şifre',
+                    labelText: l10n.currentPassword,
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
@@ -245,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Bu alan gerekli';
+                      return l10n.fieldRequired;
                     }
                     return null;
                   },
@@ -255,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: _newPasswordController,
                   obscureText: !_isNewPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Yeni Şifre',
+                    labelText: l10n.newPassword,
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_isNewPasswordVisible ? Icons.visibility_off : Icons.visibility),
@@ -265,10 +265,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Bu alan gerekli';
+                      return l10n.fieldRequired;
                     }
                     if (value.length < 6) {
-                      return 'Şifre en az 6 karakter olmalı';
+                      return l10n.passwordTooShort;
                     }
                     return null;
                   },
@@ -278,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: _confirmPasswordController,
                   obscureText: !_isConfirmPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Şifre Tekrarı',
+                    labelText: l10n.confirmNewPassword,
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility),
@@ -288,10 +288,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Bu alan gerekli';
+                      return l10n.fieldRequired;
                     }
                     if (value != _newPasswordController.text) {
-                      return 'Şifreler eşleşmiyor';
+                      return l10n.passwordsDoNotMatch;
                     }
                     return null;
                   },
@@ -325,6 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _performPasswordChange() async {
+    final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
     
     if (user == null) return;
@@ -344,20 +345,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
-      
-      if (mounted) {
+          if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Şifre başarıyla değiştirildi'),
+          SnackBar(
+            content: Text(l10n.passwordChangedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Şifre değiştirme hatası';
+        String errorMessage = l10n.passwordChangeError;
         if (e.toString().contains('wrong-password')) {
-          errorMessage = 'Mevcut şifre yanlış';
+          errorMessage = l10n.wrongCurrentPassword;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -371,12 +371,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _selectBirthDate() async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showDatePicker(
       context: context,
       initialDate: _birthDate ?? DateTime(1990),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: 'Doğum Tarihi Seçin',
+      helpText: l10n.selectBirthDate,
     );
     
     if (picked != null) {
@@ -407,6 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveAvatarSelection(String avatarPath) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -423,8 +425,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Avatar başarıyla güncellendi'),
+          SnackBar(
+            content: Text(l10n.avatarUpdated),
             backgroundColor: Colors.green,
           ),
         );
@@ -433,7 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Avatar güncellenirken hata oluştu: ${e.toString()}'),
+            content: Text('${l10n.error("")} ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -655,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Personal Information Section
                   _buildSectionCard(
-                    title: 'Kişisel Bilgiler',
+                    title: l10n.personalInfo,
                     icon: Icons.person_outline,
                     child: Column(
                       children: [
@@ -707,7 +709,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 8),
                         
                         // Bağlantı çizgisi
-                        Container(
+                        SizedBox(
                           height: 40,
                           child: Row(
                             children: [
@@ -715,7 +717,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Expanded(child: Container()),
                               const SizedBox(width: 8),
                               // Göz simgeleri arası bağlantı
-                              Container(
+                              SizedBox(
                                 width: 48, // IconButton genişliği
                                 child: Column(
                                   children: [
@@ -728,7 +730,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ),
                                     Expanded(
-                                      child: Container(
+                                      child: SizedBox(
                                         width: 2,
                                         child: CustomPaint(
                                           painter: DashedLinePainter(
@@ -761,7 +763,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 controller: _nicknameController,
                                 style: const TextStyle(fontSize: 16),
                                 decoration: InputDecoration(
-                                  labelText: 'Takma İsim / Kullanıcı Adı',
+                                  labelText: l10n.nicknameLabel,
                                   prefixIcon: const Icon(Icons.alternate_email),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -820,7 +822,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Phone
                         _buildInputWithPrivacy(
                           controller: _phoneController,
-                          labelText: 'Telefon',
+                          labelText: l10n.profileEmailLabel, // Reusing email label as phone/contact
                           icon: Icons.phone,
                           isPublic: _showPhoneInPublic,
                           onPrivacyChanged: (value) {
@@ -840,7 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onTap: _selectBirthDate,
                                 child: InputDecorator(
                                   decoration: InputDecoration(
-                                    labelText: 'Doğum Tarihi',
+                                    labelText: l10n.birthDate,
                                     prefixIcon: const Icon(Icons.cake),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -851,7 +853,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Text(
                                     _birthDate != null 
                                       ? '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}'
-                                      : 'Seçin',
+                                      : l10n.select,
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: _birthDate != null ? Colors.black : Colors.grey[600],
@@ -880,7 +882,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     _showBirthDateInPublic = !_showBirthDateInPublic;
                                   });
                                 },
-                                tooltip: _showBirthDateInPublic ? 'Herkese görünür' : 'Sadece sen görebilirsin',
+                                tooltip: _showBirthDateInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
                               ),
                             ),
                           ],
@@ -894,7 +896,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: DropdownButtonFormField<String>(
                                 initialValue: _gender,
                                 decoration: InputDecoration(
-                                  labelText: 'Cinsiyet',
+                                  labelText: l10n.gender,
                                   prefixIcon: const Icon(Icons.people),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -902,10 +904,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   filled: true,
                                   fillColor: Colors.grey[50],
                                 ),
-                                items: const [
-                                  DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-                                  DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-                                  DropdownMenuItem(value: 'Diğer', child: Text('Diğer')),
+                                items: [
+                                  DropdownMenuItem(value: 'Erkek', child: Text(l10n.male)),
+                                  DropdownMenuItem(value: 'Kadın', child: Text(l10n.female)),
+                                  DropdownMenuItem(value: 'Diğer', child: Text(l10n.other)),
                                 ],
                                 onChanged: (value) {
                                   setState(() {
@@ -934,7 +936,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     _showGenderInPublic = !_showGenderInPublic;
                                   });
                                 },
-                                tooltip: _showGenderInPublic ? 'Herkese görünür' : 'Sadece sen görebilirsin',
+                                tooltip: _showGenderInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
                               ),
                             ),
                           ],
@@ -947,7 +949,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   
                   // Bio Section
                   _buildSectionCard(
-                    title: 'Hakkında',
+                    title: l10n.aboutMe,
                     icon: Icons.description_outlined,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -958,8 +960,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             maxLines: 4,
                             style: const TextStyle(fontSize: 16),
                             decoration: InputDecoration(
-                              labelText: 'Kendinizi tanıtın',
-                              hintText: 'Kısa bir biyografi yazın...',
+                              labelText: l10n.introduceYourself,
+                              hintText: l10n.writeBioHint,
                               prefixIcon: const Icon(Icons.description),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -992,7 +994,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 _showBioInPublic = !_showBioInPublic;
                               });
                             },
-                            tooltip: _showBioInPublic ? 'Herkese görünür' : 'Sadece sen görebilirsin',
+                            tooltip: _showBioInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
                           ),
                         ),
                       ],
@@ -1003,7 +1005,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   
                   // Settings Section
                   _buildSectionCard(
-                    title: 'Ayarlar',
+                    title: l10n.settings,
                     icon: Icons.settings_outlined,
                     child: Column(
                       children: [
@@ -1067,9 +1069,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
-                            DropdownMenuItem(value: 'en', child: Text('English')),
+                          items: [
+                            DropdownMenuItem(value: 'tr', child: Text(l10n.languageTurkish)),
+                            DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -1085,7 +1087,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   
                   // Security Section
                   _buildSectionCard(
-                    title: 'Güvenlik',
+                    title: l10n.security,
                     icon: Icons.security_outlined,
                     child: Column(
                       children: [
@@ -1095,7 +1097,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _changePassword,
                             icon: const Icon(Icons.lock_outline),
-                            label: const Text('Şifre Değiştir'),
+                            label: Text(l10n.changePassword),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -1268,6 +1270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String? Function(String?)? validator,
     TextInputType? keyboardType,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
@@ -1303,7 +1306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               size: 20,
             ),
             onPressed: () => onPrivacyChanged(!isPublic),
-            tooltip: isPublic ? 'Herkese görünür' : 'Sadece sen görebilirsin',
+            tooltip: isPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
           ),
         ),
       ],

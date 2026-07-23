@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 import '../utils/avatar_utils.dart';
 
 class AvatarSelectionScreen extends StatefulWidget {
   final String? currentSelectedAvatar;
 
   const AvatarSelectionScreen({
-    Key? key,
+    super.key,
     this.currentSelectedAvatar,
-  }) : super(key: key);
+  });
 
   @override
   State<AvatarSelectionScreen> createState() => _AvatarSelectionScreenState();
@@ -25,11 +26,12 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Avatar Seç',
-          style: TextStyle(
+        title: Text(
+          l10n.selectAvatarTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
@@ -62,9 +64,9 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
               onPressed: () {
                 Navigator.of(context).pop(selectedAvatar);
               },
-              child: const Text(
-                'Seç',
-                style: TextStyle(
+              child: Text(
+                l10n.selectButton,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -149,7 +151,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                 Text(
                   selectedAvatar != null 
                       ? AvatarUtils.getAvatarName(selectedAvatar!)
-                      : 'Avatar Seçin',
+                      : l10n.selectAvatarLabel,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -160,7 +162,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                 Text(
                   selectedAvatar != null
                       ? AvatarUtils.getAvatarDescription(selectedAvatar!)
-                      : 'Aşağıdaki avatarlardan birini seçin',
+                      : l10n.selectAvatarDescription,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],

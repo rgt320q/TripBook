@@ -113,7 +113,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rota Sırası',
+                        l10n.routeOrder,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -121,7 +121,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         ),
                       ),
                       Text(
-                        '${_selectedLocations.length} konum • Sürükleyerek sıralayın',
+                        l10n.numLocationsDragToOrder(_selectedLocations.length),
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.blue[600],
@@ -136,9 +136,9 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                     color: Colors.blue[600],
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Düzenle',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.edit,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -406,7 +406,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.check_circle, color: Colors.white, size: 24),
                   label: Text(
-                    'Rotayı Onayla (${_selectedLocations.length} Konum)',
+                    l10n.confirmRouteWithCount(_selectedLocations.length),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,

@@ -879,4 +879,230 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addNewGroup => 'Add New Group...';
+
+  @override
+  String get forgotPassword => 'Forgot Password?';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get passwordResetEmailSent => 'Password reset email sent!';
+
+  @override
+  String get enterEmailToResetPassword =>
+      'Enter your email to reset your password';
+
+  @override
+  String get sendResetEmail => 'Send Reset Email';
+
+  @override
+  String get pleaseWait => 'Please wait...';
+
+  @override
+  String get processing => 'Processing your request...';
+
+  @override
+  String get routeOrder => 'Route Order';
+
+  @override
+  String numLocationsDragToOrder(int count) {
+    return '$count locations • Drag to reorder';
+  }
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String confirmRouteWithCount(int count) {
+    return 'Confirm Route ($count Locations)';
+  }
+
+  @override
+  String get selectAvatarTitle => 'Select Avatar';
+
+  @override
+  String get selectButton => 'Select';
+
+  @override
+  String get selectAvatarLabel => 'Select Avatar';
+
+  @override
+  String get selectAvatarDescription => 'Select one of the avatars below';
+
+  @override
+  String get aboutLabel => 'About:';
+
+  @override
+  String get genderLabel => 'Gender:';
+
+  @override
+  String get birthDateLabel => 'Birth Date:';
+
+  @override
+  String get privacyNotShared =>
+      'This user has chosen not to share profile information.';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get authorProfileTooltip => 'Author\'s profile information';
+
+  @override
+  String get newRoutes => 'New routes';
+
+  @override
+  String get allRoutes => 'All routes';
+
+  @override
+  String get filtered => 'Filtered';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get downloaded => 'Downloaded';
+
+  @override
+  String get newLabel => 'New';
+
+  @override
+  String get oldLabel => 'Old';
+
+  @override
+  String get addLocationsFromMapHint => 'You can add locations via the map';
+
+  @override
+  String get savedLocationsHeader => 'Your saved locations';
+
+  @override
+  String get thisIsYourProfile => 'This is your profile';
+
+  @override
+  String get privacyNotice =>
+      'Other users can only see information you set as public.';
+
+  @override
+  String get publicProfileInfo => 'Public profile information of this user.';
+
+  @override
+  String get privacyPreferencesNotice =>
+      'Profile information is displayed based on user privacy preferences.';
+
+  @override
+  String get minutes => 'minutes';
+
+  @override
+  String get hours => 'hours';
+
+  @override
+  String get connectionLost => 'Connection lost. Using offline data.';
+
+  @override
+  String get groupsSyncFailed =>
+      'Groups sync failed. Some features may be limited.';
+
+  @override
+  String get profileSyncFailed =>
+      'Profile sync failed. Home location may not be available.';
+
+  @override
+  String get failedToSaveRoute => 'Failed to save route. Please try again.';
+
+  @override
+  String get networkError =>
+      'Network error. Please check your internet connection.';
+
+  @override
+  String get quotaLimitError =>
+      'Service limit reached. Please try again later.';
+
+  @override
+  String get invalidLocationError =>
+      'Invalid location. Please check your waypoints.';
+
+  @override
+  String get routeDetails => 'Route Details';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get currentPassword => 'Current Password';
+
+  @override
+  String get newPassword => 'New Password';
+
+  @override
+  String get confirmNewPassword => 'Confirm New Password';
+
+  @override
+  String get passwordChangedSuccess => 'Password changed successfully';
+
+  @override
+  String get passwordChangeError => 'Error changing password';
+
+  @override
+  String get wrongCurrentPassword => 'Current password is wrong';
+
+  @override
+  String get selectBirthDate => 'Select Birth Date';
+
+  @override
+  String get avatarUpdated => 'Avatar updated successfully';
+
+  @override
+  String get personalInfo => 'Personal Information';
+
+  @override
+  String get nicknameLabel => 'Nickname / Username';
+
+  @override
+  String get birthDate => 'Birth Date';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get aboutMe => 'About Me';
+
+  @override
+  String get security => 'Security';
+
+  @override
+  String get visibleToPublic => 'Visible to public';
+
+  @override
+  String get visibleToOnlyYou => 'Only visible to you';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get select => 'Select';
+
+  @override
+  String get fieldRequired => 'This field is required';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get introduceYourself => 'Introduce yourself';
+
+  @override
+  String get writeBioHint => 'Write a short bio...';
+
+  @override
+  String get settings => 'Settings';
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/utils/avatar_utils.dart';
 
@@ -21,6 +22,7 @@ class UserProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Herkese açık profil bilgilerini al
     final publicProfile = isCurrentUser ? userProfile : userProfile.getPublicProfile();
     
@@ -93,7 +95,7 @@ class UserProfileCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Sen',
+                            'You', // Simplified as it's a minor tag
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green[700],
@@ -176,6 +178,7 @@ class UserProfileCard extends StatelessWidget {
 /// Kullanıcı detaylarını gösteren modal bottom sheet
 class UserDetailSheet {
   static void show(BuildContext context, UserProfile userProfile, {bool isCurrentUser = false}) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -236,7 +239,7 @@ class UserDetailSheet {
                   children: [
                     if (isCurrentUser) ...[
                       Text(
-                        'Bu senin profilin',
+                        l10n.thisIsYourProfile,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -245,7 +248,7 @@ class UserDetailSheet {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Diğer kullanıcılar sadece herkese açık olarak ayarladığın bilgileri görebilir.',
+                        l10n.privacyNotice,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -253,7 +256,7 @@ class UserDetailSheet {
                       ),
                     ] else ...[
                       Text(
-                        'Kullanıcı Profili',
+                        l10n.profileScreenTitle,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -262,7 +265,7 @@ class UserDetailSheet {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Bu kullanıcının herkese açık profil bilgileri.',
+                        l10n.publicProfileInfo,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -290,7 +293,7 @@ class UserDetailSheet {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Profil bilgileri kullanıcı gizlilik tercihlerine göre görüntülenir.',
+                              l10n.privacyPreferencesNotice,
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.orange[800],

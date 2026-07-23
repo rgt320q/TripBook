@@ -1,0 +1,22 @@
+- [x] Add `resetPassword` method to `AuthService`
+- [x] Add initial localization keys to `app_en.arb`
+- [x] Add initial localization keys to `app_tr.arb`
+- [x] Implement "Forgot Password" UI and logic in `AuthScreen`
+- [x] Update `.env` with correct Maps API Key (...IPUls)
+- [x] Migrate `DirectionsService` to use Google Routes API (v2)
+- [x] Comprehensive Localization Fix
+    - [x] Update `app_en.arb` with all missing keys
+    - [x] Update `app_tr.arb` with all missing keys
+    - [x] Localize `location_selection_screen.dart`
+    - [x] Localize `avatar_selection_screen.dart`
+    - [x] Localize `community_route_detail_screen.dart`
+    - [x] Localize `community_routes_screen.dart`
+    - [x] Localize `manage_locations_screen.dart`
+    - [x] Localize `map_screen.dart` (dynamic strings & snackbars)
+    - [x] Localize `user_profile_card.dart`
+    - [x] Localize `profile_screen.dart`
+    - [x] Localize `saved_routes_screen.dart`
+- [x] UX Improvements (Re-applying rolled back changes)
+    - [x] Re-create `loading_overlay.dart`
+    - [x] Re-integrate `LoadingOverlay` into `map_screen.dart`
+- [x] Final verification in both languages

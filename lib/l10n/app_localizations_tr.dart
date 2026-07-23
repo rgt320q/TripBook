@@ -880,4 +880,233 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get addNewGroup => 'Yeni Grup Ekle...';
+
+  @override
+  String get forgotPassword => 'Şifremi Unuttum';
+
+  @override
+  String get resetPassword => 'Şifreyi Sıfırla';
+
+  @override
+  String get passwordResetEmailSent => 'Şifre sıfırlama e-postası gönderildi!';
+
+  @override
+  String get enterEmailToResetPassword =>
+      'Şifrenizi sıfırlamak için e-posta adresinizi girin';
+
+  @override
+  String get sendResetEmail => 'Sıfırlama E-postası Gönder';
+
+  @override
+  String get pleaseWait => 'Lütfen bekleyin...';
+
+  @override
+  String get processing => 'İşleminiz yapılıyor...';
+
+  @override
+  String get routeOrder => 'Rota Sırası';
+
+  @override
+  String numLocationsDragToOrder(int count) {
+    return '$count konum • Sürükleyerek sıralayın';
+  }
+
+  @override
+  String get edit => 'Düzenle';
+
+  @override
+  String confirmRouteWithCount(int count) {
+    return 'Rotayı Onayla ($count Konum)';
+  }
+
+  @override
+  String get selectAvatarTitle => 'Avatar Seç';
+
+  @override
+  String get selectButton => 'Seç';
+
+  @override
+  String get selectAvatarLabel => 'Avatar Seçin';
+
+  @override
+  String get selectAvatarDescription => 'Aşağıdaki avatarlardan birini seçin';
+
+  @override
+  String get aboutLabel => 'Hakkında:';
+
+  @override
+  String get genderLabel => 'Cinsiyet:';
+
+  @override
+  String get birthDateLabel => 'Doğum Tarihi:';
+
+  @override
+  String get privacyNotShared =>
+      'Bu kullanıcı profil bilgilerini paylaşmayı tercih etmemiş.';
+
+  @override
+  String get saved => 'Kaydedildi';
+
+  @override
+  String get authorProfileTooltip => 'Paylaşan kişinin profil bilgileri';
+
+  @override
+  String get newRoutes => 'Yeni rotalar';
+
+  @override
+  String get allRoutes => 'Tüm rotalar';
+
+  @override
+  String get filtered => 'Filtrelenmiş';
+
+  @override
+  String get all => 'Hepsi';
+
+  @override
+  String get downloaded => 'İndirildi';
+
+  @override
+  String get newLabel => 'Yeni';
+
+  @override
+  String get oldLabel => 'Eski';
+
+  @override
+  String get addLocationsFromMapHint =>
+      'Harita üzerinden konumlar ekleyebilirsiniz';
+
+  @override
+  String get savedLocationsHeader => 'Kaydedilmiş konumlarınız';
+
+  @override
+  String get thisIsYourProfile => 'Bu senin profilin';
+
+  @override
+  String get privacyNotice =>
+      'Diğer kullanıcılar sadece herkese açık olarak ayarladığın bilgileri görebilir.';
+
+  @override
+  String get publicProfileInfo =>
+      'Bu kullanıcının herkese açık profil bilgileri.';
+
+  @override
+  String get privacyPreferencesNotice =>
+      'Profil bilgileri kullanıcı gizlilik tercihlerine göre görüntülenir.';
+
+  @override
+  String get minutes => 'dakika';
+
+  @override
+  String get hours => 'saat';
+
+  @override
+  String get connectionLost =>
+      'Bağlantı kesildi. Çevrimdışı veriler kullanılıyor.';
+
+  @override
+  String get groupsSyncFailed =>
+      'Gruplar eşitlenemedi. Bazı özellikler kısıtlanmış olabilir.';
+
+  @override
+  String get profileSyncFailed =>
+      'Profil eşitlenemedi. Ev konumu kullanılamayabilir.';
+
+  @override
+  String get failedToSaveRoute => 'Rota kaydedilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get networkError =>
+      'Ağ hatası. Lütfen internet bağlantınızı kontrol edin.';
+
+  @override
+  String get quotaLimitError =>
+      'Servis limiti doldu. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String get invalidLocationError =>
+      'Geçersiz konum. Lütfen duraklarınızı kontrol edin.';
+
+  @override
+  String get routeDetails => 'Rota Detayları';
+
+  @override
+  String get changePassword => 'Şifre Değiştir';
+
+  @override
+  String get currentPassword => 'Mevcut Şifre';
+
+  @override
+  String get newPassword => 'Yeni Şifre';
+
+  @override
+  String get confirmNewPassword => 'Şifre Tekrarı';
+
+  @override
+  String get passwordChangedSuccess => 'Şifre başarıyla değiştirildi';
+
+  @override
+  String get passwordChangeError => 'Şifre değiştirme hatası';
+
+  @override
+  String get wrongCurrentPassword => 'Mevcut şifre yanlış';
+
+  @override
+  String get selectBirthDate => 'Doğum Tarihi Seçin';
+
+  @override
+  String get avatarUpdated => 'Avatar başarıyla güncellendi';
+
+  @override
+  String get personalInfo => 'Kişisel Bilgiler';
+
+  @override
+  String get nicknameLabel => 'Takma İsim / Kullanıcı Adı';
+
+  @override
+  String get birthDate => 'Doğum Tarihi';
+
+  @override
+  String get gender => 'Cinsiyet';
+
+  @override
+  String get aboutMe => 'Hakkında';
+
+  @override
+  String get security => 'Güvenlik';
+
+  @override
+  String get visibleToPublic => 'Herkese görünür';
+
+  @override
+  String get visibleToOnlyYou => 'Sadece sen görebilirsin';
+
+  @override
+  String get male => 'Erkek';
+
+  @override
+  String get female => 'Kadın';
+
+  @override
+  String get other => 'Diğer';
+
+  @override
+  String get select => 'Seçin';
+
+  @override
+  String get fieldRequired => 'Bu alan gerekli';
+
+  @override
+  String get passwordTooShort => 'Şifre en az 6 karakter olmalı';
+
+  @override
+  String get passwordsDoNotMatch => 'Şifreler eşleşmiyor';
+
+  @override
+  String get introduceYourself => 'Kendinizi tanıtın';
+
+  @override
+  String get writeBioHint => 'Kısa bir biyografi yazın...';
+
+  @override
+  String get settings => 'Ayarlar';
 }

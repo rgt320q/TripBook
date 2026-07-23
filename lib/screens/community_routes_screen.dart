@@ -139,7 +139,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Henüz paylaşılmış rota bulunmuyor',
+                      'Henüz paylaşılmış bir rota bulunmuyor',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[500],
@@ -187,12 +187,12 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Tüm rotalar indirildi',
+                      l10n.allRoutesDownloaded,
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[600],
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -235,7 +235,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Topluluk Rotaları',
+                            l10n.communityRoutes,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -243,7 +243,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                             ),
                           ),
                           Text(
-                            '${filteredItems.length} rota • ${_hideDownloaded ? 'Yeni rotalar' : 'Tüm rotalar'}',
+                            '${filteredItems.length} ${filteredItems.length == 1 ? "route" : "routes"} • ${_hideDownloaded ? l10n.newRoutes : l10n.allRoutes}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.purple[600],
@@ -259,7 +259,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        _hideDownloaded ? 'Filtrelenmiş' : 'Hepsi',
+                        _hideDownloaded ? l10n.filtered : l10n.all,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -332,16 +332,16 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
-                                              children: const [
-                                                Icon(
+                                              children: [
+                                                const Icon(
                                                   Icons.download_done,
                                                   color: Colors.white,
                                                   size: 16,
                                                 ),
-                                                SizedBox(width: 4),
+                                                const SizedBox(width: 4),
                                                 Text(
-                                                  'İndirildi',
-                                                  style: TextStyle(
+                                                  l10n.downloaded,
+                                                  style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w600,

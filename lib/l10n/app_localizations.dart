@@ -1669,6 +1669,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add New Group...'**
   String get addNewGroup;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get forgotPassword;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPassword;
+
+  /// No description provided for @passwordResetEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent!'**
+  String get passwordResetEmailSent;
+
+  /// No description provided for @enterEmailToResetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to reset your password'**
+  String get enterEmailToResetPassword;
+
+  /// No description provided for @sendResetEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Email'**
+  String get sendResetEmail;
+
+  /// No description provided for @pleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait...'**
+  String get pleaseWait;
+
+  /// No description provided for @processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing your request...'**
+  String get processing;
+
+  /// No description provided for @routeOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Order'**
+  String get routeOrder;
+
+  /// No description provided for @numLocationsDragToOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} locations • Drag to reorder'**
+  String numLocationsDragToOrder(int count);
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @confirmRouteWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Route ({count} Locations)'**
+  String confirmRouteWithCount(int count);
+
+  /// No description provided for @selectAvatarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Avatar'**
+  String get selectAvatarTitle;
+
+  /// No description provided for @selectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get selectButton;
+
+  /// No description provided for @selectAvatarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Avatar'**
+  String get selectAvatarLabel;
+
+  /// No description provided for @selectAvatarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one of the avatars below'**
+  String get selectAvatarDescription;
+
+  /// No description provided for @aboutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'About:'**
+  String get aboutLabel;
+
+  /// No description provided for @genderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender:'**
+  String get genderLabel;
+
+  /// No description provided for @birthDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth Date:'**
+  String get birthDateLabel;
+
+  /// No description provided for @privacyNotShared.
+  ///
+  /// In en, this message translates to:
+  /// **'This user has chosen not to share profile information.'**
+  String get privacyNotShared;
+
+  /// No description provided for @saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get saved;
+
+  /// No description provided for @authorProfileTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Author\'s profile information'**
+  String get authorProfileTooltip;
+
+  /// No description provided for @newRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'New routes'**
+  String get newRoutes;
+
+  /// No description provided for @allRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'All routes'**
+  String get allRoutes;
+
+  /// No description provided for @filtered.
+  ///
+  /// In en, this message translates to:
+  /// **'Filtered'**
+  String get filtered;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get downloaded;
+
+  /// No description provided for @newLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get newLabel;
+
+  /// No description provided for @oldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Old'**
+  String get oldLabel;
+
+  /// No description provided for @addLocationsFromMapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add locations via the map'**
+  String get addLocationsFromMapHint;
+
+  /// No description provided for @savedLocationsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved locations'**
+  String get savedLocationsHeader;
+
+  /// No description provided for @thisIsYourProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your profile'**
+  String get thisIsYourProfile;
+
+  /// No description provided for @privacyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Other users can only see information you set as public.'**
+  String get privacyNotice;
+
+  /// No description provided for @publicProfileInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Public profile information of this user.'**
+  String get publicProfileInfo;
+
+  /// No description provided for @privacyPreferencesNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile information is displayed based on user privacy preferences.'**
+  String get privacyPreferencesNotice;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'minutes'**
+  String get minutes;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get hours;
+
+  /// No description provided for @connectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost. Using offline data.'**
+  String get connectionLost;
+
+  /// No description provided for @groupsSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups sync failed. Some features may be limited.'**
+  String get groupsSyncFailed;
+
+  /// No description provided for @profileSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile sync failed. Home location may not be available.'**
+  String get profileSyncFailed;
+
+  /// No description provided for @failedToSaveRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save route. Please try again.'**
+  String get failedToSaveRoute;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your internet connection.'**
+  String get networkError;
+
+  /// No description provided for @quotaLimitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Service limit reached. Please try again later.'**
+  String get quotaLimitError;
+
+  /// No description provided for @invalidLocationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid location. Please check your waypoints.'**
+  String get invalidLocationError;
+
+  /// No description provided for @routeDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Details'**
+  String get routeDetails;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @currentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Password'**
+  String get currentPassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get newPassword;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New Password'**
+  String get confirmNewPassword;
+
+  /// No description provided for @passwordChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get passwordChangedSuccess;
+
+  /// No description provided for @passwordChangeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error changing password'**
+  String get passwordChangeError;
+
+  /// No description provided for @wrongCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is wrong'**
+  String get wrongCurrentPassword;
+
+  /// No description provided for @selectBirthDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Birth Date'**
+  String get selectBirthDate;
+
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar updated successfully'**
+  String get avatarUpdated;
+
+  /// No description provided for @personalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInfo;
+
+  /// No description provided for @nicknameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname / Username'**
+  String get nicknameLabel;
+
+  /// No description provided for @birthDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth Date'**
+  String get birthDate;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @aboutMe.
+  ///
+  /// In en, this message translates to:
+  /// **'About Me'**
+  String get aboutMe;
+
+  /// No description provided for @security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get security;
+
+  /// No description provided for @visibleToPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible to public'**
+  String get visibleToPublic;
+
+  /// No description provided for @visibleToOnlyYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Only visible to you'**
+  String get visibleToOnlyYou;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get select;
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get fieldRequired;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get passwordTooShort;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @introduceYourself.
+  ///
+  /// In en, this message translates to:
+  /// **'Introduce yourself'**
+  String get introduceYourself;
+
+  /// No description provided for @writeBioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a short bio...'**
+  String get writeBioHint;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
 }
 
 class _AppLocalizationsDelegate

@@ -65,6 +65,62 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _showResetPasswordDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    String resetEmail = _email; // Pre-fill with entered email if any
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.resetPassword),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.enterEmailToResetPassword),
+            TextField(
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(labelText: l10n.emailAddress),
+              onChanged: (value) => resetEmail = value,
+              controller: TextEditingController(text: resetEmail),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (resetEmail.isEmpty || !resetEmail.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.enterValidEmail)),
+                );
+                return;
+              }
+              final result = await _authService.resetPassword(email: resetEmail);
+              if (!mounted) return;
+              Navigator.of(ctx).pop();
+              if (result == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.passwordResetEmailSent)),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+            },
+            child: Text(l10n.sendResetEmail),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -133,6 +189,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       obscureText: true,
                       decoration: InputDecoration(labelText: l10n.password),
                     ),
+                    if (_isLogin && !_isLoading)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _showResetPasswordDialog,
+                          child: Text(l10n.forgotPassword),
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     if (_isLoading) const CircularProgressIndicator(),
                     if (!_isLoading)

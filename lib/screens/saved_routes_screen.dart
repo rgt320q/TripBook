@@ -215,7 +215,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Rota Detayları',
+                            l10n.routeDetails,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.9),
@@ -594,11 +594,11 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                                 }
                               } catch (e) {
                                 // Herhangi bir hata durumunda kullanıcıyı bilgilendir
-                                if (mounted) {
-                                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                                    SnackBar(content: Text('Hata: ${e.toString()}')),
-                                  );
-                                }
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                                      SnackBar(content: Text('${l10n.error("")} ${e.toString()}')),
+                                    );
+                                  }
                               }
                             },
                             child: Container(
