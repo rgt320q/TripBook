@@ -70,7 +70,7 @@
   "customLocationNameLabel": "Custom Name",
   "descriptionLabel": "Description",
   "notesLabel": "Private Notes",
-  "estimatedDurationLabel": "Estimated Duration (minutes)",
+  "estimatedDurationLabel": "Estimated Stay Time",
   "needsLabel": "Needs (comma-separated)",
   "selectGroupOptionalLabel": "Select Group (Optional)",
   "confirmEndpointDialogTitle": "Confirm Endpoint",
@@ -569,5 +569,8 @@
   "passwordsDoNotMatch": "Passwords do not match",
   "introduceYourself": "Introduce yourself",
   "writeBioHint": "Write a short bio...",
-  "settings": "Settings"
+  "settings": "Settings",
+  "custom": "Custom",
+  "durationUnitMinutes": "Minutes",
+  "durationUnitHours": "Hours"
 }

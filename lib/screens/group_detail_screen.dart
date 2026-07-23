@@ -20,58 +20,77 @@ class GroupDetailScreen extends StatefulWidget {
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  List<TravelLocation> _locations = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations();
+  }
+
+  Future<void> _loadLocations() async {
+    try {
+      final fetched = await _firestoreService.getLocationsForGroup(widget.groupId);
+      if (mounted) {
+        setState(() {
+          _locations = fetched;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final item = _locations.removeAt(oldIndex);
+      _locations.insert(newIndex, item);
+    });
+
+    final ids = _locations.map((l) => l.firestoreId!).toList();
+    try {
+      await _firestoreService.updateGroupLocationOrder(widget.groupId, ids);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sıralama güncellenemedi: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(widget.groupName)),
-      body: StreamBuilder<List<TravelLocation>>(
-        stream: _firestoreService
-            .getLocationsForGroup(widget.groupId)
-            .asStream(), // Convert Future to Stream
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Text(AppLocalizations.of(context)!.noLocationsInGroup),
-            );
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                AppLocalizations.of(context)!.error(snapshot.error.toString()),
-              ),
-            );
-          }
-
-          final locations = snapshot.data!;
-          return AnimationLimiter(
-            child: ListView.builder(
-              itemCount: locations.length,
-              itemBuilder: (context, index) {
-                final location = locations[index];
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 375),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
-                    child: FadeInAnimation(
-                      child: ListTile(
-                        leading: const Icon(Icons.location_on),
-                        title: Text(location.name),
-                        subtitle: Text(location.description ?? ''),
-                        // TODO: Add onTap to navigate to location detail screen
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _locations.isEmpty
+              ? Center(child: Text(l10n.noLocationsInGroup))
+              : ReorderableListView.builder(
+                  itemCount: _locations.length,
+                  onReorder: _onReorder,
+                  itemBuilder: (context, index) {
+                    final location = _locations[index];
+                    return ListTile(
+                      key: ValueKey(location.firestoreId),
+                      leading: const Icon(Icons.location_on),
+                      title: Text(location.name),
+                      subtitle: Text(location.description ?? ''),
+                      trailing: const Icon(Icons.drag_handle),
+                    );
+                  },
+                ),
     );
   }
 }

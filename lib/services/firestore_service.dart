@@ -46,7 +46,18 @@ class FirestoreService {
 
   Future<void> addLocation(TravelLocation location) async {
     try {
-      await _locationsCollection.add(location);
+      final docRef = await _locationsCollection.add(location);
+      
+      // If location belongs to a group, update group's locationIds
+      if (location.groupId != null) {
+        await _db.collection('users')
+            .doc(_currentUser!.uid)
+            .collection('groups')
+            .doc(location.groupId)
+            .update({
+              'locationIds': FieldValue.arrayUnion([docRef.id])
+            });
+      }
     } catch (e) {
       throw Exception('Failed to add location: ${e.toString()}');
     }
@@ -96,7 +107,34 @@ class FirestoreService {
 
   Future<void> updateLocation(String id, TravelLocation location) async {
     try {
+      final oldDoc = await _locationsCollection.doc(id).get();
+      final oldGroupId = oldDoc.data()?.groupId;
+      
       await _locationsCollection.doc(id).update(location.toFirestore());
+
+      // Handle group change logic
+      if (oldGroupId != location.groupId) {
+        // Remove from old group
+        if (oldGroupId != null) {
+          await _db.collection('users')
+              .doc(_currentUser!.uid)
+              .collection('groups')
+              .doc(oldGroupId)
+              .update({
+                'locationIds': FieldValue.arrayRemove([id])
+              });
+        }
+        // Add to new group
+        if (location.groupId != null) {
+          await _db.collection('users')
+              .doc(_currentUser!.uid)
+              .collection('groups')
+              .doc(location.groupId)
+              .update({
+                'locationIds': FieldValue.arrayUnion([id])
+              });
+        }
+      }
     } catch (e) {
       throw Exception('Failed to update location: ${e.toString()}');
     }
@@ -115,7 +153,20 @@ class FirestoreService {
 
   Future<void> deleteLocation(String id) async {
     try {
+      final doc = await _locationsCollection.doc(id).get();
+      final groupId = doc.data()?.groupId;
+
       await _locationsCollection.doc(id).delete();
+
+      if (groupId != null) {
+        await _db.collection('users')
+            .doc(_currentUser!.uid)
+            .collection('groups')
+            .doc(groupId)
+            .update({
+              'locationIds': FieldValue.arrayRemove([id])
+            });
+      }
     } catch (e) {
       throw Exception('Failed to delete location: ${e.toString()}');
     }
@@ -170,11 +221,51 @@ class FirestoreService {
   }
 
   Future<List<TravelLocation>> getLocationsForGroup(String groupId) async {
+    // 1. Get the group to check for explicit order
+    final groupDoc = await _groupsCollection.doc(groupId).get();
+    final groupData = groupDoc.data();
+    final List<String> orderedIds = groupData?.locationIds ?? [];
+
+    // 2. Query the locations
     final snapshot = await _locationsCollection
         .where('groupId', isEqualTo: groupId)
-        .snapshots()
-        .first;
-    return snapshot.docs.map((doc) => doc.data()).toList();
+        .get();
+    
+    final locations = snapshot.docs.map((doc) => doc.data()).toList();
+
+    if (orderedIds.isNotEmpty) {
+      // 3. Sort based on orderedIds list
+      final Map<String, TravelLocation> locMap = {
+        for (var loc in locations) loc.firestoreId!: loc
+      };
+      
+      final List<TravelLocation> sorted = [];
+      // Add items that are in orderedIds in that order
+      for (var id in orderedIds) {
+        if (locMap.containsKey(id)) {
+          sorted.add(locMap[id]!);
+          locMap.remove(id);
+        }
+      }
+      // Add any remaining items (that might not be in the list yet) by creation date
+      final remaining = locMap.values.toList();
+      remaining.sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+      sorted.addAll(remaining);
+      
+      return sorted;
+    } else {
+      // Fallback: Sort by createdAt
+      locations.sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+      return locations;
+    }
+  }
+
+  Future<void> updateGroupLocationOrder(String groupId, List<String> locationIds) async {
+    try {
+      await _groupsCollection.doc(groupId).update({'locationIds': locationIds});
+    } catch (e) {
+      throw Exception('Failed to update group order: ${e.toString()}');
+    }
   }
 
   Future<void> updateGroup(String id, LocationGroup group) async {

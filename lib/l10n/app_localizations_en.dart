@@ -189,7 +189,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesLabel => 'Private Notes';
 
   @override
-  String get estimatedDurationLabel => 'Estimated Duration (minutes)';
+  String get estimatedDurationLabel => 'Estimated Stay Time';
 
   @override
   String get needsLabel => 'Needs (comma-separated)';
@@ -1105,4 +1105,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings => 'Settings';
+
+  @override
+  String get custom => 'Custom';
+
+  @override
+  String get durationUnitMinutes => 'Minutes';
+
+  @override
+  String get durationUnitHours => 'Hours';
 }

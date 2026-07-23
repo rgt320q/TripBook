@@ -190,7 +190,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notesLabel => 'Özel Notlar';
 
   @override
-  String get estimatedDurationLabel => 'Tahmini Süre (dakika)';
+  String get estimatedDurationLabel => 'Tahmini Kalma Süresi';
 
   @override
   String get needsLabel => 'İhtiyaçlar (virgülle ayırın)';
@@ -1109,4 +1109,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings => 'Ayarlar';
+
+  @override
+  String get custom => 'Özel';
+
+  @override
+  String get durationUnitMinutes => 'Dakika';
+
+  @override
+  String get durationUnitHours => 'Saat';
 }

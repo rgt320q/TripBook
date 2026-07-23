@@ -22,7 +22,6 @@ class UserProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     // Herkese açık profil bilgilerini al
     final publicProfile = isCurrentUser ? userProfile : userProfile.getPublicProfile();
     

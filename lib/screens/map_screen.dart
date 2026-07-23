@@ -27,6 +27,7 @@ import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/widgets/loading_overlay.dart';
+import 'package:tripbook/widgets/duration_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
@@ -1125,23 +1126,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  int _parseDuration(String durationString) {
-    int totalMinutes = 0;
-    final parts = durationString.toLowerCase().split(' ');
-    for (int i = 0; i < parts.length; i++) {
-      if (parts[i].contains('hour') || parts[i].contains('saat')) {
-        if (i > 0) {
-          totalMinutes += (int.tryParse(parts[i - 1]) ?? 0) * 60;
-        }
-      } else if (parts[i].contains('min') || parts[i].contains('dakika')) {
-        if (i > 0) {
-          totalMinutes += int.tryParse(parts[i - 1]) ?? 0;
-        }
-      }
-    }
-    return totalMinutes;
-  }
-
   String _formatDuration(int totalMinutes) {
     final l10n = AppLocalizations.of(context)!;
     if (totalMinutes < 0) return '0 ${l10n.minutes}';
@@ -1474,7 +1458,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       (total, loc) => total + (loc.estimatedDuration ?? 0),
     );
 
-    final travelDuration = _parseDuration(info.totalDuration);
+    final travelDuration = info.duration.inMinutes;
     final totalTripDuration = travelDuration + totalStopDuration;
 
     _activeRouteTotalStopDuration = _formatDuration(totalStopDuration);
@@ -3071,10 +3055,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       );
                       return;
                     }
-                    final optimizedLocations = _optimizeRouteByProximity(
-                      locations,
-                      _currentPosition!,
-                    );
+                    
+                    // Respect the group's internal order (manual or createdAt)
+                    final orderedLocations = locations;
+                    
                     String defaultEndLocationGeoName;
                     try {
                       defaultEndLocationGeoName =
@@ -3104,7 +3088,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       context,
                       MaterialPageRoute(
                         builder: (context) => LocationSelectionScreen(
-                          initialLocations: optimizedLocations,
+                          initialLocations: orderedLocations,
                           endLocation: homeEndLocation ?? defaultEndLocation,
                         ),
                       ),
@@ -3114,7 +3098,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     } else if (result == 'change_end_location') {
                       setState(() {
                         _isSelectingEndpoint = true;
-                        _locationsForRoute = optimizedLocations;
+                        _locationsForRoute = orderedLocations;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(l10n.selectNewEndpoint)),
@@ -3224,7 +3208,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final descriptionController = TextEditingController();
     final notesController = TextEditingController();
     final needsController = TextEditingController();
-    final durationController = TextEditingController();
+    int? selectedDuration;
     String? selectedGroupId;
     List<LocationGroup> dialogGroups = List.from(_allGroups);
 
@@ -3303,16 +3287,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: durationController,
-                        decoration: InputDecoration(
-                          labelText: l10n.estimatedDurationLabel,
-                        ),
-                        keyboardType: TextInputType.number,
+                      DurationSelector(
+                        onChanged: (value) => selectedDuration = value,
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        initialValue: selectedGroupId,
+                        value: dialogGroups.any((g) => g.firestoreId == selectedGroupId) ? selectedGroupId : null,
                         decoration: InputDecoration(
                           labelText: l10n.groupLabel,
                           border: const OutlineInputBorder(),
@@ -3322,7 +3302,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             value: null,
                             child: Text(l10n.groupNone),
                           ),
-                          ...dialogGroups.map((group) {
+                          ...{ for (var g in dialogGroups) g.firestoreId : g }.values.map((group) {
                             return DropdownMenuItem<String>(
                               value: group.firestoreId,
                               child: Text(group.name),
@@ -3338,8 +3318,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             final newGroup = await _showAddNewGroupDialog(context);
                             if (newGroup != null) {
                               setState(() {
-                                dialogGroups.add(newGroup);
-                                _allGroups.add(newGroup);
+                                // Ensure no duplicates when adding new group
+                                if (!dialogGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+                                  dialogGroups.add(newGroup);
+                                }
+                                if (!_allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+                                  _allGroups.add(newGroup);
+                                }
                                 selectedGroupId = newGroup.firestoreId;
                               });
                             }
@@ -3380,8 +3365,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         longitude: pos.longitude,
                         notes: notesController.text.trim(),
                         needsList: needsList,
-                        estimatedDuration:
-                            int.tryParse(durationController.text),
+                        estimatedDuration: selectedDuration,
                         groupId: selectedGroupId,
                         userId: user.uid,
                         createdAt: DateTime.now(),

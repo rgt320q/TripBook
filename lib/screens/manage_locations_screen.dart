@@ -6,6 +6,7 @@ import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/map_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/widgets/duration_selector.dart';
 
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
@@ -476,7 +477,7 @@ class _LocationListItemState extends State<LocationListItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _notesController;
   late TextEditingController _needsController;
-  late TextEditingController _durationController;
+  int? _selectedDuration;
   String? _selectedGroupId;
 
   late bool _isExpanded;
@@ -758,9 +759,7 @@ class _LocationListItemState extends State<LocationListItem> {
             .join(', ') ??
         '';
     _needsController = TextEditingController(text: needNames);
-    _durationController = TextEditingController(
-      text: widget.location.estimatedDuration?.toString(),
-    );
+    _selectedDuration = widget.location.estimatedDuration;
     _selectedGroupId = widget.location.groupId;
     _isExpanded = widget.isInitiallyExpanded;
   }
@@ -771,7 +770,6 @@ class _LocationListItemState extends State<LocationListItem> {
     _descriptionController.dispose();
     _notesController.dispose();
     _needsController.dispose();
-    _durationController.dispose();
     super.dispose();
   }
 
@@ -856,7 +854,7 @@ class _LocationListItemState extends State<LocationListItem> {
       groupId: _selectedGroupId,
       notes: notes,
       needsList: needsList,
-      estimatedDuration: int.tryParse(_durationController.text),
+      estimatedDuration: _selectedDuration,
       createdAt: widget.location.createdAt, userId: widget.location.userId,
     );
 
@@ -1050,11 +1048,10 @@ class _LocationListItemState extends State<LocationListItem> {
                   const SizedBox(height: 16),
                   _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint, readOnly: widget.isReadOnly),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    _durationController,
-                    l10n.estimatedDurationLabel,
-                    inputType: TextInputType.number,
+                  DurationSelector(
+                    initialDurationMinutes: _selectedDuration,
                     readOnly: widget.isReadOnly,
+                    onChanged: (value) => _selectedDuration = value,
                   ),
                   const SizedBox(height: 16),
                   _buildGroupDropdown(),
@@ -1238,7 +1235,8 @@ class _LocationListItemState extends State<LocationListItem> {
 
   Widget _buildGroupDropdown() {
     final l10n = AppLocalizations.of(context)!;
-    final allGroupIds = widget.allGroups.map((g) => g.firestoreId).toSet();
+    final uniqueGroups = { for (var g in widget.allGroups) g.firestoreId : g }.values.toList();
+    final allGroupIds = uniqueGroups.map((g) => g.firestoreId).toSet();
     allGroupIds.add(null);
 
     final String? validSelectedGroupId =
@@ -1251,7 +1249,7 @@ class _LocationListItemState extends State<LocationListItem> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: validSelectedGroupId,
+        value: validSelectedGroupId,
         decoration: InputDecoration(
           labelText: l10n.groupLabel,
           border: InputBorder.none,
@@ -1289,7 +1287,7 @@ class _LocationListItemState extends State<LocationListItem> {
               ],
             ),
           ),
-          ...widget.allGroups.map((group) {
+          ...uniqueGroups.map((group) {
             return DropdownMenuItem<String>(
               value: group.firestoreId,
               child: Row(
@@ -1340,7 +1338,9 @@ class _LocationListItemState extends State<LocationListItem> {
                   final newGroup = await _showAddNewGroupDialog(context);
                   if (newGroup != null) {
                     setState(() {
-                      widget.allGroups.add(newGroup);
+                      if (!widget.allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+                        widget.allGroups.add(newGroup);
+                      }
                       _selectedGroupId = newGroup.firestoreId;
                     });
                   }

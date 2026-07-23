@@ -6,6 +6,7 @@ class LocationGroup {
   final int? color; // Added color field
   final DateTime? createdAt;
   final String userId;
+  final List<String> locationIds;
 
   LocationGroup({
     this.firestoreId,
@@ -13,6 +14,7 @@ class LocationGroup {
     this.color,
     this.createdAt,
     required this.userId,
+    this.locationIds = const [],
   }); // Updated constructor
 
   Map<String, dynamic> toFirestore() {
@@ -23,6 +25,7 @@ class LocationGroup {
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
       'userId': userId,
+      'locationIds': locationIds,
     };
   }
 
@@ -36,6 +39,7 @@ class LocationGroup {
       color: firestoreMap['color'] as int?,
       createdAt: (firestoreMap['createdAt'] as Timestamp?)?.toDate(),
       userId: firestoreMap['userId'] as String? ?? '', // Handle old data without userId
+      locationIds: List<String>.from(firestoreMap['locationIds'] ?? []),
     );
   }
 
@@ -45,6 +49,7 @@ class LocationGroup {
     int? color,
     DateTime? createdAt,
     String? userId,
+    List<String>? locationIds,
   }) {
     return LocationGroup(
       firestoreId: firestoreId ?? this.firestoreId,
@@ -52,6 +57,7 @@ class LocationGroup {
       color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
       userId: userId ?? this.userId,
+      locationIds: locationIds ?? this.locationIds,
     );
   }
 }

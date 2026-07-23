@@ -146,19 +146,30 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  var groups = snapshot.data!;
+                  
+                  // Ensure unique groups and check for selection existence
+                  final groups = { for (var g in snapshot.data!) g.firestoreId : g }.values.toList();
+                  final String? validSelectedGroupId = 
+                      groups.any((g) => g.firestoreId == _selectedGroupId) ? _selectedGroupId : null;
+
                   return DropdownButtonFormField<String>(
-                    initialValue: _selectedGroupId,
+                    value: validSelectedGroupId,
                     decoration: InputDecoration(
                       labelText: l10n.groupLabel,
                       border: const OutlineInputBorder(),
                     ),
-                    items: groups.map((group) {
-                      return DropdownMenuItem<String>(
-                        value: group.firestoreId,
-                        child: Text(group.name),
-                      );
-                    }).toList(),
+                    items: [
+                      DropdownMenuItem<String>(
+                        value: null,
+                        child: Text(l10n.groupNone),
+                      ),
+                      ...groups.map((group) {
+                        return DropdownMenuItem<String>(
+                          value: group.firestoreId,
+                          child: Text(group.name),
+                        );
+                      }),
+                    ],
                     onChanged: (value) {
                       setState(() {
                         _selectedGroupId = value;

@@ -72,7 +72,7 @@
   "customLocationNameLabel": "Özel Konum Adı",
   "descriptionLabel": "Açıklama",
   "notesLabel": "Özel Notlar",
-  "estimatedDurationLabel": "Tahmini Süre (dakika)",
+  "estimatedDurationLabel": "Tahmini Kalma Süresi",
   "needsLabel": "İhtiyaçlar (virgülle ayırın)",
   "selectGroupOptionalLabel": "Grup Seç (İsteğe Bağlı)",
   "confirmEndpointDialogTitle": "Bitiş Noktasını Onayla",
@@ -570,5 +570,8 @@
   "passwordsDoNotMatch": "Şifreler eşleşmiyor",
   "introduceYourself": "Kendinizi tanıtın",
   "writeBioHint": "Kısa bir biyografi yazın...",
-  "settings": "Ayarlar"
+  "settings": "Ayarlar",
+  "custom": "Özel",
+  "durationUnitMinutes": "Dakika",
+  "durationUnitHours": "Saat"
 }

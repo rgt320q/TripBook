@@ -894,7 +894,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                initialValue: _gender,
+                                value: ['Erkek', 'Kadın', 'Diğer'].contains(_gender) ? _gender : null,
                                 decoration: InputDecoration(
                                   labelText: l10n.gender,
                                   prefixIcon: const Icon(Icons.people),

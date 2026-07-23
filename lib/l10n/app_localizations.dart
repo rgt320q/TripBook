@@ -443,7 +443,7 @@ abstract class AppLocalizations {
   /// No description provided for @estimatedDurationLabel.
   ///
   /// In en, this message translates to:
-  /// **'Estimated Duration (minutes)'**
+  /// **'Estimated Stay Time'**
   String get estimatedDurationLabel;
 
   /// No description provided for @needsLabel.
@@ -2095,6 +2095,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
+
+  /// No description provided for @durationUnitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get durationUnitMinutes;
+
+  /// No description provided for @durationUnitHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get durationUnitHours;
 }
 
 class _AppLocalizationsDelegate

@@ -1,35 +1,36 @@
-# Walkthrough - Comprehensive Localization & UX Enhancements
+# Walkthrough - Group Location Sorting & Ordering
 
-I have completed a thorough localization fix across the entire application to ensure that all screens respect the user's language choice (English or Turkish). I also re-applied the UX improvements to provide better feedback during long-running operations.
+I have implemented the ability to manually sort locations within a group and ensured that this order is respected when creating a route.
 
-## 1. Comprehensive Localization Fix
-Identified and replaced hardcoded Turkish strings with localized keys across multiple screens.
+## Changes Made
 
-### Key Screens Updated:
-- **Location Selection Screen:** Localized headers ("Route Order"), instructions, and the final confirmation button.
-- **Profile Screen:** Localized personal information labels, security settings, password change dialogs, and privacy tooltips.
-- **Community Screens:** Localized route details, comments, ratings, and shared-by labels.
-- **Avatar Selection:** Localized titles and selection buttons.
-- **Map Screen:** Localized snackbar messages and dynamic duration strings (e.g., "2 hours 15 minutes").
+### 1. Data Model Update
+- Updated `LocationGroup` in [location_group.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/models/location_group.dart) to include a `locationIds` list. This list persists the manual order of locations within each group.
 
-### Localization Files:
-- Added over 30 new keys to [app_en.arb](file:///D:/Repo/Flutter/Projects/TripBook/lib/l10n/app_en.arb) and [app_tr.arb](file:///D:/Repo/Flutter/Projects/TripBook/lib/l10n/app_tr.arb).
+### 2. Service Logic Improvements
+- Updated `FirestoreService` in [firestore_service.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/services/firestore_service.dart):
+    - **Add/Delete/Update:** Automatically keeps the group's `locationIds` list in sync when locations are added, deleted, or moved between groups.
+    - **Fetching:** `getLocationsForGroup` now returns locations sorted by the manual order (if set) or by creation date (as a fallback).
+    - **New Method:** Added `updateGroupLocationOrder` to save manual reordering changes.
 
-## 2. UX Improvement: Loading Indicators
-Added a global loading overlay to prevent the app from appearing frozen during network or processing tasks.
+### 3. UI: Manual Reordering in Groups
+- Refactored `GroupDetailScreen` in [group_detail_screen.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/screens/group_detail_screen.dart):
+    - Replaced the static list with a `ReorderableListView`.
+    - Users can now drag and drop locations to set their preferred order within a group.
+    - Changes are automatically saved to Firebase.
 
-### Changes:
-- **New Widget:** `LoadingOverlay` in [loading_overlay.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/widgets/loading_overlay.dart).
-- **Integration:** Added to `MapScreen` during:
-    - Group-to-route processing.
-    - Manual location selection processing.
-    - Google Routes API v2 calls.
+### 4. Rota Creation Logic
+- Updated `MapScreen` in [map_screen.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/screens/map_screen.dart):
+    - When selecting "From Group", the app now respects the group's internal order (manual or chronological) instead of forcing a distance-based optimization.
+    - This ensures that the "Sort and Edit" screen opens with the exact order you defined in the group.
 
-## 3. Google Maps Integration
-- Successfully migrated to **Google Routes API (v2)**.
-- Fixed the API key mismatch in `.env`.
-
-## How to Verify
-1.  **Change Language:** Go to the **Profile** screen, change the language to **English**, and verify that the "Create Route" flow and "Profile" settings are fully in English.
-2.  **Test Loading:** Create a route from a group and notice the **"Please wait..."** overlay that appears during the transition.
-3.  **Confirm Routing:** Ensure the blue route line is drawn correctly on the map.
+## How to Test
+1.  **Manual Sorting:**
+    - Go to **Groups** and select a group.
+    - Use the handle on the right to drag locations into a new order.
+2.  **Route Creation:**
+    - Go back to the **Map**, tap "Create Route", and select **"From Group"**.
+    - Choose the group you just sorted.
+    - Notice that the next screen ("Sort and Edit") displays the locations in the exact order you set in the group.
+3.  **Persistence:**
+    - Restart the app and verify that your manual group order is still preserved.
