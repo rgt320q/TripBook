@@ -7,6 +7,7 @@ import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/map_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/widgets/duration_selector.dart';
+import 'package:tripbook/widgets/multi_group_selector.dart';
 
 class ManageLocationsScreen extends StatefulWidget {
   final String? initiallyExpandedLocationId;
@@ -408,7 +409,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                           Widget listItem = LocationListItem(
                             key: ValueKey(location.firestoreId ?? location.hashCode),
                             location: location,
-                            groupName: groupMap[location.groupId] ?? l10n.groupNone,
+                            groupNames: location.groupIds.map((id) => groupMap[id] ?? l10n.groupNone).toList(),
                             allGroups: groups,
                             firestoreService: _firestoreService,
                             isInitiallyExpanded: isTarget,
@@ -448,7 +449,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
 
 class LocationListItem extends StatefulWidget {
   final TravelLocation location;
-  final String groupName;
+  final List<String> groupNames;
   final List<LocationGroup> allGroups;
   final FirestoreService firestoreService;
   final bool isInitiallyExpanded;
@@ -459,7 +460,7 @@ class LocationListItem extends StatefulWidget {
   const LocationListItem({
     super.key,
     required this.location,
-    required this.groupName,
+    required this.groupNames,
     required this.allGroups,
     required this.firestoreService,
     this.isInitiallyExpanded = false,
@@ -478,7 +479,7 @@ class _LocationListItemState extends State<LocationListItem> {
   late TextEditingController _notesController;
   late TextEditingController _needsController;
   int? _selectedDuration;
-  String? _selectedGroupId;
+  List<String> _selectedGroupIds = [];
 
   late bool _isExpanded;
 
@@ -760,7 +761,7 @@ class _LocationListItemState extends State<LocationListItem> {
         '';
     _needsController = TextEditingController(text: needNames);
     _selectedDuration = widget.location.estimatedDuration;
-    _selectedGroupId = widget.location.groupId;
+    _selectedGroupIds = List.from(widget.location.groupIds);
     _isExpanded = widget.isInitiallyExpanded;
   }
 
@@ -851,7 +852,7 @@ class _LocationListItemState extends State<LocationListItem> {
       latitude: widget.location.latitude,
       longitude: widget.location.longitude,
       description: description,
-      groupId: _selectedGroupId,
+      groupIds: _selectedGroupIds,
       notes: notes,
       needsList: needsList,
       estimatedDuration: _selectedDuration,
@@ -893,7 +894,7 @@ class _LocationListItemState extends State<LocationListItem> {
 
     // Group color for the location
     final groupColor = widget.allGroups
-        .where((g) => g.firestoreId == widget.location.groupId)
+        .where((g) => widget.location.groupIds.contains(g.firestoreId))
         .map((g) => Color(g.color!))
         .firstOrNull ?? Colors.grey[400]!;
 
@@ -966,23 +967,31 @@ class _LocationListItemState extends State<LocationListItem> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: groupColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: groupColor.withOpacity(0.3)),
-                ),
-                child: Text(
-                  widget.groupName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: groupColor.computeLuminance() > 0.5 
-                        ? Colors.grey[800] 
-                        : groupColor,
-                  ),
-                ),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: widget.location.groupIds.map((gid) {
+                  final group = widget.allGroups.firstWhere((g) => g.firestoreId == gid, orElse: () => LocationGroup(name: l10n.groupNone, userId: ''));
+                  final color = group.color != null ? Color(group.color!) : Colors.grey[400]!;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      group.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: color.computeLuminance() > 0.5 
+                            ? Colors.grey[800] 
+                            : color,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 6),
               Row(
@@ -1054,7 +1063,7 @@ class _LocationListItemState extends State<LocationListItem> {
                     onChanged: (value) => _selectedDuration = value,
                   ),
                   const SizedBox(height: 16),
-                  _buildGroupDropdown(),
+                  _buildGroupsSelection(),
                   const SizedBox(height: 24),
                   
                   // Action buttons
@@ -1233,124 +1242,27 @@ class _LocationListItemState extends State<LocationListItem> {
     );
   }
 
-  Widget _buildGroupDropdown() {
-    final l10n = AppLocalizations.of(context)!;
-    final uniqueGroups = { for (var g in widget.allGroups) g.firestoreId : g }.values.toList();
-    final allGroupIds = uniqueGroups.map((g) => g.firestoreId).toSet();
-    allGroupIds.add(null);
-
-    final String? validSelectedGroupId =
-        allGroupIds.contains(_selectedGroupId) ? _selectedGroupId : null;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: validSelectedGroupId,
-        decoration: InputDecoration(
-          labelText: l10n.groupLabel,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-          labelStyle: TextStyle(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-          suffixIcon: widget.isReadOnly 
-              ? Icon(Icons.lock, color: Colors.grey[400], size: 20)
-              : Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
-        ),
-        style: TextStyle(
-          color: widget.isReadOnly ? Colors.grey[600] : Colors.grey[800],
-          fontWeight: FontWeight.w500,
-        ),
-        dropdownColor: Colors.white,
-        items: [
-          DropdownMenuItem<String>(
-            value: null, 
-            child: Row(
-              children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(l10n.groupNone),
-              ],
-            ),
-          ),
-          ...uniqueGroups.map((group) {
-            return DropdownMenuItem<String>(
-              value: group.firestoreId,
-              child: Row(
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Color(group.color!),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(group.name),
-                ],
-              ),
-            );
-          }),
-          DropdownMenuItem<String>(
-            value: 'add_new_group',
-            child: Row(
-              children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[600],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 12),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  l10n.addNewGroup,
-                  style: TextStyle(
-                    color: Colors.blue[600],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        onChanged: widget.isReadOnly
-            ? null
-            : (value) async {
-                if (value == 'add_new_group') {
-                  final newGroup = await _showAddNewGroupDialog(context);
-                  if (newGroup != null) {
-                    setState(() {
-                      if (!widget.allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
-                        widget.allGroups.add(newGroup);
-                      }
-                      _selectedGroupId = newGroup.firestoreId;
-                    });
-                  }
-                } else {
-                  setState(() {
-                    _selectedGroupId = value;
-                  });
-                }
-              },
-      ),
+  Widget _buildGroupsSelection() {
+    return MultiGroupSelector(
+      selectedGroupIds: _selectedGroupIds,
+      allGroups: widget.allGroups,
+      readOnly: widget.isReadOnly,
+      onChanged: (ids) {
+        setState(() {
+          _selectedGroupIds = ids;
+        });
+      },
+      onAddNewGroup: () async {
+        final newGroup = await _showAddNewGroupDialog(context);
+        if (newGroup != null) {
+          setState(() {
+            if (!widget.allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+              widget.allGroups.add(newGroup);
+            }
+          });
+        }
+        return newGroup;
+      },
     );
   }
 

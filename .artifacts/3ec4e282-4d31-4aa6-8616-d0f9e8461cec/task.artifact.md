@@ -1,5 +1,4 @@
-- [x] Update `LocationGroup` model to include `locationIds`
-- [x] Update `FirestoreService` logic for location management (add/delete/update/get)
-- [x] Implement manual reordering in `GroupDetailScreen`
-- [x] Verify `MapScreen` "From Group" logic respects the new order
-- [x] Final verification
+- [x] Fix Gradle cross-drive root conflict in `android/build.gradle.kts`
+- [x] Clean up redundant code in `lib/screens/location_detail_screen.dart`
+- [/] Remind user about PowerShell command and system restart
+- [ ] Final verification build

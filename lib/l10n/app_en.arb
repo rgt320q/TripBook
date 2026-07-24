@@ -572,5 +572,7 @@
   "settings": "Settings",
   "custom": "Custom",
   "durationUnitMinutes": "Minutes",
-  "durationUnitHours": "Hours"
+  "durationUnitHours": "Hours",
+  "addGroups": "Add to Groups",
+  "selectGroups": "Select Groups"
 }

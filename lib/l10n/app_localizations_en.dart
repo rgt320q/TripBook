@@ -1114,4 +1114,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get durationUnitHours => 'Hours';
+
+  @override
+  String get addGroups => 'Add to Groups';
+
+  @override
+  String get selectGroups => 'Select Groups';
 }

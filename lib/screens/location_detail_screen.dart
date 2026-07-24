@@ -4,6 +4,7 @@ import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/widgets/multi_group_selector.dart';
 
 class LocationDetailScreen extends StatefulWidget {
   final TravelLocation location;
@@ -22,7 +23,31 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
   late String _notes;
   late int _estimatedDuration;
   late List<Map<String, dynamic>> _needsList;
-  late String? _selectedGroupId;
+  late List<String> _selectedGroupIds;
+  List<LocationGroup> _allGroups = [];
+
+  final List<Color> _groupColors = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
+  ];
 
   @override
   void initState() {
@@ -32,7 +57,123 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
     _needsList = List<Map<String, dynamic>>.from(
       widget.location.needsList ?? [],
     );
-    _selectedGroupId = widget.location.groupId;
+    _selectedGroupIds = List.from(widget.location.groupIds);
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final groups = await _firestoreService.getGroupsOnce();
+    if (mounted) {
+      setState(() {
+        _allGroups = groups;
+      });
+    }
+  }
+
+  Future<LocationGroup?> _showAddNewGroupDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final groupNameController = TextEditingController();
+    Color selectedColor = _groupColors.first;
+    final formKey = GlobalKey<FormState>();
+
+    return await showDialog<LocationGroup>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(l10n.newGroup),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: groupNameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.groupName,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.locationNameEmptyError;
+                          }
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.invalidGroupNameError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Text(l10n.selectGroupColor),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: _groupColors.map((color) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            },
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selectedColor == color
+                                      ? Colors.black
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final newGroup = LocationGroup(
+                        name: groupNameController.text.trim(),
+                        // ignore: deprecated_member_use
+                        color: selectedColor.value,
+                        createdAt: DateTime.now(),
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                      );
+                      final docRef = await _firestoreService.addGroup(newGroup);
+                      final createdGroup = LocationGroup(
+                        firestoreId: docRef.id,
+                        name: newGroup.name,
+                        color: newGroup.color,
+                        createdAt: newGroup.createdAt,
+                        userId: newGroup.userId,
+                      );
+                      Navigator.of(dialogContext).pop(createdGroup);
+                    }
+                  },
+                  child: Text(l10n.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -60,7 +201,7 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
         description: widget.location.description,
         latitude: widget.location.latitude,
         longitude: widget.location.longitude,
-        groupId: _selectedGroupId,
+        groupIds: _selectedGroupIds,
         notes: _notes,
         estimatedDuration: _estimatedDuration,
         needsList: _needsList,
@@ -140,42 +281,22 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              StreamBuilder<List<LocationGroup>>(
-                stream: _firestoreService.getGroups(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+              MultiGroupSelector(
+                selectedGroupIds: _selectedGroupIds,
+                allGroups: _allGroups,
+                onChanged: (ids) {
+                  setState(() {
+                    _selectedGroupIds = ids;
+                  });
+                },
+                onAddNewGroup: () async {
+                  final newGroup = await _showAddNewGroupDialog();
+                  if (newGroup != null) {
+                    setState(() {
+                      _allGroups.add(newGroup);
+                    });
                   }
-                  
-                  // Ensure unique groups and check for selection existence
-                  final groups = { for (var g in snapshot.data!) g.firestoreId : g }.values.toList();
-                  final String? validSelectedGroupId = 
-                      groups.any((g) => g.firestoreId == _selectedGroupId) ? _selectedGroupId : null;
-
-                  return DropdownButtonFormField<String>(
-                    value: validSelectedGroupId,
-                    decoration: InputDecoration(
-                      labelText: l10n.groupLabel,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: null,
-                        child: Text(l10n.groupNone),
-                      ),
-                      ...groups.map((group) {
-                        return DropdownMenuItem<String>(
-                          value: group.firestoreId,
-                          child: Text(group.name),
-                        );
-                      }),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedGroupId = value;
-                      });
-                    },
-                  );
+                  return newGroup;
                 },
               ),
               const SizedBox(height: 24),

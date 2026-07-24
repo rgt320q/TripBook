@@ -1,30 +1,34 @@
-# Implementation Plan - Fix Dropdown Assertion Error
+# Implementation Plan - Build & Environment Stability
 
-This plan addresses the `DropdownButton` assertion error that occurs when adding a location and selecting/creating a group. The error is caused by duplicate items in the dropdown or the selected value missing from the list.
+This plan addresses the persistent Gradle build errors and environment variable conflicts that are preventing the application from running.
 
 ## Proposed Changes
 
-### [Component] Map Screen
+### [Component] Gradle Build Configuration
 
-#### [MODIFY] [map_screen.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/screens/map_screen.dart)
-- In `_showAddLocationDialog`, improve the logic for managing `dialogGroups` and the `DropdownButtonFormField`.
-- Use a `Set` or a `Map` to ensure that `dialogGroups` contains unique groups by their `firestoreId`.
-- In the `DropdownButtonFormField`:
-    - Ensure that the `items` list is filtered for uniqueness.
-    - Ensure that the `initialValue` (or `value`) is actually present in the `items` list to avoid the crash.
+#### [MODIFY] [build.gradle.kts](file:///D:/Repo/Flutter/Projects/TripBook/android/build.gradle.kts)
+Remove the custom build directory override. This override is forcing Gradle tasks (from the C: drive Pub cache) to write into the D: drive, triggering the "different roots" security error in Gradle 8.x.
 
-### [Component] Manage Locations Screen
+```kotlin
+// I will remove the logic that sets rootProject.layout.buildDirectory to "../../build"
+```
 
-#### [MODIFY] [manage_locations_screen.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/screens/manage_locations_screen.dart)
-- Apply similar fixes to `_buildGroupDropdown` in `LocationListItem`.
-- Ensure that the groups list used for the dropdown is unique and that the selected value is present in the list.
+### [Component] Environment Variables (User Action Required)
+
+#### [ACTION] Permanent Removal of `ANDROID_PREFS_ROOT`
+The conflict between `ANDROID_PREFS_ROOT` and `ANDROID_USER_HOME` is a known blocker for Modern Android Gradle plugins.
+
+1.  Open **PowerShell as Administrator**.
+2.  Run the following command:
+    ```powershell
+    [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "User"); [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "Machine")
+    ```
+3.  **CRITICAL:** Restart your computer or at least log out and log back in to ensure all background processes (like the Gradle Daemon) see the change.
 
 ## Verification Plan
 
 ### Manual Verification
-1.  Open the app and try to add a new location.
-2.  Open the group dropdown.
-3.  Select "Add New Group" and create a new group.
-4.  Verify that the new group is selected automatically without crashing.
-5.  Repeat the process in the "Manage Locations" screen.
-6.  Simulate a scenario where the same group might appear twice (e.g., rapid stream updates) and verify that the app handles it gracefully by filtering duplicates.
+1.  Apply the Gradle configuration change.
+2.  Perform the PowerShell action and restart.
+3.  Run `flutter clean` and `flutter run`.
+4.  Verify that the app launches on the device without "different roots" or "AndroidLocationsBuildService" errors.

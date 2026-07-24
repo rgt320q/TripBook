@@ -2,43 +2,62 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
     // --- USER DATA ---
     match /users/{userId} {
-      allow get: if request.auth != null;
-      allow list: if request.auth.uid == userId;
-      allow write: if request.auth.uid == userId;
+      // Allow getting profile info if signed in (needed for community features)
+      // Note: In production, consider splitting public/private data into separate collections
+      allow get: if isSignedIn();
+      allow list, write: if isOwner(userId);
     }
 
     match /users/{userId}/locations/{locationId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
     }
     match /users/{userId}/routes/{routeId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
     }
     match /users/{userId}/groups/{groupId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
     }
     match /users/{userId}/reached_logs/{logId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
     }
 
     // --- COMMUNITY ROUTES ---
     match /community_routes/{routeId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.sharedBy;
-      allow update: if request.auth != null;
-      allow delete: if request.auth.uid == resource.data.sharedBy;
+      allow read: if isSignedIn();
+      // Ensure sharedBy matches the actual user creating the route
+      allow create: if isSignedIn() && request.resource.data.sharedBy == request.auth.uid;
+      // Only the owner can update the route metadata (ratings/comment counts are updated by functions or restricted updates)
+      // Fixed the previous vulnerability where anyone could update any route
+      allow update: if isSignedIn() && (
+        resource.data.sharedBy == request.auth.uid ||
+        // Allow updating only rating/comment counts if the core data hasn't changed
+        // This is a simplified check; ideally use Cloud Functions for atomic increments
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'ratingCount', 'commentCount']))
+      );
+      allow delete: if isSignedIn() && resource.data.sharedBy == request.auth.uid;
 
       // Comments
       match /comments/{commentId} {
-        allow read, create: if request.auth != null;
-        allow update, delete: if request.auth.uid == resource.data.userId;
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       }
 
       // Ratings
       match /ratings/{ratingUserId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth.uid == ratingUserId;
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && ratingUserId == request.auth.uid;
       }
     }
   }

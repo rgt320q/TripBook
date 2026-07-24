@@ -573,5 +573,7 @@
   "settings": "Ayarlar",
   "custom": "Özel",
   "durationUnitMinutes": "Dakika",
-  "durationUnitHours": "Saat"
+  "durationUnitHours": "Saat",
+  "addGroups": "Gruplara Ekle",
+  "selectGroups": "Grupları Seç"
 }

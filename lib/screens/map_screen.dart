@@ -28,6 +28,7 @@ import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/widgets/loading_overlay.dart';
 import 'package:tripbook/widgets/duration_selector.dart';
+import 'package:tripbook/widgets/multi_group_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
@@ -310,7 +311,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       } catch (e) {
         // Hata durumunda log
         if (kDebugMode) {
+          if (kDebugMode) {
           print('Map refresh error after resume: $e');
+        }
         }
       }
     }
@@ -857,10 +860,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         color = Colors.purpleAccent;
       } else if (isVisited) {
         color = Colors.green;
-      } else if (loc.groupId == null) {
+      } else if (loc.groupIds.isEmpty) {
         color = Colors.grey;
       } else {
-        final group = groupsMap[loc.groupId];
+        final group = groupsMap[loc.groupIds.first];
         color = group?.color != null ? Color(group!.color!) : Colors.red;
       }
 
@@ -1040,7 +1043,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       longitude: finalDestination.longitude,
       firestoreId: 'end',
       id: finalDestination.id,
-      groupId: finalDestination.groupId,
+      groupIds: finalDestination.groupIds,
       notes: finalDestination.notes,
       needsList: finalDestination.needsList,
       estimatedDuration: finalDestination.estimatedDuration,
@@ -3209,8 +3212,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final notesController = TextEditingController();
     final needsController = TextEditingController();
     int? selectedDuration;
-    String? selectedGroupId;
-    List<LocationGroup> dialogGroups = List.from(_allGroups);
+    List<String> selectedGroupIds = [];
+    List<LocationGroup> dialogGroups = { for (var g in _allGroups) g.firestoreId : g }.values.toList();
 
     showDialog(
       context: context,
@@ -3291,48 +3294,27 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         onChanged: (value) => selectedDuration = value,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: dialogGroups.any((g) => g.firestoreId == selectedGroupId) ? selectedGroupId : null,
-                        decoration: InputDecoration(
-                          labelText: l10n.groupLabel,
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text(l10n.groupNone),
-                          ),
-                          ...{ for (var g in dialogGroups) g.firestoreId : g }.values.map((group) {
-                            return DropdownMenuItem<String>(
-                              value: group.firestoreId,
-                              child: Text(group.name),
-                            );
-                          }),
-                          DropdownMenuItem<String>(
-                            value: 'add_new_group',
-                            child: Text(l10n.addNewGroup),
-                          ),
-                        ],
-                        onChanged: (value) async {
-                          if (value == 'add_new_group') {
-                            final newGroup = await _showAddNewGroupDialog(context);
-                            if (newGroup != null) {
-                              setState(() {
-                                // Ensure no duplicates when adding new group
-                                if (!dialogGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
-                                  dialogGroups.add(newGroup);
-                                }
-                                if (!_allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
-                                  _allGroups.add(newGroup);
-                                }
-                                selectedGroupId = newGroup.firestoreId;
-                              });
-                            }
-                          } else {
+                      MultiGroupSelector(
+                        selectedGroupIds: selectedGroupIds,
+                        allGroups: dialogGroups,
+                        onChanged: (ids) {
+                          setState(() {
+                            selectedGroupIds = ids;
+                          });
+                        },
+                        onAddNewGroup: () async {
+                          final newGroup = await _showAddNewGroupDialog(context);
+                          if (newGroup != null) {
                             setState(() {
-                              selectedGroupId = value;
+                              if (!_allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+                                _allGroups.add(newGroup);
+                              }
+                              if (!dialogGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+                                dialogGroups.add(newGroup);
+                              }
                             });
                           }
+                          return newGroup;
                         },
                       ),
                     ],
@@ -3366,7 +3348,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         notes: notesController.text.trim(),
                         needsList: needsList,
                         estimatedDuration: selectedDuration,
-                        groupId: selectedGroupId,
+                        groupIds: selectedGroupIds,
                         userId: user.uid,
                         createdAt: DateTime.now(),
                       );

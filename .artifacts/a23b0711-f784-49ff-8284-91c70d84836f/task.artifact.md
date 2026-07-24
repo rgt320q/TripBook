@@ -1,0 +1,6 @@
+- [x] Bağımlılıkları güncelle (`package.json`)
+- [x] `.env` dosyasını oluştur ve API anahtarını ekle
+- [x] `index.js` dosyasını Firebase v2'ye taşı ve `params` kullan
+- [x] Bağımlılıkları yükle (`npm install`)
+- [ ] Yerel emülatör ile doğrula
+- [ ] Deploy işlemini başlat

@@ -2113,6 +2113,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hours'**
   String get durationUnitHours;
+
+  /// No description provided for @addGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Groups'**
+  String get addGroups;
+
+  /// No description provided for @selectGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Groups'**
+  String get selectGroups;
 }
 
 class _AppLocalizationsDelegate

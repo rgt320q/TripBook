@@ -61,7 +61,7 @@ CREATE TABLE locations (
   description $textType,
   latitude $doubleType,
   longitude $doubleType,
-  groupId TEXT,
+  groupIds TEXT,
   notes TEXT,
   needsList TEXT,
   estimatedDuration $intType
@@ -80,7 +80,7 @@ CREATE TABLE locations (
       'description': location.description,
       'latitude': location.latitude,
       'longitude': location.longitude,
-      'groupId': location.groupId,
+      'groupIds': jsonEncode(location.groupIds),
       'notes': location.notes,
       'needsList': location.needsList != null
           ? jsonEncode(location.needsList)
@@ -119,6 +119,21 @@ CREATE TABLE locations (
         }
       }
 
+      // Decode groupIds
+      List<String> groupIds = [];
+      final groupIdsString = json['groupIds'] as String?;
+      if (groupIdsString != null && groupIdsString.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(groupIdsString);
+          if (decoded is List) {
+            groupIds = List<String>.from(decoded);
+          }
+        } catch (e) {
+          // Backward compatibility if it was just a string
+          groupIds = [groupIdsString];
+        }
+      }
+
       return TravelLocation(
         id: json['id'] as int,
         name: json['name'] as String,
@@ -126,7 +141,7 @@ CREATE TABLE locations (
         description: json['description'] as String,
         latitude: json['latitude'] as double,
         longitude: json['longitude'] as double,
-        groupId: json['groupId'] as String?,
+        groupIds: groupIds,
         notes: json['notes'] as String?,
         needsList: needsList,
         estimatedDuration: json['estimatedDuration'] as int?, userId: '',
@@ -147,7 +162,7 @@ CREATE TABLE locations (
         'description': location.description,
         'latitude': location.latitude,
         'longitude': location.longitude,
-        'groupId': location.groupId,
+        'groupIds': jsonEncode(location.groupIds),
         'notes': location.notes,
         'needsList': location.needsList != null
             ? jsonEncode(location.needsList)
@@ -187,7 +202,7 @@ extension TravelLocationCopyWith on TravelLocation {
     String? description,
     double? latitude,
     double? longitude,
-    String? groupId,
+    List<String>? groupIds,
     String? notes,
     List<Map<String, dynamic>>? needsList,
     int? estimatedDuration,
@@ -201,7 +216,7 @@ extension TravelLocationCopyWith on TravelLocation {
       description: description ?? this.description,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
-      groupId: groupId ?? this.groupId,
+      groupIds: groupIds ?? this.groupIds,
       notes: notes ?? this.notes,
       needsList: needsList ?? this.needsList,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,

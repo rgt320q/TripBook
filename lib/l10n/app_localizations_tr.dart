@@ -1118,4 +1118,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get durationUnitHours => 'Saat';
+
+  @override
+  String get addGroups => 'Gruplara Ekle';
+
+  @override
+  String get selectGroups => 'Grupları Seç';
 }

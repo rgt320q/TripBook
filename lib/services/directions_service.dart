@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -78,7 +79,20 @@ class DirectionsService {
           'destination=${destination.latitude},${destination.longitude}'
           '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
 
-      final response = await http.get(Uri.parse(url));
+      // SECURITY: Get Firebase ID Token to authorize the Cloud Function call
+      String? idToken;
+      try {
+        idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      } catch (e) {
+        if (kDebugMode) print('Error getting ID token: $e');
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          if (idToken != null) 'Authorization': 'Bearer $idToken',
+        },
+      );
       if (response.statusCode == 200) {
         return _parseLegacyResponse(convert.jsonDecode(response.body));
       }
@@ -130,10 +144,11 @@ class DirectionsService {
         body: convert.jsonEncode(body),
       );
 
-      if (kDebugMode) {
-        print('Routes API v2 Response Status: ${response.statusCode}');
-        print('Routes API v2 Response Body: ${response.body}');
-      }
+    if (kDebugMode) {
+      print('Routes API v2 Response Status: ${response.statusCode}');
+      // Avoid printing full response body in production to prevent large logs
+      print('Routes API v2 Response Body: ${response.body}');
+    }
 
       if (response.statusCode == 200) {
         final json = convert.jsonDecode(response.body);

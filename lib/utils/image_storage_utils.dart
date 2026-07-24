@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
@@ -63,7 +64,9 @@ class ImageStorageUtils {
         throw Exception('Dosya kaydedilemedi');
       }
     } catch (e) {
-      print('Resim kaydetme hatası: $e');
+      if (kDebugMode) {
+        print('Image storage error: $e');
+      }
       return null;
     }
   }
@@ -81,7 +84,9 @@ class ImageStorageUtils {
       
       return null;
     } catch (e) {
-      print('Resim alma hatası: $e');
+      if (kDebugMode) {
+        print('Image load error: $e');
+      }
       return null;
     }
   }
@@ -100,7 +105,9 @@ class ImageStorageUtils {
       
       return false;
     } catch (e) {
-      print('Resim silme hatası: $e');
+      if (kDebugMode) {
+        print('Image delete error: $e');
+      }
       return false;
     }
   }
@@ -114,7 +121,9 @@ class ImageStorageUtils {
       
       return await imageFile.exists();
     } catch (e) {
-      print('Resim kontrol hatası: $e');
+      if (kDebugMode) {
+        print('Image check error: $e');
+      }
       return false;
     }
   }
@@ -140,7 +149,9 @@ class ImageStorageUtils {
       
       return totalBytes / (1024 * 1024); // MB cinsinden döndür
     } catch (e) {
-      print('Boyut hesaplama hatası: $e');
+      if (kDebugMode) {
+        print('Size calculation error: $e');
+      }
       return 0.0;
     }
   }
@@ -163,12 +174,16 @@ class ImageStorageUtils {
           // Aktif kullanıcı listesinde yoksa sil
           if (!activeUserIds.contains(fileName)) {
             await file.delete();
-            print('Eski profil resmi silindi: $fileName');
+            if (kDebugMode) {
+              print('Old profile image deleted: $fileName');
+            }
           }
         }
       }
     } catch (e) {
-      print('Temizlik hatası: $e');
+      if (kDebugMode) {
+        print('Cleanup error: $e');
+      }
     }
   }
 }

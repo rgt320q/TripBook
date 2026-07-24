@@ -8,7 +8,7 @@ class TravelLocation {
   final String? description;
   final double latitude;
   final double longitude;
-  final String? groupId;
+  final List<String> groupIds;
   final String? notes;
   final List<Map<String, dynamic>>? needsList;
   final int? estimatedDuration; // Duration in minutes
@@ -24,7 +24,7 @@ class TravelLocation {
     this.description,
     required this.latitude,
     required this.longitude,
-    this.groupId,
+    this.groupIds = const [],
     this.notes,
     this.needsList,
     this.estimatedDuration,
@@ -40,7 +40,7 @@ class TravelLocation {
       if (description != null) "description": description,
       "latitude": latitude,
       "longitude": longitude,
-      "groupId": groupId,
+      "groupIds": groupIds,
       if (notes != null) "notes": notes,
       if (needsList != null) "needsList": needsList,
       if (estimatedDuration != null) "estimatedDuration": estimatedDuration,
@@ -72,6 +72,14 @@ class TravelLocation {
       }
     }
 
+    // Backward compatibility: Convert old groupId (String) to groupIds (List)
+    List<String> groupIds = [];
+    if (firestoreMap['groupIds'] != null) {
+      groupIds = List<String>.from(firestoreMap['groupIds']);
+    } else if (firestoreMap['groupId'] != null) {
+      groupIds = [firestoreMap['groupId'] as String];
+    }
+
     return TravelLocation(
       firestoreId: id,
       name: firestoreMap['name'] as String,
@@ -81,7 +89,7 @@ class TravelLocation {
       description: firestoreMap['description'] as String?,
       latitude: firestoreMap['latitude'] as double,
       longitude: firestoreMap['longitude'] as double,
-      groupId: firestoreMap['groupId'] as String?,
+      groupIds: groupIds,
       notes: firestoreMap['notes'] as String?,
       needsList: parsedNeeds,
       estimatedDuration: firestoreMap['estimatedDuration'] as int?,

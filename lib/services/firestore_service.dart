@@ -48,15 +48,19 @@ class FirestoreService {
     try {
       final docRef = await _locationsCollection.add(location);
       
-      // If location belongs to a group, update group's locationIds
-      if (location.groupId != null) {
-        await _db.collection('users')
-            .doc(_currentUser!.uid)
-            .collection('groups')
-            .doc(location.groupId)
-            .update({
-              'locationIds': FieldValue.arrayUnion([docRef.id])
-            });
+      // If location belongs to groups, update each group's locationIds
+      if (location.groupIds.isNotEmpty) {
+        final WriteBatch batch = _db.batch();
+        for (final groupId in location.groupIds) {
+          final groupRef = _db.collection('users')
+              .doc(_currentUser!.uid)
+              .collection('groups')
+              .doc(groupId);
+          batch.update(groupRef, {
+            'locationIds': FieldValue.arrayUnion([docRef.id])
+          });
+        }
+        await batch.commit();
       }
     } catch (e) {
       throw Exception('Failed to add location: ${e.toString()}');
@@ -108,32 +112,40 @@ class FirestoreService {
   Future<void> updateLocation(String id, TravelLocation location) async {
     try {
       final oldDoc = await _locationsCollection.doc(id).get();
-      final oldGroupId = oldDoc.data()?.groupId;
+      final List<String> oldGroupIds = List<String>.from(oldDoc.data()?.groupIds ?? []);
       
       await _locationsCollection.doc(id).update(location.toFirestore());
 
-      // Handle group change logic
-      if (oldGroupId != location.groupId) {
-        // Remove from old group
-        if (oldGroupId != null) {
-          await _db.collection('users')
+      // Calculate added and removed groups
+      final addedGroups = location.groupIds.where((g) => !oldGroupIds.contains(g)).toList();
+      final removedGroups = oldGroupIds.where((g) => !location.groupIds.contains(g)).toList();
+
+      if (addedGroups.isNotEmpty || removedGroups.isNotEmpty) {
+        final WriteBatch batch = _db.batch();
+        
+        // Remove from old groups
+        for (final groupId in removedGroups) {
+          final groupRef = _db.collection('users')
               .doc(_currentUser!.uid)
               .collection('groups')
-              .doc(oldGroupId)
-              .update({
-                'locationIds': FieldValue.arrayRemove([id])
-              });
+              .doc(groupId);
+          batch.update(groupRef, {
+            'locationIds': FieldValue.arrayRemove([id])
+          });
         }
-        // Add to new group
-        if (location.groupId != null) {
-          await _db.collection('users')
+        
+        // Add to new groups
+        for (final groupId in addedGroups) {
+          final groupRef = _db.collection('users')
               .doc(_currentUser!.uid)
               .collection('groups')
-              .doc(location.groupId)
-              .update({
-                'locationIds': FieldValue.arrayUnion([id])
-              });
+              .doc(groupId);
+          batch.update(groupRef, {
+            'locationIds': FieldValue.arrayUnion([id])
+          });
         }
+        
+        await batch.commit();
       }
     } catch (e) {
       throw Exception('Failed to update location: ${e.toString()}');
@@ -154,18 +166,22 @@ class FirestoreService {
   Future<void> deleteLocation(String id) async {
     try {
       final doc = await _locationsCollection.doc(id).get();
-      final groupId = doc.data()?.groupId;
+      final List<String> groupIds = List<String>.from(doc.data()?.groupIds ?? []);
 
       await _locationsCollection.doc(id).delete();
 
-      if (groupId != null) {
-        await _db.collection('users')
-            .doc(_currentUser!.uid)
-            .collection('groups')
-            .doc(groupId)
-            .update({
-              'locationIds': FieldValue.arrayRemove([id])
-            });
+      if (groupIds.isNotEmpty) {
+        final WriteBatch batch = _db.batch();
+        for (final groupId in groupIds) {
+          final groupRef = _db.collection('users')
+              .doc(_currentUser!.uid)
+              .collection('groups')
+              .doc(groupId);
+          batch.update(groupRef, {
+            'locationIds': FieldValue.arrayRemove([id])
+          });
+        }
+        await batch.commit();
       }
     } catch (e) {
       throw Exception('Failed to delete location: ${e.toString()}');
@@ -226,9 +242,9 @@ class FirestoreService {
     final groupData = groupDoc.data();
     final List<String> orderedIds = groupData?.locationIds ?? [];
 
-    // 2. Query the locations
+    // 2. Query the locations belonging to this group
     final snapshot = await _locationsCollection
-        .where('groupId', isEqualTo: groupId)
+        .where('groupIds', arrayContains: groupId)
         .get();
     
     final locations = snapshot.docs.map((doc) => doc.data()).toList();
