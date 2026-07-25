@@ -11,12 +11,14 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
     <application
         android:enableOnBackInvokedCallback="true"
         android:label="TripBook"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
+
         <meta-data android:name="com.google.android.geo.API_KEY"
            android:value="@string/google_maps_api_key"/>
 
@@ -28,7 +30,7 @@
         <!-- Set up default notification icon for background messages -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/launcher_icon" />
+            android:resource="@mipmap/ic_launcher" />
 
         <activity
             android:name=".MainActivity"
@@ -57,6 +59,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
         <service
             android:name="com.baseflow.geolocator.GeolocatorLocationService"
             android:enabled="true"

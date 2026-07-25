@@ -1,34 +1,46 @@
-# Implementation Plan - Build & Environment Stability
+# Implementation Plan - Project Stabilization and Build Fix
 
-This plan addresses the persistent Gradle build errors and environment variable conflicts that are preventing the application from running.
+This plan addresses several critical build and configuration issues in the TripBook project, ranging from environment conflicts to dependency mismatches.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Environment Variables Cleanup:** You MUST delete the following environment variables from your system to prevent persistent Gradle service failures:
+> - `ANDROID_PREFS_ROOT`
+> - `ANDROID_USER_HOME`
+>
+> These variables often point to conflicting paths (e.g., including `.android` in the root) which causes `AndroidLocationsBuildService` to fail.
 
 ## Proposed Changes
 
-### [Component] Gradle Build Configuration
+### [Component] Android Build Configuration
 
-#### [MODIFY] [build.gradle.kts](file:///D:/Repo/Flutter/Projects/TripBook/android/build.gradle.kts)
-Remove the custom build directory override. This override is forcing Gradle tasks (from the C: drive Pub cache) to write into the D: drive, triggering the "different roots" security error in Gradle 8.x.
+#### [MODIFY] [local.properties](file:///C:/Users/cetin/Projects/TripBook/android/local.properties)
+- Correct the `flutter.sdk` path to `C:\flutter` to match your current system setup and avoid cross-drive path issues.
 
-```kotlin
-// I will remove the logic that sets rootProject.layout.buildDirectory to "../../build"
-```
+#### [MODIFY] [settings.gradle.kts](file:///C:/Users/cetin/Projects/TripBook/android/settings.gradle.kts)
+- Upgrade **Android Gradle Plugin (AGP)** to `8.9.1` to support modern dependencies.
+- Upgrade **Kotlin** to `2.2.0` (a stable version that resolves internal compiler errors found in 2.1.0).
 
-### [Component] Environment Variables (User Action Required)
+#### [MODIFY] [build.gradle.kts (App)](file:///C:/Users/cetin/Projects/TripBook/android/app/build.gradle.kts)
+- Apply `id("org.jetbrains.kotlin.android")` plugin explicitly.
+- Upgrade `compileSdk` and `targetSdk` to `36` as required by the latest Flutter plugins.
+- Upgrade `minSdk` to `24` as required by `geocoding_android`.
+- Update `compileOptions` and `kotlinOptions` to use **Java 17** for better compatibility with modern Android tools.
 
-#### [ACTION] Permanent Removal of `ANDROID_PREFS_ROOT`
-The conflict between `ANDROID_PREFS_ROOT` and `ANDROID_USER_HOME` is a known blocker for Modern Android Gradle plugins.
+#### [MODIFY] [gradle-wrapper.properties](file:///C:/Users/cetin/Projects/TripBook/android/gradle/wrapper/gradle-wrapper.properties)
+- Upgrade **Gradle** to `8.11.1` (required by AGP 8.9.1).
 
-1.  Open **PowerShell as Administrator**.
-2.  Run the following command:
-    ```powershell
-    [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "User"); [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "Machine")
-    ```
-3.  **CRITICAL:** Restart your computer or at least log out and log back in to ensure all background processes (like the Gradle Daemon) see the change.
+#### [MODIFY] [gradle.properties](file:///C:/Users/cetin/Projects/TripBook/android/gradle.properties)
+- Set `org.gradle.java.home` to use Android Studio's bundled **JDK 21** to avoid "Unsupported class file major version 68" (Java 24) errors.
 
 ## Verification Plan
 
+### Automated Tests
+- Run `./gradlew assembleDebug` in the `android` folder.
+- Run `flutter build apk --debug`.
+
 ### Manual Verification
-1.  Apply the Gradle configuration change.
-2.  Perform the PowerShell action and restart.
-3.  Run `flutter clean` and `flutter run`.
-4.  Verify that the app launches on the device without "different roots" or "AndroidLocationsBuildService" errors.
+1. Open the project in Android Studio.
+2. Ensure Gradle syncs without errors.
+3. Run the app on an emulator or physical device.

@@ -64,7 +64,7 @@ class _HomeLocationPickerScreenState extends State<HomeLocationPickerScreen> {
     if (_searchController.text.isEmpty) return;
 
     try {
-      List<Location> locations = await locationFromAddress(
+      List<Location> locations = await Geocoding().locationFromAddress(
         _searchController.text,
       );
       if (locations.isNotEmpty) {

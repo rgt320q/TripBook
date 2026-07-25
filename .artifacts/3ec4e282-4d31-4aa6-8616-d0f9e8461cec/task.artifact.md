@@ -1,4 +1,6 @@
-- [x] Fix Gradle cross-drive root conflict in `android/build.gradle.kts`
-- [x] Clean up redundant code in `lib/screens/location_detail_screen.dart`
-- [/] Remind user about PowerShell command and system restart
-- [ ] Final verification build
+- [x] Fix `DirectionsInfo` to use `distanceValue` (double) to avoid locale parsing issues
+- [x] Update `getHybridDirections` to include all path points in `LatLngBounds`
+- [x] Ensure initial location is included in hybrid route bounds
+- [x] Fix camera animation logic in `MapScreen` to prevent jumping to "Alaska"
+- [x] Improve `AppTravelMode.transit` handling
+- [ ] Verify functionality with sea-crossing points and transit mode

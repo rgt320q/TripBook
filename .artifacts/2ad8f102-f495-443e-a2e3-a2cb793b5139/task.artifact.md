@@ -1,0 +1,6 @@
+- [x] `android/local.properties` dosyasındaki Flutter yolunu düzelt
+- [x] `ios/Flutter/Generated.xcconfig` dosyasındaki Flutter yolunu düzelt
+- [x] `ios/Flutter/flutter_export_environment.sh` dosyasındaki Flutter yolunu düzelt
+- [x] `macos/Flutter/ephemeral/` altındaki dosyaları temizle/düzelt
+- [x] `flutter clean` çalıştır ve build'i doğrula
+- [x] `.idea/libraries/Dart_SDK.xml` içindeki IDE SDK yollarını düzelt

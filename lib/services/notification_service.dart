@@ -56,7 +56,7 @@ class NotificationService {
   }) async {
     // --- Local Notifications Initialization ---
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings();
@@ -68,7 +68,7 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
       onDidReceiveBackgroundNotificationResponse:
           onDidReceiveBackgroundNotificationResponse,
@@ -174,10 +174,10 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch.toUnsigned(31),
-      title,
-      body,
-      platformChannelSpecifics,
+      id: DateTime.now().millisecondsSinceEpoch.toUnsigned(31),
+      title: title,
+      body: body,
+      notificationDetails: platformChannelSpecifics,
       payload: payload,
     );
   }

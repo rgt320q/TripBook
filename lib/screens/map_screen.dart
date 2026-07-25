@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math' show min, max;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -105,6 +107,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   double _actualDistanceMeters = 0.0;
   bool _isNavigationStarted = false;
   bool _isNeedsListConsolidated = false;
+  AppTravelMode _selectedTravelMode = AppTravelMode.driving;
+  int _lastNotifiedStageIndex = -1;
   // --------------------------
 
   final Map<String, bool> _activeRouteNeedsState = {};
@@ -643,6 +647,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           setState(() {
             _visitedWaypoints.add(locationId);
           });
+          _checkStageTransition(location, _activeRouteLocations!.indexOf(location));
         }
 
         final allWaypointIds =
@@ -1008,6 +1013,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _visitedWaypoints.clear();
     _triggeredWikipediaNotifications.clear();
     _isNeedsListConsolidated = false; // Reset for new route
+    _lastNotifiedStageIndex = -1; // Reset staged navigation
 
     final userLocation = TravelLocation(
       name: l10n.currentLocation,
@@ -1054,45 +1060,31 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
     DirectionsInfo? directionsInfo;
+    
+    if (mounted) LoadingOverlay.show(context);
+
     try {
-      directionsInfo = await _directionsService.getDirections(routeLocationsForApi);
+      directionsInfo = await _directionsService.getHybridDirections(
+        routeLocationsForApi,
+        mode: _selectedTravelMode,
+      );
     } catch (e) {
-      // Log error for debugging
-      if (kDebugMode) {
-        print('Route calculation error: $e');
-      }
-      
-      if (mounted) {
-        // Show specific error message based on error type
-        String errorMessage = l10n.drawRouteError;
-        
-        if (e.toString().contains('network') || e.toString().contains('timeout')) {
-          errorMessage = l10n.networkError;
-        } else if (e.toString().contains('quota') || e.toString().contains('limit')) {
-          errorMessage = l10n.quotaLimitError;
-        } else if (e.toString().contains('location') || e.toString().contains('address')) {
-          errorMessage = l10n.invalidLocationError;
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-      return; // Exit early on error
+      if (kDebugMode) print('Route calculation error: $e');
+    } finally {
+      if (mounted) LoadingOverlay.hide(context);
     }
 
-    if (kIsWeb && directionsInfo == null && routeLocationsForApi.length >= 2) {
+    if (directionsInfo == null && kIsWeb) {
       // On web, if Directions API is skipped, create a dummy DirectionsInfo
       // to allow saving the route with partial data.
+      double minLat = routeLocationsForApi.map((e) => e.latitude).reduce(min);
+      double maxLat = routeLocationsForApi.map((e) => e.latitude).reduce(max);
+      double minLng = routeLocationsForApi.map((e) => e.longitude).reduce(min);
+      double maxLng = routeLocationsForApi.map((e) => e.longitude).reduce(max);
+
       final bounds = LatLngBounds(
-        southwest: LatLng(routeLocationsForApi.first.latitude,
-            routeLocationsForApi.first.longitude),
-        northeast: LatLng(
-            routeLocationsForApi.last.latitude, routeLocationsForApi.last.longitude),
+        southwest: LatLng(minLat, minLng),
+        northeast: LatLng(maxLat, maxLng),
       );
       directionsInfo = DirectionsInfo(
         bounds: bounds,
@@ -1100,6 +1092,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         totalDistance: l10n.notAvailable,
         totalDuration: l10n.notAvailable,
         duration: Duration.zero,
+        distanceValue: 0.0,
+        containsStraightLines: true,
       );
     }
 
@@ -1112,11 +1106,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
       _updateMapElements();
 
-      // Don't animate camera on web if we don't have real bounds
-      if (!kIsWeb) {
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
-        );
+      // Safely animate camera to bounds
+      if (!kIsWeb && _mapController != null) {
+        try {
+          _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
+          );
+        } catch (e) {
+          if (kDebugMode) print('Camera animation error: $e');
+          // Fallback to current position if bounds fail
+          if (_currentPosition != null) {
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLng(
+                LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+              ),
+            );
+          }
+        }
       }
 
       _showRouteSummary(directionsInfo, activeRouteLocations);
@@ -1561,25 +1567,94 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                l10n.routeSummaryTitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                Text(
+                                  info.containsStraightLines
+                                      ? 'Hibrit Rota (${_selectedTravelMode == AppTravelMode.driving ? 'Araç' : 'Yürüyüş'} + Kuş Uçuşu)'
+                                      : l10n.routeSummaryTitle,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${locations.length} ${l10n.locationsLabel}',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 14,
-                                ),
-                              ),
+                                if (info.containsStraightLines)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.9),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Bazı Noktalara Yol Erişimi Yok',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    '${locations.length} ${l10n.locationsLabel}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 14,
+                                    ),
+                                  ),
                             ],
                           ),
                         ),
                         if (!_isNavigationStarted) ...[
+                          // Travel Mode Selector
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: PopupMenuButton<AppTravelMode>(
+                              icon: Icon(
+                                _selectedTravelMode == AppTravelMode.driving
+                                    ? Icons.drive_eta
+                                    : _selectedTravelMode == AppTravelMode.walking
+                                        ? Icons.directions_walk
+                                        : Icons.directions_bus,
+                                color: Colors.white,
+                              ),
+                              tooltip: 'Ulaşım Modunu Değiştir',
+                              onSelected: (AppTravelMode mode) {
+                                setState(() {
+                                  _selectedTravelMode = mode;
+                                });
+                                Navigator.pop(context);
+                                _drawRoute(locations);
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: AppTravelMode.driving,
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.drive_eta, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Sürüş'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: AppTravelMode.walking,
+                                  child: Row(
+                                    children: [
+                                        Icon(Icons.directions_walk, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Yürüyüş'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
@@ -1700,15 +1775,47 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _buildStatCard(
-                                  icon: Icons.schedule,
+                                  icon: info.containsStraightLines 
+                                      ? Icons.priority_high 
+                                      : Icons.schedule,
                                   label: l10n.totalTripTime,
                                   value: _formatDuration(totalTripDuration),
-                                  color: Colors.green,
+                                  color: info.containsStraightLines 
+                                      ? Colors.orange 
+                                      : Colors.green,
                                   isHighlighted: true,
                                 ),
                               ),
                             ],
                           ),
+                          
+                          if (info.containsStraightLines) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Hesaplanamayan rotalar olduğu için yaklaşık süre hesaplanmıştır.',
+                                      style: TextStyle(
+                                        color: Colors.orange[900],
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           
                           const SizedBox(height: 24),
                           
@@ -1994,27 +2101,68 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           .showSnackBar(SnackBar(content: Text(l10n.currentLocationError)));
       return;
     }
-    if (locations.isEmpty) return;
+    if (locations.isEmpty || _activeRouteInfo == null) return;
 
-    final origin =
-        '${_currentPosition!.latitude},${_currentPosition!.longitude}';
-    final destination =
-        '${locations.last.latitude},${locations.last.longitude}';
-    String waypoints = '';
+    // Find the current stage (the next sequence of driveable legs)
+    final legsIsStraight = _activeRouteInfo!.legsIsStraight;
+    
+    // Waypoints are locations[0...N-1]. 
+    // leg[0] is currentPosition -> locations[0]
+    // leg[i] is locations[i-1] -> locations[i]
+    
+    int firstUnvisitedIndex = -1;
+    for (int i = 0; i < locations.length; i++) {
+      if (!_visitedWaypoints.contains(locations[i].firestoreId)) {
+        firstUnvisitedIndex = i;
+        break;
+      }
+    }
 
-    if (locations.length > 1) {
-      waypoints = locations
-          .sublist(0, locations.length - 1)
+    if (firstUnvisitedIndex == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.routeCompleted)),
+      );
+      return;
+    }
+
+    // Check if the current leg is straight
+    if (legsIsStraight.isNotEmpty && 
+        firstUnvisitedIndex < legsIsStraight.length && 
+        legsIsStraight[firstUnvisitedIndex]) {
+      _showStageInfoDialog(
+        title: 'Ulaşım Arasındasınız',
+        message: 'Bu etap için Google Haritalar navigasyonu kullanılamaz (kuş uçuşu). Lütfen bir sonraki kara noktasına ulaştığınızda tekrar deneyin.',
+      );
+      return;
+    }
+
+    // Construct the stage: from current position to the last driveable waypoint before a straight leg
+    List<TravelLocation> stageWaypoints = [];
+    for (int i = firstUnvisitedIndex; i < locations.length; i++) {
+      if (i < legsIsStraight.length && legsIsStraight[i]) {
+        break; // Stop before the straight leg
+      }
+      stageWaypoints.add(locations[i]);
+    }
+
+    if (stageWaypoints.isEmpty) return;
+
+    final origin = '${_currentPosition!.latitude},${_currentPosition!.longitude}';
+    final destination = '${stageWaypoints.last.latitude},${stageWaypoints.last.longitude}';
+    String waypointsParam = '';
+
+    if (stageWaypoints.length > 1) {
+      waypointsParam = stageWaypoints
+          .sublist(0, stageWaypoints.length - 1)
           .map((loc) => '${loc.latitude},${loc.longitude}')
           .join('|');
     }
 
-    String url =
-        'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination';
-    if (waypoints.isNotEmpty) {
-      url += '&waypoints=$waypoints';
+    String url = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination';
+    if (waypointsParam.isNotEmpty) {
+      url += '&waypoints=$waypointsParam';
     }
-    url += '&travelmode=driving';
+    url += '&travelmode=${_selectedTravelMode.name}';
 
     final Uri uri = Uri.parse(url);
 
@@ -2026,6 +2174,79 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             .showSnackBar(SnackBar(content: Text(l10n.launchMapsError)));
       }
     }
+  }
+
+  void _showStageInfoDialog({required String title, required String message}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _checkStageTransition(TravelLocation reachedLocation, int reachedIndex) {
+    if (_activeRouteInfo == null || _activeRouteLocations == null) return;
+    final legsIsStraight = _activeRouteInfo!.legsIsStraight;
+    final locations = _activeRouteLocations!;
+
+    // Case A: Just reached a point that is the entry to a straight-line transition
+    // i.e., leg[reachedIndex + 1] is straight
+    if (reachedIndex + 1 < legsIsStraight.length && legsIsStraight[reachedIndex + 1]) {
+      if (_lastNotifiedStageIndex != reachedIndex) {
+        _lastNotifiedStageIndex = reachedIndex;
+        _notificationService.showNotification(
+          'Mola Noktasına Ulaştınız',
+          '${reachedLocation.name} konumuna ulaştınız. Buradan sonra kuş uçuşu geçiş (deniz vb.) bulunmaktadır.',
+        );
+        _showStageInfoDialog(
+          title: 'Etap Tamamlandı',
+          message: '${reachedLocation.name} konumuna ulaştınız. Bu noktadan sonraki kısım araçla ulaşılamaz (deniz geçişi vb.) olarak işaretlenmiştir. Geçişi tamamladığınızda bir sonraki kara noktası için navigasyonu tekrar başlatabilirsiniz.',
+        );
+      }
+    }
+
+    // Case B: Just reached a point that is the end of a straight-line transition
+    // i.e., leg[reachedIndex] was straight and leg[reachedIndex + 1] is road (or it's the last point)
+    // Actually, if we just reached it, and it was a straight leg, we might want to start Google Maps for the NEXT segment.
+    if (reachedIndex < legsIsStraight.length && legsIsStraight[reachedIndex]) {
+      // We just finished a straight leg. If there's a road leg coming up, prompt for navigation.
+      if (reachedIndex + 1 < legsIsStraight.length && !legsIsStraight[reachedIndex + 1]) {
+        _showNextStagePrompt();
+      } else if (reachedIndex + 1 == locations.length) {
+        // reached the very last point via straight leg, route completion handled elsewhere
+      }
+    }
+  }
+
+  void _showNextStagePrompt() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Etap Hazır'),
+        content: const Text('Deniz geçişi/ara bölge tamamlandı. Sıradaki kara rotası için Google Haritalar navigasyonunu başlatmak ister misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Daha Sonra'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _launchGoogleMaps(_activeRouteLocations!);
+            },
+            child: const Text('Navigasyonu Başlat'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAboutDialog() {

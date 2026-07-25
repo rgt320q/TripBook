@@ -1,39 +1,33 @@
-# Walkthrough - Build & Environment Stabilization
+# Akıllı Hibrit Rota Sistemi Devreye Alındı
 
-I have stabilized the build configuration and environment settings to resolve persistent Gradle errors.
+Artık rotalarınız sadece karayolu ile sınırlı değil. Uygulama, karayolu bağlantısı olan kısımları yollar üzerinden, deniz veya arazi geçişlerini ise otomatik olarak düz çizgilerle bağlayarak kesintisiz bir rota sunuyor.
 
-## Changes Made
+## Neler Yeni?
 
-### 1. Gradle Configuration Fix
-- Modified [build.gradle.kts](file:///D:/Repo/Flutter/Projects/TripBook/android/build.gradle.kts) to remove the custom build directory override.
-- **Why?** Redirecting the build folder to `../../build` was forcing Gradle to mix paths from different drives (D: and C:), which newer Gradle versions block for security. Keeping the build folder within the project directory fixes this.
+### 1. Otomatik Hibrit Çizim
+`DirectionsService` artık akıllı bir algoritma kullanıyor:
+- İlk olarak rotanın tamamını tek parça olarak Google'dan ister.
+- Eğer rota bir noktada (örn. deniz geçişi) kesiliyorsa, durakları tek tek analiz eder.
+- Yol tarifi alınabilen segmentleri harita yollarına sadık kalarak çizer.
+- Yol tarifi alınamayan (deniz, vapur hattı olmayan sular vb.) segmentleri otomatik olarak düz çizgi ile birleştirir.
 
-### 2. Code Cleanup
-- Verified and cleaned [location_detail_screen.dart](file:///D:/Repo/Flutter/Projects/TripBook/lib/screens/location_detail_screen.dart) to ensure no duplicate methods or syntax errors remain.
+### 2. Akıllı Mesafe Hesaplama
+Hibrit rotalarda toplam mesafe; karayolu mesafeleri ve kuş uçuşu mesafelerin toplamı olarak en doğru şekilde hesaplanır.
 
-## Final Steps for the User
+### 3. Gelişmiş Ulaşım Modları
+Rota özet ekranının sağ üst köşesindeki ikon aracılığıyla şu modlar arasında geçiş yapabilirsiniz:
+- **Sürüş (Varsayılan):** Araba yollarını ve feribotları kullanır.
+- **Yürüyüş:** Yaya yollarını ve patikaları kullanır.
+- **Toplu Taşıma:** Otobüs, metro ve vapur hatlarını önceler.
 
-> [!IMPORTANT]
-> To fully apply these changes and clear the conflicting system settings, please perform these steps exactly:
+### 4. Kesintisiz Kullanıcı Deneyimi
+Kullanıcıya artık "rota bulunamadı" gibi hata mesajları yerine, arka planda otomatik olarak tamamlanmış bir rota sunulur. Eğer bir bölüm düz çizgi ile bağlandıysa, rota özetinde "Hibrit Rota" bilgilendirmesi görünür.
 
-1.  **Run the PowerShell Fix:**
-    - Open **PowerShell as Administrator**.
-    - Copy and paste this command, then press Enter:
-      ```powershell
-      [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "User"); [Environment]::SetEnvironmentVariable("ANDROID_PREFS_ROOT", $null, "Machine")
-      ```
-2.  **RESTART YOUR COMPUTER:** This is the only way to ensure the background "Gradle Daemon" processes drop the old settings.
-3.  **Perform a Clean Build:**
-    - After restart, open Android Studio.
-    - Run these commands in the terminal:
-      ```bash
-      flutter clean
-      flutter pub get
-      ```
-4.  **Run the App:** Press the "Run" button in Android Studio.
+## Doğrulama
+İstanbul'un iki yakası arasında (örn: Karaköy'den Kadıköy'e) bir rota oluşturulduğunda:
+- Karaköy-Eminönü arası yollar üzerinden,
+- Eminönü-Kadıköy arası (deniz geçişi) düz çizgi ile,
+- Kadıköy içindeki varış noktası tekrar yollar üzerinden otomatik olarak birleştirilir.
 
-## Progress Update
-- [x] Removed cross-drive build directory override.
-- [x] Simplified Gradle task configuration.
-- [x] Verified code integrity in screen files.
-- [ ] Waiting for user system restart and build test.
+> [!TIP]
+> Rota özetindeki araç ikonuna tıklayarak modu "Toplu Taşıma"ya alırsanız, Google'ın bildiği resmi vapur hatlarını da rotaya dahil edebilir.
