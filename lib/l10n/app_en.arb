@@ -574,5 +574,45 @@
   "durationUnitMinutes": "Minutes",
   "durationUnitHours": "Hours",
   "addGroups": "Add to Groups",
-  "selectGroups": "Select Groups"
+  "selectGroups": "Select Groups",
+  "noInternetAtStartup": "No internet connection detected. Some features may be limited.",
+  "noInternetForOperation": "This operation requires an internet connection. Please check your network.",
+  "connectionRestored": "Internet connection restored.",
+  "hybridRouteTitle": "Hybrid Route ({mode} + As the Crow Flies)",
+  "@hybridRouteTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "noRoadAccessWarning": "No Road Access to Some Points",
+  "approximateDurationWarning": "Approximate duration calculated due to unreachable routes.",
+  "stageCompletedTitle": "Stage Completed",
+  "stageCompletedMessage": "You have reached {location}. The next part is marked as unreachable by vehicle (sea crossing etc.). You can restart navigation for the next land point when you complete the crossing.",
+  "@stageCompletedMessage": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "nextStageReadyTitle": "Next Stage Ready",
+  "nextStageReadyMessage": "Sea crossing/buffer zone completed. Would you like to start Google Maps navigation for the next land route?",
+  "navigationNotAvailableTitle": "Mid-Transit",
+  "navigationNotAvailableMessage": "Google Maps navigation is not available for this stage (as the crow flies). Please try again when you reach the next land point.",
+  "modeDriving": "Driving",
+  "modeWalking": "Walking",
+  "later": "Later",
+  "reachedCheckpoint": "Reached Checkpoint",
+  "reachedCheckpointMessage": "You have reached {location}. Beyond this is a non-road segment (sea crossing, etc.).",
+  "@reachedCheckpointMessage": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "startLabel": "Start",
+  "ok": "OK"
 }

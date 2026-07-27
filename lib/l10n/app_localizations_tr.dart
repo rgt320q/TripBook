@@ -1124,4 +1124,72 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get selectGroups => 'Grupları Seç';
+
+  @override
+  String get noInternetAtStartup =>
+      'İnternet bağlantısı algılanamadı. Bazı özellikler kısıtlanmış olabilir.';
+
+  @override
+  String get noInternetForOperation =>
+      'Bu işlem için internet bağlantısı gereklidir. Lütfen bağlantınızı kontrol edin.';
+
+  @override
+  String get connectionRestored => 'İnternet bağlantısı yeniden sağlandı.';
+
+  @override
+  String hybridRouteTitle(String mode) {
+    return 'Hibrit Rota ($mode + Kuş Uçuşu)';
+  }
+
+  @override
+  String get noRoadAccessWarning => 'Bazı Noktalara Yol Erişimi Yok';
+
+  @override
+  String get approximateDurationWarning =>
+      'Hesaplanamayan rotalar olduğu için yaklaşık süre hesaplanmıştır.';
+
+  @override
+  String get stageCompletedTitle => 'Etap Tamamlandı';
+
+  @override
+  String stageCompletedMessage(String location) {
+    return '$location konumuna ulaştınız. Bu noktadan sonraki kısım araçla ulaşılamaz (deniz geçişi vb.) olarak işaretlenmiştir. Geçişi tamamladığınızda bir sonraki kara noktası için navigasyonu tekrar başlatabilirsiniz.';
+  }
+
+  @override
+  String get nextStageReadyTitle => 'Yeni Etap Hazır';
+
+  @override
+  String get nextStageReadyMessage =>
+      'Deniz geçişi/ara bölge tamamlandı. Sıradaki kara rotası için Google Haritalar navigasyonunu başlatmak ister misiniz?';
+
+  @override
+  String get navigationNotAvailableTitle => 'Ulaşım Arasındasınız';
+
+  @override
+  String get navigationNotAvailableMessage =>
+      'Bu etap için Google Haritalar navigasyonu kullanılamaz (kuş uçuşu). Lütfen bir sonraki kara noktasına ulaştığınızda tekrar deneyin.';
+
+  @override
+  String get modeDriving => 'Araç';
+
+  @override
+  String get modeWalking => 'Yürüyüş';
+
+  @override
+  String get later => 'Daha Sonra';
+
+  @override
+  String get reachedCheckpoint => 'Mola Noktasına Ulaştınız';
+
+  @override
+  String reachedCheckpointMessage(String location) {
+    return '$location konumuna ulaştınız. Buradan sonra kuş uçuşu geçiş (deniz vb.) bulunmaktadır.';
+  }
+
+  @override
+  String get startLabel => 'Başlangıç';
+
+  @override
+  String get ok => 'Tamam';
 }

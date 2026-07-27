@@ -575,5 +575,45 @@
   "durationUnitMinutes": "Dakika",
   "durationUnitHours": "Saat",
   "addGroups": "Gruplara Ekle",
-  "selectGroups": "Grupları Seç"
+  "selectGroups": "Grupları Seç",
+  "noInternetAtStartup": "İnternet bağlantısı algılanamadı. Bazı özellikler kısıtlanmış olabilir.",
+  "noInternetForOperation": "Bu işlem için internet bağlantısı gereklidir. Lütfen bağlantınızı kontrol edin.",
+  "connectionRestored": "İnternet bağlantısı yeniden sağlandı.",
+  "hybridRouteTitle": "Hibrit Rota ({mode} + Kuş Uçuşu)",
+  "@hybridRouteTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "noRoadAccessWarning": "Bazı Noktalara Yol Erişimi Yok",
+  "approximateDurationWarning": "Hesaplanamayan rotalar olduğu için yaklaşık süre hesaplanmıştır.",
+  "stageCompletedTitle": "Etap Tamamlandı",
+  "stageCompletedMessage": "{location} konumuna ulaştınız. Bu noktadan sonraki kısım araçla ulaşılamaz (deniz geçişi vb.) olarak işaretlenmiştir. Geçişi tamamladığınızda bir sonraki kara noktası için navigasyonu tekrar başlatabilirsiniz.",
+  "@stageCompletedMessage": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "nextStageReadyTitle": "Yeni Etap Hazır",
+  "nextStageReadyMessage": "Deniz geçişi/ara bölge tamamlandı. Sıradaki kara rotası için Google Haritalar navigasyonunu başlatmak ister misiniz?",
+  "navigationNotAvailableTitle": "Ulaşım Arasındasınız",
+  "navigationNotAvailableMessage": "Bu etap için Google Haritalar navigasyonu kullanılamaz (kuş uçuşu). Lütfen bir sonraki kara noktasına ulaştığınızda tekrar deneyin.",
+  "modeDriving": "Araç",
+  "modeWalking": "Yürüyüş",
+  "later": "Daha Sonra",
+  "reachedCheckpoint": "Mola Noktasına Ulaştınız",
+  "reachedCheckpointMessage": "{location} konumuna ulaştınız. Buradan sonra kuş uçuşu geçiş (deniz vb.) bulunmaktadır.",
+  "@reachedCheckpointMessage": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "startLabel": "Başlangıç",
+  "ok": "Tamam"
 }

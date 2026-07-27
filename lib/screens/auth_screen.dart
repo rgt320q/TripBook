@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tripbook/services/auth_service.dart';
+import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -22,42 +23,53 @@ class _AuthScreenState extends State<AuthScreen> {
     FocusScope.of(context).unfocus(); // Close keyboard
 
     if (isValid == true) {
-      _formKey.currentState?.save();
-      setState(() {
-        _isLoading = true;
-      });
+      final connectivityResult = await ConnectivityService().executeWithConnectivityCheck(
+        context,
+        () async {
+          _formKey.currentState?.save();
+          setState(() {
+            _isLoading = true;
+          });
 
-      String? authResult;
-      if (_isLogin) {
-        authResult = await _authService.signIn(
-          email: _email,
-          password: _password,
-        );
-      } else {
-        authResult = await _authService.signUp(
-          email: _email,
-          password: _password,
-        );
-      }
+          String? authResult;
+          if (_isLogin) {
+            authResult = await _authService.signIn(
+              email: _email,
+              password: _password,
+            );
+          } else {
+            authResult = await _authService.signUp(
+              email: _email,
+              password: _password,
+            );
+          }
 
-      if (authResult != null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authResult),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      } else {
-        // Login/Signup successful, simply pop AuthScreen
-        if (mounted) {
-          Navigator.of(
-            context,
-          ).pop(); // Just pop, let AuthWrapper handle the rest
-        }
-      }
+          if (authResult != null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(authResult),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          } else {
+            // Login/Signup successful, simply pop AuthScreen
+            if (mounted) {
+              Navigator.of(
+                context,
+              ).pop(); // Just pop, let AuthWrapper handle the rest
+            }
+          }
 
-      if (mounted) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        },
+      );
+      
+      if (!connectivityResult && mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -98,21 +110,27 @@ class _AuthScreenState extends State<AuthScreen> {
                 );
                 return;
               }
-              final result = await _authService.resetPassword(email: resetEmail);
-              if (!mounted) return;
-              Navigator.of(ctx).pop();
-              if (result == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.passwordResetEmailSent)),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result),
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                );
-              }
+              
+              await ConnectivityService().executeWithConnectivityCheck(
+                context,
+                () async {
+                  final result = await _authService.resetPassword(email: resetEmail);
+                  if (!mounted) return;
+                  Navigator.of(ctx).pop();
+                  if (result == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.passwordResetEmailSent)),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                },
+              );
             },
             child: Text(l10n.sendResetEmail),
           ),

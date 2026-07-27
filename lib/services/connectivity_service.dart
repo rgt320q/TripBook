@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._internal();
@@ -16,7 +17,7 @@ class ConnectivityService {
   bool get isConnected => _isConnected;
 
   void initialize(BuildContext context) {
-    _checkInitialConnection();
+    _checkInitialConnection(context);
     _startListening(context);
   }
 
@@ -25,12 +26,20 @@ class ConnectivityService {
     _removeOverlay();
   }
 
-  Future<void> _checkInitialConnection() async {
+  Future<void> _checkInitialConnection(BuildContext context) async {
     try {
       final List<ConnectivityResult> connectivityResult = await _connectivity.checkConnectivity();
-      _isConnected = connectivityResult.contains(ConnectivityResult.mobile) ||
-                    connectivityResult.contains(ConnectivityResult.wifi) ||
-                    connectivityResult.contains(ConnectivityResult.ethernet);
+      _isConnected = connectivityResult.any((res) => res != ConnectivityResult.none);
+      
+      if (!_isConnected && context.mounted) {
+        _showNoConnectionOverlay(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.noInternetAtStartup),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
       _isConnected = false;
     }
@@ -40,9 +49,7 @@ class ConnectivityService {
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       (List<ConnectivityResult> result) {
         final bool wasConnected = _isConnected;
-        _isConnected = result.contains(ConnectivityResult.mobile) ||
-                      result.contains(ConnectivityResult.wifi) ||
-                      result.contains(ConnectivityResult.ethernet);
+        _isConnected = result.any((res) => res != ConnectivityResult.none);
         
         if (wasConnected && !_isConnected) {
           // İnternet bağlantısı kesildi
@@ -50,6 +57,15 @@ class ConnectivityService {
         } else if (!wasConnected && _isConnected) {
           // İnternet bağlantısı yeniden bağlandı
           _removeOverlay();
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.connectionRestored),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         }
       },
     );
@@ -59,8 +75,8 @@ class ConnectivityService {
     if (_overlayEntry != null) return;
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 10,
+      builder: (overlayContext) => Positioned(
+        top: MediaQuery.of(overlayContext).padding.top + 10,
         left: 20,
         right: 20,
         child: Material(
@@ -72,7 +88,7 @@ class ConnectivityService {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -86,10 +102,11 @@ class ConnectivityService {
                   size: 20,
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'İnternet bağlantısı kesildi. Uygulamanın çalışmasını etkileyecek.',
-                    style: TextStyle(
+                    AppLocalizations.of(context)?.noInternetForOperation ?? 
+                    'İnternet bağlantısı kesildi.',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -114,7 +131,6 @@ class ConnectivityService {
     try {
       Overlay.of(context).insert(_overlayEntry!);
     } catch (e) {
-      // If overlay insertion fails, reset the overlay entry
       _overlayEntry = null;
     }
   }
@@ -124,24 +140,30 @@ class ConnectivityService {
     _overlayEntry = null;
   }
 
-  // Manuel bağlantı kontrolü için
   Future<bool> checkConnection() async {
     try {
       final List<ConnectivityResult> connectivityResult = await _connectivity.checkConnectivity();
-      return connectivityResult.contains(ConnectivityResult.mobile) ||
-             connectivityResult.contains(ConnectivityResult.wifi) ||
-             connectivityResult.contains(ConnectivityResult.ethernet);
+      return connectivityResult.any((res) => res != ConnectivityResult.none);
     } catch (e) {
       return false;
     }
   }
 
-  // Ağ işlemlerinde kullanmak için helper method
   Future<bool> executeWithConnectivityCheck<T>(
+    BuildContext context,
     Future<T> Function() operation, {
     VoidCallback? onNoConnection,
+    bool showSnackBar = true,
   }) async {
     if (!await checkConnection()) {
+      if (showSnackBar && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.noInternetForOperation),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       onNoConnection?.call();
       return false;
     }

@@ -1120,4 +1120,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectGroups => 'Select Groups';
+
+  @override
+  String get noInternetAtStartup =>
+      'No internet connection detected. Some features may be limited.';
+
+  @override
+  String get noInternetForOperation =>
+      'This operation requires an internet connection. Please check your network.';
+
+  @override
+  String get connectionRestored => 'Internet connection restored.';
+
+  @override
+  String hybridRouteTitle(String mode) {
+    return 'Hybrid Route ($mode + As the Crow Flies)';
+  }
+
+  @override
+  String get noRoadAccessWarning => 'No Road Access to Some Points';
+
+  @override
+  String get approximateDurationWarning =>
+      'Approximate duration calculated due to unreachable routes.';
+
+  @override
+  String get stageCompletedTitle => 'Stage Completed';
+
+  @override
+  String stageCompletedMessage(String location) {
+    return 'You have reached $location. The next part is marked as unreachable by vehicle (sea crossing etc.). You can restart navigation for the next land point when you complete the crossing.';
+  }
+
+  @override
+  String get nextStageReadyTitle => 'Next Stage Ready';
+
+  @override
+  String get nextStageReadyMessage =>
+      'Sea crossing/buffer zone completed. Would you like to start Google Maps navigation for the next land route?';
+
+  @override
+  String get navigationNotAvailableTitle => 'Mid-Transit';
+
+  @override
+  String get navigationNotAvailableMessage =>
+      'Google Maps navigation is not available for this stage (as the crow flies). Please try again when you reach the next land point.';
+
+  @override
+  String get modeDriving => 'Driving';
+
+  @override
+  String get modeWalking => 'Walking';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get reachedCheckpoint => 'Reached Checkpoint';
+
+  @override
+  String reachedCheckpointMessage(String location) {
+    return 'You have reached $location. Beyond this is a non-road segment (sea crossing, etc.).';
+  }
+
+  @override
+  String get startLabel => 'Start';
+
+  @override
+  String get ok => 'OK';
 }

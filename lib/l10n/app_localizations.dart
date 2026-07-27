@@ -2125,6 +2125,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Groups'**
   String get selectGroups;
+
+  /// No description provided for @noInternetAtStartup.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection detected. Some features may be limited.'**
+  String get noInternetAtStartup;
+
+  /// No description provided for @noInternetForOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'This operation requires an internet connection. Please check your network.'**
+  String get noInternetForOperation;
+
+  /// No description provided for @connectionRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet connection restored.'**
+  String get connectionRestored;
+
+  /// No description provided for @hybridRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid Route ({mode} + As the Crow Flies)'**
+  String hybridRouteTitle(String mode);
+
+  /// No description provided for @noRoadAccessWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'No Road Access to Some Points'**
+  String get noRoadAccessWarning;
+
+  /// No description provided for @approximateDurationWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate duration calculated due to unreachable routes.'**
+  String get approximateDurationWarning;
+
+  /// No description provided for @stageCompletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage Completed'**
+  String get stageCompletedTitle;
+
+  /// No description provided for @stageCompletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached {location}. The next part is marked as unreachable by vehicle (sea crossing etc.). You can restart navigation for the next land point when you complete the crossing.'**
+  String stageCompletedMessage(String location);
+
+  /// No description provided for @nextStageReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Stage Ready'**
+  String get nextStageReadyTitle;
+
+  /// No description provided for @nextStageReadyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sea crossing/buffer zone completed. Would you like to start Google Maps navigation for the next land route?'**
+  String get nextStageReadyMessage;
+
+  /// No description provided for @navigationNotAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-Transit'**
+  String get navigationNotAvailableTitle;
+
+  /// No description provided for @navigationNotAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Maps navigation is not available for this stage (as the crow flies). Please try again when you reach the next land point.'**
+  String get navigationNotAvailableMessage;
+
+  /// No description provided for @modeDriving.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving'**
+  String get modeDriving;
+
+  /// No description provided for @modeWalking.
+  ///
+  /// In en, this message translates to:
+  /// **'Walking'**
+  String get modeWalking;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @reachedCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached Checkpoint'**
+  String get reachedCheckpoint;
+
+  /// No description provided for @reachedCheckpointMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached {location}. Beyond this is a non-road segment (sea crossing, etc.).'**
+  String reachedCheckpointMessage(String location);
+
+  /// No description provided for @startLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startLabel;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
 }
 
 class _AppLocalizationsDelegate

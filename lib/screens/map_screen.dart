@@ -31,6 +31,7 @@ import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/widgets/loading_overlay.dart';
 import 'package:tripbook/widgets/duration_selector.dart';
 import 'package:tripbook/widgets/multi_group_selector.dart';
+import 'package:tripbook/widgets/long_press_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 
@@ -47,10 +48,14 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
+class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   bool _isLoading = true;
   bool _showApiKeyWarning = false;
   bool _isMapInitialized = false;
+
+  late AnimationController _longPressController;
+  Offset? _longPressPosition;
+  bool _isLongPressing = false;
 
   GoogleMapController? _mapController;
   Position? _currentPosition;
@@ -144,10 +149,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
     WidgetsBinding.instance.addObserver(this);
     
-    // Initialize connectivity service
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ConnectivityService().initialize(context);
-    });
+    _longPressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _onLongPressCompleted();
+        }
+      });
     
     _initializeScreen();
     _searchController.addListener(_onSearchChanged);
@@ -315,9 +324,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       } catch (e) {
         // Hata durumunda log
         if (kDebugMode) {
-          if (kDebugMode) {
           print('Map refresh error after resume: $e');
-        }
         }
       }
     }
@@ -325,6 +332,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _longPressController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     
     // Map controller'ı temizle
@@ -348,9 +356,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _debounce?.cancel();
     _mapUpdateDebounce?.cancel();
     
-    // Dispose connectivity service
-    ConnectivityService().dispose();
-    
     super.dispose();
   }
 
@@ -358,6 +363,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       if (_searchController.text.isNotEmpty) {
+        if (!await ConnectivityService().checkConnection()) return;
+        
         final predictions =
             await _directionsService.getAutocomplete(_searchController.text);
         if (mounted) {
@@ -916,8 +923,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       final legs = _activeRouteInfo!.legsPoints;
       final routeWaypoints = [
         TravelLocation(
-          name: 'Start',
-          geoName: 'Start',
+          name: l10n.startLabel,
+          geoName: l10n.startLabel,
           latitude: 0,
           longitude: 0,
           firestoreId: 'start',
@@ -998,141 +1005,148 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     TravelLocation? endLocation,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    if (_currentPosition == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.currentLocationError)));
-      return;
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return;
-    }
-
-    _activeRouteNeedsState.clear();
-    _visitedWaypoints.clear();
-    _triggeredWikipediaNotifications.clear();
-    _isNeedsListConsolidated = false; // Reset for new route
-    _lastNotifiedStageIndex = -1; // Reset staged navigation
-
-    final userLocation = TravelLocation(
-      name: l10n.currentLocation,
-      geoName: 'Mevcut Konumunuz',
-      description: l10n.routeStart,
-      latitude: _currentPosition!.latitude,
-      longitude: _currentPosition!.longitude,
-      firestoreId: 'start',
-      userId: '',
-    );
-
-    TravelLocation finalDestination;
-    List<TravelLocation> waypoints = List.from(locations);
-
-    if (endLocation != null) {
-      finalDestination = endLocation;
-      waypoints.removeWhere(
-        (loc) => loc.firestoreId == endLocation.firestoreId,
-      );
-    } else if (waypoints.isNotEmpty) {
-      finalDestination = waypoints.removeLast();
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.minOneLocationError)));
-      return;
-    }
-
-    finalDestination = TravelLocation(
-      name: finalDestination.name,
-      geoName: finalDestination.geoName,
-      description: finalDestination.description,
-      latitude: finalDestination.latitude,
-      longitude: finalDestination.longitude,
-      firestoreId: 'end',
-      id: finalDestination.id,
-      groupIds: finalDestination.groupIds,
-      notes: finalDestination.notes,
-      needsList: finalDestination.needsList,
-      estimatedDuration: finalDestination.estimatedDuration,
-      createdAt: finalDestination.createdAt,
-      isImported: finalDestination.isImported,
-      userId: '',
-    );
-
-    var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
-    DirectionsInfo? directionsInfo;
     
-    if (mounted) LoadingOverlay.show(context);
+    await ConnectivityService().executeWithConnectivityCheck(
+      context,
+      () async {
+        if (_currentPosition == null) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.currentLocationError)));
+          return;
+        }
 
-    try {
-      directionsInfo = await _directionsService.getHybridDirections(
-        routeLocationsForApi,
-        mode: _selectedTravelMode,
-      );
-    } catch (e) {
-      if (kDebugMode) print('Route calculation error: $e');
-    } finally {
-      if (mounted) LoadingOverlay.hide(context);
-    }
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          return;
+        }
 
-    if (directionsInfo == null && kIsWeb) {
-      // On web, if Directions API is skipped, create a dummy DirectionsInfo
-      // to allow saving the route with partial data.
-      double minLat = routeLocationsForApi.map((e) => e.latitude).reduce(min);
-      double maxLat = routeLocationsForApi.map((e) => e.latitude).reduce(max);
-      double minLng = routeLocationsForApi.map((e) => e.longitude).reduce(min);
-      double maxLng = routeLocationsForApi.map((e) => e.longitude).reduce(max);
+        _activeRouteNeedsState.clear();
+        _visitedWaypoints.clear();
+        _triggeredWikipediaNotifications.clear();
+        _isNeedsListConsolidated = false; // Reset for new route
+        _lastNotifiedStageIndex = -1; // Reset staged navigation
 
-      final bounds = LatLngBounds(
-        southwest: LatLng(minLat, minLng),
-        northeast: LatLng(maxLat, maxLng),
-      );
-      directionsInfo = DirectionsInfo(
-        bounds: bounds,
-        legsPoints: [], // No polylines for web
-        totalDistance: l10n.notAvailable,
-        totalDuration: l10n.notAvailable,
-        duration: Duration.zero,
-        distanceValue: 0.0,
-        containsStraightLines: true,
-      );
-    }
+        final userLocation = TravelLocation(
+          name: l10n.currentLocation,
+          geoName: l10n.currentLocation,
+          description: l10n.routeStart,
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          firestoreId: 'start',
+          userId: '',
+        );
 
-    if (directionsInfo != null) {
-      final activeRouteLocations = [...waypoints, finalDestination];
-      setState(() {
-        _activeRouteInfo = directionsInfo;
-        _activeRouteLocations = activeRouteLocations;
-      });
+        TravelLocation finalDestination;
+        List<TravelLocation> waypoints = List.from(locations);
 
-      _updateMapElements();
+        if (endLocation != null) {
+          finalDestination = endLocation;
+          waypoints.removeWhere(
+            (loc) => loc.firestoreId == endLocation.firestoreId,
+          );
+        } else if (waypoints.isNotEmpty) {
+          finalDestination = waypoints.removeLast();
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.minOneLocationError)));
+          return;
+        }
 
-      // Safely animate camera to bounds
-      if (!kIsWeb && _mapController != null) {
+        finalDestination = TravelLocation(
+          name: finalDestination.name,
+          geoName: finalDestination.geoName,
+          description: finalDestination.description,
+          latitude: finalDestination.latitude,
+          longitude: finalDestination.longitude,
+          firestoreId: 'end',
+          id: finalDestination.id,
+          groupIds: finalDestination.groupIds,
+          notes: finalDestination.notes,
+          needsList: finalDestination.needsList,
+          estimatedDuration: finalDestination.estimatedDuration,
+          createdAt: finalDestination.createdAt,
+          isImported: finalDestination.isImported,
+          userId: '',
+        );
+
+        var routeLocationsForApi = [userLocation, ...waypoints, finalDestination];
+        DirectionsInfo? directionsInfo;
+        
+        if (mounted) LoadingOverlay.show(context);
+
         try {
-          _mapController!.animateCamera(
-            CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
+          directionsInfo = await _directionsService.getHybridDirections(
+            routeLocationsForApi,
+            mode: _selectedTravelMode,
           );
         } catch (e) {
-          if (kDebugMode) print('Camera animation error: $e');
-          // Fallback to current position if bounds fail
-          if (_currentPosition != null) {
-            _mapController!.animateCamera(
-              CameraUpdate.newLatLng(
-                LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-              ),
-            );
+          if (kDebugMode) print('Route calculation error: $e');
+        } finally {
+          if (mounted) LoadingOverlay.hide(context);
+        }
+
+        if (directionsInfo == null && kIsWeb) {
+          // On web, if Directions API is skipped, create a dummy DirectionsInfo
+          // to allow saving the route with partial data.
+          double minLat = routeLocationsForApi.map((e) => e.latitude).reduce(min);
+          double maxLat = routeLocationsForApi.map((e) => e.latitude).reduce(max);
+          double minLng = routeLocationsForApi.map((e) => e.longitude).reduce(min);
+          double maxLng = routeLocationsForApi.map((e) => e.longitude).reduce(max);
+
+          final bounds = LatLngBounds(
+            southwest: LatLng(minLat, minLng),
+            northeast: LatLng(maxLat, maxLng),
+          );
+          directionsInfo = DirectionsInfo(
+            bounds: bounds,
+            legsPoints: [], // No polylines for web
+            totalDistance: l10n.notAvailable,
+            totalDuration: l10n.notAvailable,
+            duration: Duration.zero,
+            distanceValue: 0.0,
+            containsStraightLines: true,
+            legsIsStraight: List.filled(routeLocationsForApi.length - 1, true),
+          );
+        }
+
+        if (directionsInfo != null) {
+          final activeRouteLocations = [...waypoints, finalDestination];
+          setState(() {
+            _activeRouteInfo = directionsInfo;
+            _activeRouteLocations = activeRouteLocations;
+          });
+
+          _updateMapElements();
+
+          // Safely animate camera to bounds
+          if (!kIsWeb && _mapController != null) {
+            try {
+              _mapController!.animateCamera(
+                CameraUpdate.newLatLngBounds(directionsInfo.bounds, 50),
+              );
+            } catch (e) {
+              if (kDebugMode) print('Camera animation error: $e');
+              // Fallback to current position if bounds fail
+              if (_currentPosition != null) {
+                _mapController!.animateCamera(
+                  CameraUpdate.newLatLng(
+                    LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                  ),
+                );
+              }
+            }
+          }
+
+          _showRouteSummary(directionsInfo, activeRouteLocations);
+          _startRouteTracking();
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l10n.drawRouteError)));
           }
         }
-      }
-
-      _showRouteSummary(directionsInfo, activeRouteLocations);
-      _startRouteTracking();
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.drawRouteError)));
-      }
-    }
+      },
+    );
   }
 
   String _formatDuration(int totalMinutes) {
@@ -1167,7 +1181,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isHighlighted ? color.withOpacity(0.1) : Colors.grey[50],
+        color: isHighlighted ? color.withValues(alpha: 0.1) : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted ? color : Colors.grey[200]!,
@@ -1175,7 +1189,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ),
         boxShadow: isHighlighted ? [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1189,7 +1203,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1454,8 +1468,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showRouteSummary(DirectionsInfo info, List<TravelLocation> locations) {
-    final l10n = AppLocalizations.of(context)!;
-
     final locationsWithInfo = locations
         .where((loc) =>
             (loc.notes != null && loc.notes!.isNotEmpty) ||
@@ -1503,10 +1515,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (modalContext) {
+        final l10n = AppLocalizations.of(modalContext)!;
         return Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
           ),
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -1548,186 +1561,243 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         top: Radius.circular(20),
                       ),
                     ),
-                    child: Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.route,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                                Text(
-                                  info.containsStraightLines
-                                      ? 'Hibrit Rota (${_selectedTravelMode == AppTravelMode.driving ? 'Araç' : 'Yürüyüş'} + Kuş Uçuşu)'
-                                      : l10n.routeSummaryTitle,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                if (info.containsStraightLines)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'Bazı Noktalara Yol Erişimi Yok',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    '${locations.length} ${l10n.locationsLabel}',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                            ],
-                          ),
-                        ),
-                        if (!_isNavigationStarted) ...[
-                          // Travel Mode Selector
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<AppTravelMode>(
-                              icon: Icon(
-                                _selectedTravelMode == AppTravelMode.driving
-                                    ? Icons.drive_eta
-                                    : _selectedTravelMode == AppTravelMode.walking
-                                        ? Icons.directions_walk
-                                        : Icons.directions_bus,
-                                color: Colors.white,
+                        // Top Row: Icon and Action Buttons
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              tooltip: 'Ulaşım Modunu Değiştir',
-                              onSelected: (AppTravelMode mode) {
-                                setState(() {
-                                  _selectedTravelMode = mode;
-                                });
-                                Navigator.pop(context);
-                                _drawRoute(locations);
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: AppTravelMode.driving,
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.drive_eta, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Sürüş'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: AppTravelMode.walking,
-                                  child: Row(
-                                    children: [
-                                        Icon(Icons.directions_walk, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Yürüyüş'),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              child: const Icon(
+                                Icons.route_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.bookmark, color: Colors.white),
-                              tooltip: l10n.saveRouteDialogTitle,
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _showSaveRouteDialog(
-                                  info,
-                                  locations,
-                                  totalStopDuration: _activeRouteTotalStopDuration,
-                                  totalTripDuration: _activeRouteTotalTripDuration,
-                                  needs: _activeRouteNeeds,
-                                  notes: _activeRouteNotes,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () {
-                                  setState(() {
-                                    _isNavigationStarted = true;
-                                  });
-                                  Navigator.pop(context);
-                                  _launchGoogleMaps(locations);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.navigation,
+                            const Spacer(),
+                            if (!_isNavigationStarted) ...[
+                              // Action buttons wrapped in a Row to prevent vertical overlap
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Travel Mode Selector
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: PopupMenuButton<AppTravelMode>(
+                                      icon: Icon(
+                                        _selectedTravelMode == AppTravelMode.driving
+                                            ? Icons.drive_eta
+                                            : _selectedTravelMode == AppTravelMode.walking
+                                                ? Icons.directions_walk
+                                                : Icons.directions_bus,
                                         color: Colors.white,
                                         size: 20,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        l10n.startNavigation,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
+                                      tooltip: l10n.change,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 40),
+                                      onSelected: (AppTravelMode mode) {
+                                        setState(() {
+                                          _selectedTravelMode = mode;
+                                        });
+                                        Navigator.pop(context);
+                                        _drawRoute(locations);
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          value: AppTravelMode.driving,
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.drive_eta, size: 20),
+                                              const SizedBox(width: 8),
+                                              Text(l10n.modeDriving),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: AppTravelMode.walking,
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.directions_walk, size: 20),
+                                              const SizedBox(width: 8),
+                                              Text(l10n.modeWalking),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.bookmark_outline, color: Colors.white, size: 20),
+                                      tooltip: l10n.saveRouteDialogTitle,
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _showSaveRouteDialog(
+                                          info,
+                                          locations,
+                                          totalStopDuration: _activeRouteTotalStopDuration,
+                                          totalTripDuration: _activeRouteTotalTripDuration,
+                                          needs: _activeRouteNeeds,
+                                          notes: _activeRouteNotes,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.greenAccent[700],
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(8),
+                                        onTap: () {
+                                          setState(() {
+                                            _isNavigationStarted = true;
+                                          });
+                                          Navigator.pop(context);
+                                          _launchGoogleMaps(locations);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 10,
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.navigation_rounded,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                l10n.startNavigation,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Middle Area: The "Hybrid Route" text in its own thin row
+                        if (info.containsStraightLines)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l10n.hybridRouteTitle(_selectedTravelMode == AppTravelMode.driving ? l10n.modeDriving : l10n.modeWalking),
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ),
                           ),
-                        ],
+                        // Main Title and Chips Area
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.routeSummaryTitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                if (info.containsStraightLines) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange[400]!.withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.auto_fix_high, color: Colors.white, size: 12),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          l10n.noRoadAccessWarning,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Text(
+                                    '${locations.length} ${l10n.locationsLabel}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -1794,9 +1864,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
+                                color: Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 children: [
@@ -1804,7 +1874,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Hesaplanamayan rotalar olduğu için yaklaşık süre hesaplanmıştır.',
+                                      l10n.approximateDurationWarning,
                                       style: TextStyle(
                                         color: Colors.orange[900],
                                         fontSize: 12,
@@ -2130,8 +2200,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         firstUnvisitedIndex < legsIsStraight.length && 
         legsIsStraight[firstUnvisitedIndex]) {
       _showStageInfoDialog(
-        title: 'Ulaşım Arasındasınız',
-        message: 'Bu etap için Google Haritalar navigasyonu kullanılamaz (kuş uçuşu). Lütfen bir sonraki kara noktasına ulaştığınızda tekrar deneyin.',
+        title: l10n.navigationNotAvailableTitle,
+        message: l10n.navigationNotAvailableMessage,
       );
       return;
     }
@@ -2177,6 +2247,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showStageInfoDialog({required String title, required String message}) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2185,7 +2256,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tamam'),
+            child: Text(l10n.ok),
           ),
         ],
       ),
@@ -2194,6 +2265,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   void _checkStageTransition(TravelLocation reachedLocation, int reachedIndex) {
     if (_activeRouteInfo == null || _activeRouteLocations == null) return;
+    final l10n = AppLocalizations.of(context)!;
     final legsIsStraight = _activeRouteInfo!.legsIsStraight;
     final locations = _activeRouteLocations!;
 
@@ -2203,12 +2275,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       if (_lastNotifiedStageIndex != reachedIndex) {
         _lastNotifiedStageIndex = reachedIndex;
         _notificationService.showNotification(
-          'Mola Noktasına Ulaştınız',
-          '${reachedLocation.name} konumuna ulaştınız. Buradan sonra kuş uçuşu geçiş (deniz vb.) bulunmaktadır.',
+          l10n.reachedCheckpoint,
+          l10n.reachedCheckpointMessage(reachedLocation.name),
         );
         _showStageInfoDialog(
-          title: 'Etap Tamamlandı',
-          message: '${reachedLocation.name} konumuna ulaştınız. Bu noktadan sonraki kısım araçla ulaşılamaz (deniz geçişi vb.) olarak işaretlenmiştir. Geçişi tamamladığınızda bir sonraki kara noktası için navigasyonu tekrar başlatabilirsiniz.',
+          title: l10n.stageCompletedTitle,
+          message: l10n.stageCompletedMessage(reachedLocation.name),
         );
       }
     }
@@ -2227,26 +2299,183 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _showNextStagePrompt() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Yeni Etap Hazır'),
-        content: const Text('Deniz geçişi/ara bölge tamamlandı. Sıradaki kara rotası için Google Haritalar navigasyonunu başlatmak ister misiniz?'),
+        title: Text(l10n.nextStageReadyTitle),
+        content: Text(l10n.nextStageReadyMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Daha Sonra'),
+            child: Text(l10n.later),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _launchGoogleMaps(_activeRouteLocations!);
             },
-            child: const Text('Navigasyonu Başlat'),
+            child: Text(l10n.startNavigation),
           ),
         ],
       ),
     );
+  }
+
+  void _onLongPressCompleted() async {
+    if (_longPressPosition == null || _mapController == null || _activeRouteLocations != null) return;
+
+    final Offset pos = _longPressPosition!;
+    
+    final connectivityResult = await ConnectivityService().checkConnection();
+    if (!connectivityResult && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.noInternetForOperation),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        _isLongPressing = false;
+        _longPressPosition = null;
+      });
+      _longPressController.reset();
+      return;
+    }
+
+    setState(() {
+      _isLongPressing = false;
+      _longPressPosition = null;
+    });
+    _longPressController.reset();
+
+    // Ekran koordinatını LatLng'e çevir
+    final LatLng latLng = await _mapController!.getLatLng(
+      ScreenCoordinate(x: pos.dx.round(), y: pos.dy.round()),
+    );
+
+    if (widget.isChangingEndPoint) {
+      if (mounted) LoadingOverlay.show(context);
+      final geoName = await _directionsService.getPlaceName(latLng) ??
+          AppLocalizations.of(context)!.unknownLocation;
+      if (mounted) {
+        LoadingOverlay.hide(context);
+        final newEndPoint = TravelLocation(
+          name: geoName,
+          geoName: geoName,
+          latitude: latLng.latitude,
+          longitude: latLng.longitude,
+          firestoreId: 'end',
+          userId: '',
+        );
+        Navigator.of(context).pop(newEndPoint);
+      }
+      return;
+    }
+
+    if (_isSelectingEndpoint) {
+      _handleEndpointSelection(latLng);
+    } else {
+      if (mounted) LoadingOverlay.show(context);
+      final geoName = await _directionsService.getPlaceName(latLng) ??
+          AppLocalizations.of(context)!.unknownLocation;
+      if (mounted) {
+        LoadingOverlay.hide(context);
+        _showAddLocationDialog(latLng, geoName);
+      }
+    }
+  }
+
+  void _handleEndpointSelection(LatLng pos) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (mounted) LoadingOverlay.show(context);
+    final geoName = await _directionsService.getPlaceName(pos) ?? l10n.unknownLocation;
+    if (mounted) LoadingOverlay.hide(context);
+    
+    if (!mounted) return;
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.confirmEndpointDialogTitle),
+        content: Text(l10n.confirmEndpointDialogContent(geoName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final endLocation = TravelLocation(
+        name: l10n.selectedEndpoint,
+        geoName: geoName,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        firestoreId: 'end',
+        userId: '',
+      );
+      final result = await Navigator.push<dynamic>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LocationSelectionScreen(
+            initialLocations: _locationsForRoute,
+            endLocation: endLocation,
+          ),
+        ),
+      );
+      if (result is List<TravelLocation>) {
+        _drawRoute(result);
+      } else if (result == 'change_end_location') {
+        setState(() {
+          _isSelectingEndpoint = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.selectNewEndpoint)),
+          );
+        }
+      }
+    }
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (_activeRouteLocations != null) return;
+    
+    setState(() {
+      _longPressPosition = event.localPosition;
+      _isLongPressing = true;
+    });
+    _longPressController.forward();
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (_isLongPressing) {
+      setState(() {
+        _isLongPressing = false;
+        _longPressPosition = null;
+      });
+      _longPressController.reset();
+    }
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (_isLongPressing && _longPressPosition != null) {
+      final distance = (event.localPosition - _longPressPosition!).distance;
+      if (distance > 20) {
+        setState(() {
+          _isLongPressing = false;
+          _longPressPosition = null;
+        });
+        _longPressController.reset();
+      }
+    }
   }
 
   void _showAboutDialog() {
@@ -2340,7 +2569,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -2360,48 +2589,52 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 end: Alignment.bottomRight,
                 colors: [
                   Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.8),
+                  Theme.of(context).primaryColor.withValues(alpha: 0.8),
                 ],
               ),
             ),
           ),
         ),
-        body: Stack(
-          children: [
-            GoogleMap(
-              key: const ValueKey('endpoint_google_map'),
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller;
-                _isMapInitialized = true;
-              },
-              initialCameraPosition: CameraPosition(
-                target: LatLng(
-                  widget.initialLocation?.latitude ??
-                      _currentPosition?.latitude ??
-                      38.9637,
-                  widget.initialLocation?.longitude ??
-                      _currentPosition?.longitude ??
-                      35.2433,
+        body: Listener(
+          onPointerDown: _onPointerDown,
+          onPointerUp: _onPointerUp,
+          onPointerMove: _onPointerMove,
+          child: Stack(
+            children: [
+              GoogleMap(
+                key: const ValueKey('endpoint_google_map'),
+                onMapCreated: (GoogleMapController controller) {
+                  _mapController = controller;
+                  _isMapInitialized = true;
+                },
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(
+                    widget.initialLocation?.latitude ??
+                        _currentPosition?.latitude ??
+                        38.9637,
+                    widget.initialLocation?.longitude ??
+                        _currentPosition?.longitude ??
+                        35.2433,
+                  ),
+                  zoom: widget.initialLocation != null ? 15 : 5,
                 ),
-                zoom: widget.initialLocation != null ? 15 : 5,
+                markers: endPointMarkers,
+                myLocationButtonEnabled: false,
+                myLocationEnabled: true,
               ),
-              markers: endPointMarkers,
-              onLongPress: (pos) async {
-                final geoName = await _directionsService.getPlaceName(pos) ??
-                    l10n.unknownLocation;
-                final newEndPoint = TravelLocation(
-                  name: geoName,
-                  geoName: geoName,
-                  latitude: pos.latitude,
-                  longitude: pos.longitude,
-                  firestoreId: 'end',
-                  userId: '',
-                );
-                Navigator.of(context).pop(newEndPoint);
-              },
-              myLocationButtonEnabled: false,
-              myLocationEnabled: true,
-            ),
+              if (_isLongPressing && _longPressPosition != null)
+                Positioned(
+                  left: _longPressPosition!.dx - 40,
+                  top: _longPressPosition!.dy - 40,
+                  child: AnimatedBuilder(
+                    animation: _longPressController,
+                    builder: (context, child) {
+                      return LongPressIndicator(
+                        progress: _longPressController.value,
+                      );
+                    },
+                  ),
+                ),
             Positioned(
               top: 10,
               left: 15,
@@ -2476,6 +2709,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 final placeId = prediction['place_id'];
                                 if (placeId == null) return;
 
+                                if (!await ConnectivityService().checkConnection() && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(AppLocalizations.of(context)!.noInternetForOperation),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 final details = await _directionsService
                                     .getPlaceDetails(placeId);
                                 if (details == null || !mounted) return;
@@ -2520,14 +2763,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
           ],
         ),
-        floatingActionButton: Padding(
+      ),
+      floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 90.0),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -2622,6 +2866,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               icon: const Icon(Icons.public),
               tooltip: l10n.communityRoutes,
               onPressed: () async {
+                final connectivityResult = await ConnectivityService().checkConnection();
+                if (!connectivityResult && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.noInternetForOperation),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (!mounted) return;
+                
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -2720,7 +2977,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: SizedBox(
@@ -2750,7 +3007,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -2779,103 +3036,54 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            key: const ValueKey('google_map'),
-            onMapCreated: (GoogleMapController controller) async {
-              _mapController = controller;
-              _isMapInitialized = true;
-              if (widget.initialLocation != null) {
-                await _goToInitialLocation();
-              } else if (_currentPosition != null) {
-                await _goToCurrentLocation(isInitial: true);
-              }
-            },
-            initialCameraPosition: initialCamPos,
-            markers: _markers,
-            polylines: _polylines,
-            onLongPress: (pos) async {
-              if (_activeRouteLocations != null) return;
-
-              if (_isSelectingEndpoint) {
-                final geoName =
-                    await _directionsService.getPlaceName(pos) ??
-                        l10n.unknownLocation;
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(l10n.confirmEndpointDialogTitle),
-                    content:
-                        Text(l10n.confirmEndpointDialogContent(geoName)),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(l10n.cancel),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text(l10n.confirm),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirmed == true) {
-                  final endLocation = TravelLocation(
-                    name: l10n.selectedEndpoint,
-                    geoName: geoName,
-                    latitude: pos.latitude,
-                    longitude: pos.longitude,
-                    firestoreId: 'end',
-                    userId: '',
-                  );
-                  final result = await Navigator.push<dynamic>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LocationSelectionScreen(
-                        initialLocations: _locationsForRoute,
-                        endLocation: endLocation,
-                      ),
-                    ),
-                  );
-                  if (result is List<TravelLocation>) {
-                    _drawRoute(result);
-                  } else if (result == 'change_end_location') {
-                    setState(() {
-                      _isSelectingEndpoint = true;
-                    });
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.selectNewEndpoint)),
-                      );
-                    }
-                  }
+      body: Listener(
+        onPointerDown: _onPointerDown,
+        onPointerUp: _onPointerUp,
+        onPointerMove: _onPointerMove,
+        child: Stack(
+          children: [
+            GoogleMap(
+              key: const ValueKey('google_map'),
+              onMapCreated: (GoogleMapController controller) async {
+                _mapController = controller;
+                _isMapInitialized = true;
+                if (widget.initialLocation != null) {
+                  await _goToInitialLocation();
+                } else if (_currentPosition != null) {
+                  await _goToCurrentLocation(isInitial: true);
                 }
+              },
+              initialCameraPosition: initialCamPos,
+              markers: _markers,
+              polylines: _polylines,
+              mapType: _currentMapType,
+              compassEnabled: false,
+              myLocationButtonEnabled: false,
+              myLocationEnabled: false,
+              onCameraMove: (position) {
+                _cameraPosition = position;
                 setState(() {
-                  _isSelectingEndpoint = false;
+                  _currentBearing = position.bearing;
                 });
-              } else {
-                final geoName = await _directionsService.getPlaceName(pos) ??
-                    l10n.unknownLocation;
-                _showAddLocationDialog(pos, geoName);
-              }
-            },
-            mapType: _currentMapType,
-            compassEnabled: false,
-            myLocationButtonEnabled: false,
-            myLocationEnabled: false,
-            onCameraMove: (position) {
-              _cameraPosition = position;
-              setState(() {
-                _currentBearing = position.bearing;
-              });
-            },
-          ),
-          if (_showApiKeyWarning)
+              },
+            ),
+            if (_isLongPressing && _longPressPosition != null)
+              Positioned(
+                left: _longPressPosition!.dx - 40,
+                top: _longPressPosition!.dy - 40,
+                child: AnimatedBuilder(
+                  animation: _longPressController,
+                  builder: (context, child) {
+                    return LongPressIndicator(
+                      progress: _longPressController.value,
+                    );
+                  },
+                ),
+              ),
+            if (_showApiKeyWarning)
             Positioned.fill(
               child: Container(
-              color: Colors.grey.withAlpha(26),
+              color: Colors.grey.withValues(alpha: 0.1),
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -2905,7 +3113,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
@@ -2973,7 +3181,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -3086,20 +3294,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               ],
             ),
           ),
-          Positioned(
-            top: 70,
-            right: 15,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            Positioned(
+              top: 70,
+              right: 15,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
               child: FloatingActionButton(
                 heroTag: 'mapTypeFab',
                 mini: true,
@@ -3127,7 +3335,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -3153,6 +3361,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
         ],
       ),
+    ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
         child: Container(
@@ -3160,7 +3369,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),

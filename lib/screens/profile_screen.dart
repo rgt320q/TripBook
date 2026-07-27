@@ -11,6 +11,7 @@ import 'package:tripbook/screens/avatar_selection_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/utils/avatar_utils.dart';
 import 'package:tripbook/services/auth_service.dart';
 
@@ -135,63 +136,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _saveProfile() async {
     if (_formKey.currentState!.validate()) {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+      await ConnectivityService().executeWithConnectivityCheck(
+        context,
+        () async {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user == null) return;
 
-      final userProfile = UserProfile(
-        uid: user.uid,
-        name: _usernameController.text.trim(), // Backward compatibility için
-        fullName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
-        firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
-        lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
-        nickname: _nicknameController.text.trim().isNotEmpty ? _nicknameController.text.trim() : null,
-        phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-        languageCode: _selectedLanguage,
-        homeLocation: _homeLocation,
-        birthDate: _birthDate != null ? Timestamp.fromDate(_birthDate!) : null,
-        gender: _gender,
-        selectedAvatarPath: _selectedAvatarPath,
-        showFullNameInPublic: _showFullNameInPublic,
-        showNicknameInPublic: _showNicknameInPublic,
-        displayNameInPublic: _displayNameInPublic,
-        showBioInPublic: _showBioInPublic,
-        showProfileImageInPublic: _showProfileImageInPublic,
-        showPhoneInPublic: _showPhoneInPublic,
-        showBirthDateInPublic: _showBirthDateInPublic,
-        showGenderInPublic: _showGenderInPublic,
-      );
+          final userProfile = UserProfile(
+            uid: user.uid,
+            name: _usernameController.text.trim(), // Backward compatibility için
+            fullName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
+            firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
+            lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
+            nickname: _nicknameController.text.trim().isNotEmpty ? _nicknameController.text.trim() : null,
+            phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+            bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
+            languageCode: _selectedLanguage,
+            homeLocation: _homeLocation,
+            birthDate: _birthDate != null ? Timestamp.fromDate(_birthDate!) : null,
+            gender: _gender,
+            selectedAvatarPath: _selectedAvatarPath,
+            showFullNameInPublic: _showFullNameInPublic,
+            showNicknameInPublic: _showNicknameInPublic,
+            displayNameInPublic: _displayNameInPublic,
+            showBioInPublic: _showBioInPublic,
+            showProfileImageInPublic: _showProfileImageInPublic,
+            showPhoneInPublic: _showPhoneInPublic,
+            showBirthDateInPublic: _showBirthDateInPublic,
+            showGenderInPublic: _showGenderInPublic,
+          );
 
-      try {
-        await _firestoreService.updateUserProfile(userProfile);
-        if (mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          if (_selectedLanguage != null) {
-            Provider.of<LocaleProvider>(
-              context,
-              listen: false,
-            ).setLocale(Locale(_selectedLanguage!));
+          try {
+            await _firestoreService.updateUserProfile(userProfile);
+            if (mounted) {
+              final l10n = AppLocalizations.of(context)!;
+              if (_selectedLanguage != null) {
+                Provider.of<LocaleProvider>(
+                  context,
+                  listen: false,
+                ).setLocale(Locale(_selectedLanguage!));
+              }
+
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(
+                content: Text(l10n.profileSaveSuccess),
+                backgroundColor: Colors.green,
+              ));
+              Navigator.of(context).pop();
+            }
+          } catch (e) {
+            if (mounted) {
+              final l10n = AppLocalizations.of(context)!;
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(
+                content: Text(l10n.error(e.toString())),
+                backgroundColor: Colors.red,
+              ));
+            }
           }
-
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(
-            content: Text(l10n.profileSaveSuccess),
-            backgroundColor: Colors.green,
-          ));
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        if (mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(
-            content: Text(l10n.error(e.toString())),
-            backgroundColor: Colors.red,
-          ));
-        }
-      }
+        },
+      );
     }
   }
 

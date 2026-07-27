@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tripbook/screens/auth_screen.dart';
 import 'package:tripbook/screens/map_screen.dart';
 import 'package:tripbook/services/auth_service.dart';
+import 'package:tripbook/services/connectivity_service.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -18,6 +19,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     _authStream = AuthService().authStateChanges;
+    
+    // Initialize connectivity service at the start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ConnectivityService().initialize(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    ConnectivityService().dispose();
+    super.dispose();
   }
 
   @override
