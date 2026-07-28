@@ -413,11 +413,13 @@ class FirestoreService {
 
         await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
       } catch (e, s) {
-        FirebaseCrashlytics.instance.recordError(
-          e,
-          s,
-          reason: 'Error un-sharing route: $routeId',
-        );
+        if (!kIsWeb) {
+          FirebaseCrashlytics.instance.recordError(
+            e,
+            s,
+            reason: 'Error un-sharing route: $routeId',
+          );
+        }
         // Re-throw the exception to be handled by the caller if needed
         rethrow;
       }
@@ -511,11 +513,13 @@ class FirestoreService {
       }
       return null;
     } catch (e, s) {
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        s,
-        reason: 'Error getting user rating for route: $routeId',
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          s,
+          reason: 'Error getting user rating for route: $routeId',
+        );
+      }
       return null;
     }
   }
@@ -575,11 +579,13 @@ class FirestoreService {
       final docRef = await _reachedLogsCollection.add(log);
       return docRef.id;
     } catch (e, s) {
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        s,
-        reason: 'Error adding reached location log',
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          s,
+          reason: 'Error adding reached location log',
+        );
+      }
       return null;
     }
   }
@@ -665,11 +671,13 @@ class FirestoreService {
       }
       return null;
     } catch (e, s) {
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        s,
-        reason: 'Error getting user profile by ID: $userId',
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          s,
+          reason: 'Error getting user profile by ID: $userId',
+        );
+      }
       return null;
     }
   }
@@ -706,11 +714,13 @@ class FirestoreService {
       }
       return profiles;
     } catch (e, s) {
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        s,
-        reason: 'Error getting user profiles by IDs',
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          s,
+          reason: 'Error getting user profiles by IDs',
+        );
+      }
       return {};
     }
   }

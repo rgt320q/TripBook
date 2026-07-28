@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tripbook/services/notification_service.dart';
 
@@ -23,7 +24,15 @@ class AuthService {
       await _notificationService.onUserLogin(); // Save FCM token
       return null; // Success
     } on FirebaseAuthException catch (e) {
-      return e.message; // Return error message
+      if (kDebugMode) {
+        print('FirebaseAuthException: ${e.code} - ${e.message}');
+      }
+      return e.message ?? e.code; // Return error message or code
+    } catch (e) {
+      if (kDebugMode) {
+        print('Unknown Auth Error: $e');
+      }
+      return e.toString();
     }
   }
 
@@ -39,7 +48,15 @@ class AuthService {
       await _notificationService.onUserLogin(); // Save FCM token
       return null; // Success
     } on FirebaseAuthException catch (e) {
-      return e.message; // Return error message
+      if (kDebugMode) {
+        print('FirebaseAuthException: ${e.code} - ${e.message}');
+      }
+      return e.message ?? e.code; // Return error message or code
+    } catch (e) {
+      if (kDebugMode) {
+        print('Unknown Auth Error: $e');
+      }
+      return e.toString();
     }
   }
 

@@ -88,54 +88,53 @@ class _GroupsScreenState extends State<GroupsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
+              scrollable: true,
               title: Text(
                 groupToEdit == null
                     ? AppLocalizations.of(context)!.newGroup
                     : AppLocalizations.of(context)!.editGroup,
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: _groupNameController,
-                      decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.groupName,
-                      ),
-                      autofocus: true,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _groupNameController,
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.groupName,
                     ),
-                    const SizedBox(height: 20),
-                    Text(AppLocalizations.of(context)!.selectGroupColor),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: _groupColors.map((color) {
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedColor = color;
-                            });
-                          },
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: _selectedColor == color
-                                    ? Colors.black
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(AppLocalizations.of(context)!.selectGroupColor),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: _groupColors.map((color) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedColor = color;
+                          });
+                        },
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _selectedColor == color
+                                  ? Colors.black
+                                  : Colors.transparent,
+                              width: 2,
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(

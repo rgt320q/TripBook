@@ -31,11 +31,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       message.data['title'] ?? message.notification?.title ?? 'New Message';
   final body = message.data['body'] ?? message.notification?.body ?? '';
 
-  await NotificationService().showNotification(
-    title,
-    body,
-    payload: message.data['payload'] as String?,
-  );
+  if (!kIsWeb) {
+    await NotificationService().showNotification(
+      title,
+      body,
+      payload: message.data['payload'] as String?,
+    );
+  }
 }
 
 class NotificationService {
@@ -54,25 +56,27 @@ class NotificationService {
     void Function(NotificationResponse)?
         onDidReceiveBackgroundNotificationResponse,
   }) async {
-    // --- Local Notifications Initialization ---
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    if (!kIsWeb) {
+      // --- Local Notifications Initialization ---
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings();
+      final DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings();
 
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+      final InitializationSettings initializationSettings =
+          InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
 
-    await _flutterLocalNotificationsPlugin.initialize(
-      settings: initializationSettings,
-      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
-      onDidReceiveBackgroundNotificationResponse:
-          onDidReceiveBackgroundNotificationResponse,
-    );
+      await _flutterLocalNotificationsPlugin.initialize(
+        settings: initializationSettings,
+        onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+        onDidReceiveBackgroundNotificationResponse:
+            onDidReceiveBackgroundNotificationResponse,
+      );
+    }
 
     // --- Firebase Messaging Initialization ---
     await _requestPermissions();
@@ -90,16 +94,27 @@ class NotificationService {
         if (kDebugMode) {
           print('Message also contained a notification: ${message.notification}');
         }
-        showNotification(
-          message.notification?.title ?? 'New Message',
-          message.notification?.body ?? '',
-          payload: message.data['payload'] as String?,
-        );
+        if (!kIsWeb) {
+          showNotification(
+            message.notification?.title ?? 'New Message',
+            message.notification?.body ?? '',
+            payload: message.data['payload'] as String?,
+          );
+        } else {
+          // On web, we could use native browser notifications if we wanted, 
+          // but for now we'll just log it as FirebaseMessaging usually handles 
+          // notifications automatically if the app is in the background.
+          if (kDebugMode) {
+            print('Web notification received in foreground: ${message.notification?.title}');
+          }
+        }
       }
     });
 
     // Set the background message handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -159,6 +174,8 @@ class NotificationService {
     String body, {
     String? payload,
   }) async {
+    if (kIsWeb) return;
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'high_importance_channel', // channel id (matches AndroidManifest)
@@ -184,11 +201,13 @@ class NotificationService {
 
   // Call this method on user login
   Future<void> onUserLogin() async {
+    if (kIsWeb) return;
     await _getAndSaveToken();
   }
 
   // Call this method on user logout
   Future<void> onUserLogout() async {
+    if (kIsWeb) return;
     final user = _auth.currentUser;
     if (user == null) return;
 

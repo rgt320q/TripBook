@@ -230,6 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(l10n.changePassword),
         content: StatefulBuilder(
           builder: (context, setState) => Form(

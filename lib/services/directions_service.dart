@@ -59,11 +59,13 @@ class DirectionsService {
       print('DirectionsService: API Key loaded: $keyDisplay');
     }
     if (_apiKey.isEmpty) {
-      FirebaseCrashlytics.instance.recordError(
-        'FATAL ERROR: GOOGLE_MAPS_API_KEY is not set in the .env file.',
-        null,
-        fatal: true,
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          'FATAL ERROR: GOOGLE_MAPS_API_KEY is not set in the .env file.',
+          null,
+          fatal: true,
+        );
+      }
     }
     _sessionToken = _uuid.v4();
   }
@@ -501,18 +503,22 @@ class DirectionsService {
           return "Bilinmeyen Konum";
         }
       } else {
-        FirebaseCrashlytics.instance.recordError(
-          'Failed to get place name for position: $position',
-          null,
-          reason: 'API call failed with status code ${response.statusCode}',
-        );
+        if (!kIsWeb) {
+          FirebaseCrashlytics.instance.recordError(
+            'Failed to get place name for position: $position',
+            null,
+            reason: 'API call failed with status code ${response.statusCode}',
+          );
+        }
         return null;
       }
     } catch (e) {
-      FirebaseCrashlytics.instance.recordError(
-        'Error getting place name for position: $position - $e',
-        null,
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          'Error getting place name for position: $position - $e',
+          null,
+        );
+      }
       return null;
     }
   }
@@ -540,10 +546,12 @@ class DirectionsService {
         }
       }
     } catch (e) {
-      FirebaseCrashlytics.instance.recordError(
-        'Error getting autocomplete for input: $input - $e',
-        null,
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          'Error getting autocomplete for input: $input - $e',
+          null,
+        );
+      }
     }
     return [];
   }
@@ -572,10 +580,12 @@ class DirectionsService {
     } catch (e) {
       // Reset session token even on error
       _sessionToken = _uuid.v4();
-      FirebaseCrashlytics.instance.recordError(
-        'Error getting place details for place_id: $placeId - $e',
-        null,
-      );
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(
+          'Error getting place details for place_id: $placeId - $e',
+          null,
+        );
+      }
     }
     return null;
   }

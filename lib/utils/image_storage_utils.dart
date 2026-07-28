@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -9,13 +8,17 @@ class ImageStorageUtils {
   static const String _profileImagesDir = 'profile_images';
   
   /// Uygulama belgeler dizinini al
-  static Future<Directory> get _appDocumentsDirectory async {
+  static Future<dynamic> get _appDocumentsDirectory async {
+    if (kIsWeb) return null;
     return await getApplicationDocumentsDirectory();
   }
   
   /// Profil resimleri dizinini al veya oluştur
-  static Future<Directory> get _profileImagesDirectory async {
+  static Future<dynamic> get _profileImagesDirectory async {
+    if (kIsWeb) return null;
     final appDir = await _appDocumentsDirectory;
+    if (appDir == null) return null;
+    
     final profileDir = Directory(path.join(appDir.path, _profileImagesDir));
     
     if (!await profileDir.exists()) {
@@ -26,13 +29,14 @@ class ImageStorageUtils {
   }
   
   /// Profil resmini kaydet ve dosya yolunu döndür
-  static Future<String?> saveProfileImage(File imageFile, String userId) async {
+  static Future<String?> saveProfileImage(dynamic imageFile, String userId) async {
+    if (kIsWeb) return null;
     try {
       // Önce eski dosyayı sil (varsa)
       await deleteProfileImage(userId);
       
       // Resmi yeniden boyutlandır ve optimize et
-      final Uint8List imageBytes = await imageFile.readAsBytes();
+      final Uint8List imageBytes = await (imageFile as File).readAsBytes();
       img.Image? originalImage = img.decodeImage(imageBytes);
       
       if (originalImage == null) {
@@ -72,9 +76,12 @@ class ImageStorageUtils {
   }
   
   /// Profil resmini al
-  static Future<File?> getProfileImage(String userId) async {
+  static Future<dynamic> getProfileImage(String userId) async {
+    if (kIsWeb) return null;
     try {
       final profileDir = await _profileImagesDirectory;
+      if (profileDir == null) return null;
+      
       final fileName = '$userId.jpg';
       final imageFile = File(path.join(profileDir.path, fileName));
       
@@ -93,8 +100,11 @@ class ImageStorageUtils {
   
   /// Profil resmini sil
   static Future<bool> deleteProfileImage(String userId) async {
+    if (kIsWeb) return false;
     try {
       final profileDir = await _profileImagesDirectory;
+      if (profileDir == null) return false;
+      
       final fileName = '$userId.jpg';
       final imageFile = File(path.join(profileDir.path, fileName));
       
@@ -114,8 +124,11 @@ class ImageStorageUtils {
   
   /// Profil resmi var mı kontrol et
   static Future<bool> hasProfileImage(String userId) async {
+    if (kIsWeb) return false;
     try {
       final profileDir = await _profileImagesDirectory;
+      if (profileDir == null) return false;
+      
       final fileName = '$userId.jpg';
       final imageFile = File(path.join(profileDir.path, fileName));
       
@@ -130,8 +143,10 @@ class ImageStorageUtils {
   
   /// Tüm profil resimlerinin toplam boyutunu al (MB cinsinden)
   static Future<double> getTotalImageSize() async {
+    if (kIsWeb) return 0.0;
     try {
       final profileDir = await _profileImagesDirectory;
+      if (profileDir == null) return 0.0;
       
       if (!await profileDir.exists()) {
         return 0.0;
@@ -158,8 +173,10 @@ class ImageStorageUtils {
   
   /// Eski profil resimlerini temizle (örneğin artık kullanılmayan kullanıcıların)
   static Future<void> cleanupOldImages(List<String> activeUserIds) async {
+    if (kIsWeb) return;
     try {
       final profileDir = await _profileImagesDirectory;
+      if (profileDir == null) return;
       
       if (!await profileDir.exists()) {
         return;

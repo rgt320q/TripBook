@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/services/auth_service.dart';
 import 'package:tripbook/services/connectivity_service.dart';
-import 'package:tripbook/l10n/app_localizations.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -23,52 +24,56 @@ class _AuthScreenState extends State<AuthScreen> {
     FocusScope.of(context).unfocus(); // Close keyboard
 
     if (isValid == true) {
-      final connectivityResult = await ConnectivityService().executeWithConnectivityCheck(
-        context,
-        () async {
-          _formKey.currentState?.save();
-          setState(() {
-            _isLoading = true;
+      final connectivityResult = await ConnectivityService()
+          .executeWithConnectivityCheck(context, () async {
+            _formKey.currentState?.save();
+            setState(() {
+              _isLoading = true;
+            });
+
+            String? authResult;
+            if (_isLogin) {
+              authResult = await _authService.signIn(
+                email: _email,
+                password: _password,
+              );
+            } else {
+              authResult = await _authService.signUp(
+                email: _email,
+                password: _password,
+              );
+            }
+
+            if (authResult != null) {
+              if (kDebugMode) {
+                print('Auth Error Message: $authResult');
+              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(authResult),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  duration: const Duration(seconds: 5),
+                  action: SnackBarAction(
+                    label: 'OK',
+                    textColor: Colors.white,
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            } else {
+              // Login/Signup successful.
+              // No need to Navigator.pop() here as AuthWrapper handles the transition
+              // automatically by listening to authStateChanges.
+            }
+
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
           });
 
-          String? authResult;
-          if (_isLogin) {
-            authResult = await _authService.signIn(
-              email: _email,
-              password: _password,
-            );
-          } else {
-            authResult = await _authService.signUp(
-              email: _email,
-              password: _password,
-            );
-          }
-
-          if (authResult != null) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(authResult),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          } else {
-            // Login/Signup successful, simply pop AuthScreen
-            if (mounted) {
-              Navigator.of(
-                context,
-              ).pop(); // Just pop, let AuthWrapper handle the rest
-            }
-          }
-
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        },
-      );
-      
       if (!connectivityResult && mounted) {
         setState(() {
           _isLoading = false;
@@ -105,16 +110,18 @@ class _AuthScreenState extends State<AuthScreen> {
           ElevatedButton(
             onPressed: () async {
               if (resetEmail.isEmpty || !resetEmail.contains('@')) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.enterValidEmail)),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(l10n.enterValidEmail)));
                 return;
               }
-              
+
               await ConnectivityService().executeWithConnectivityCheck(
                 context,
                 () async {
-                  final result = await _authService.resetPassword(email: resetEmail);
+                  final result = await _authService.resetPassword(
+                    email: resetEmail,
+                  );
                   if (!mounted) return;
                   Navigator.of(ctx).pop();
                   if (result == null) {
@@ -145,97 +152,140 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       body: Center(
-        child: Card(
-          margin: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      _isLogin ? l10n.login : l10n.signUp,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      key: const ValueKey('email'),
-                      validator: (value) {
-                        final trimmedValue = value?.trim();
-                        if (trimmedValue == null || trimmedValue.isEmpty) {
-                          return l10n.enterValidEmail;
-                        }
-                        final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
-                        if (!emailRegex.hasMatch(trimmedValue)) {
-                          return l10n.enterValidEmail;
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _email = value!.trim();
-                      },
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(labelText: l10n.emailAddress),
-                    ),
-                    TextFormField(
-                      key: const ValueKey('password'),
-                      validator: (value) {
-                        final trimmedValue = value?.trim() ?? '';
-                        if (trimmedValue.isEmpty) {
-                          return l10n.passwordMinLengthError;
-                        }
-                        if (trimmedValue.length < 8) {
-                          return l10n.passwordMinLengthError;
-                        }
-                        if (trimmedValue.contains(' ')) {
-                          return l10n.passwordWhitespaceError;
-                        }
-                        final passwordRegExp = RegExp(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$');
-                        if (!passwordRegExp.hasMatch(trimmedValue)) {
-                          return l10n.passwordComplexityError;
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _password = value!.trim();
-                      },
-                      obscureText: true,
-                      decoration: InputDecoration(labelText: l10n.password),
-                    ),
-                    if (_isLogin && !_isLoading)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _showResetPasswordDialog,
-                          child: Text(l10n.forgotPassword),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        _isLogin ? l10n.login : l10n.signUp,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    const SizedBox(height: 20),
-                    if (_isLoading) const CircularProgressIndicator(),
-                    if (!_isLoading)
-                      ElevatedButton(
-                        onPressed: _trySubmit,
-                        child: Text(_isLogin ? l10n.login : l10n.signUp),
-                      ),
-                    if (!_isLoading)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLogin = !_isLogin;
-                          });
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        key: const ValueKey('email'),
+                        validator: (value) {
+                          final trimmedValue = value?.trim();
+                          if (trimmedValue == null || trimmedValue.isEmpty) {
+                            return l10n.enterValidEmail;
+                          }
+                          final emailRegex = RegExp(
+                            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                          );
+                          if (!emailRegex.hasMatch(trimmedValue)) {
+                            return l10n.enterValidEmail;
+                          }
+                          return null;
                         },
-                        child: Text(
-                          _isLogin
-                              ? l10n.createNewAccount
-                              : l10n.alreadyHaveAccount,
+                        onSaved: (value) {
+                          _email = value!.trim();
+                        },
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: l10n.emailAddress,
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        key: const ValueKey('password'),
+                        validator: (value) {
+                          final trimmedValue = value?.trim() ?? '';
+                          if (trimmedValue.isEmpty) {
+                            return l10n.passwordMinLengthError;
+                          }
+                          if (trimmedValue.length < 8) {
+                            return l10n.passwordMinLengthError;
+                          }
+                          if (trimmedValue.contains(' ')) {
+                            return l10n.passwordWhitespaceError;
+                          }
+                          final passwordRegExp = RegExp(
+                            r'^(?=.*[A-Za-z])(?=.*\d).{8,}$',
+                          );
+                          if (!passwordRegExp.hasMatch(trimmedValue)) {
+                            return l10n.passwordComplexityError;
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _password = value!.trim();
+                        },
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.password,
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      if (_isLogin && !_isLoading)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _showResetPasswordDialog,
+                            child: Text(l10n.forgotPassword),
+                          ),
+                        ),
+                      const SizedBox(height: 32),
+                      if (_isLoading)
+                        const CircularProgressIndicator()
+                      else ...[
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: _trySubmit,
+                            child: Text(
+                              _isLogin ? l10n.login : l10n.signUp,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                            });
+                          },
+                          child: Text(
+                            _isLogin
+                                ? l10n.createNewAccount
+                                : l10n.alreadyHaveAccount,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
