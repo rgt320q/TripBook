@@ -30,9 +30,10 @@ void main() async {
   await dotenv.load(fileName: "assets/.env");
 
   if (kIsWeb) {
-    // This key is ONLY for rendering the map UI.
-    // RESTRICT THIS KEY IN CLOUD CONSOLE to your specific Web domains.
-    loadGoogleMapsScript("AIzaSyC-wXmwQoc_Dxv_D61zq7ehJOgL_xY92uQ");
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (apiKey != null) {
+      loadGoogleMapsScript(apiKey);
+    }
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

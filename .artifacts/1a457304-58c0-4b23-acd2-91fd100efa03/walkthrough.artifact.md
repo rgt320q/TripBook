@@ -28,7 +28,7 @@ Run this in your terminal to tell Firebase which key to use:
 ```bash
 firebase functions:secrets:set GOOGLE_MAPS_API_KEY
 ```
-When prompted, paste your key: `AIzaSyC-wXmwQoc_Dxv_D61zq7ehJOgL_xY92uQ`
+When prompted, paste your unrestricted backend key.
 
 ### Step 2: Deploy to Firebase
 ```bash

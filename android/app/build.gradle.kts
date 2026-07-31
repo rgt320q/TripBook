@@ -9,8 +9,12 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
-// Note: The Maps API Key for Rendering is now hardcoded below for simplicity
-// as all sensitive REST calls are handled via the Backend Proxy.
+// Read secrets
+val secretsFile = rootProject.file("secrets.properties")
+val secrets = Properties()
+if (secretsFile.exists()) {
+    secrets.load(FileInputStream(secretsFile))
+}
 
 android {
     namespace = "com.cetinsoft.tripbook"
@@ -33,8 +37,7 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // RESTRICT THIS KEY IN CLOUD CONSOLE to "Android Apps" with your Package Name and SHA-1
-        resValue("string", "google_maps_api_key", "AIzaSyC-wXmwQoc_Dxv_D61zq7ehJOgL_xY92uQ")
+        resValue("string", "google_maps_api_key", secrets.getProperty("GOOGLE_MAPS_API_KEY") ?: "")
     }
 
     buildTypes {
