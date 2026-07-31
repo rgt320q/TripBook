@@ -1,7 +1,5 @@
-# Task List - Fix Gesture Bleed-through
+# Task List - Resolve Backend Secret Conflict
 
-- `[x]` Add `_isAnyModalOpen` state to `_MapScreenState`
-- `[x]` Connect `GoogleMap` gesture properties to `_isAnyModalOpen`
-- `[x]` Update `_showRouteSummary` to toggle `_isAnyModalOpen`
-- `[x]` Update `_showRouteCreationDialog` to toggle `_isAnyModalOpen`
-- `[x]` Verify interactions on Web
+- `[x]` Rename secret to `MAPS_PROXY_KEY` in `functions/index.js`
+- `[ ]` Remind user to set `MAPS_PROXY_KEY` secret
+- `[ ]` Remind user to deploy and verify

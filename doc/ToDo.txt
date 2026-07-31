@@ -2,4 +2,4 @@ Route summary de Mouse ekrana basık tutunca aşağı yukarı kaydırılabilsin.
 Goto my location butonu haritanın kendi butonlarının üzerine çıkıyor. Arkasında başka butona denk gelmeyecek bir pozisyona taşı.
 web de Ana ekrandaki Search kutusuna metin girince arama yapmıyor
 web ve android de Harita üzerinde lokasyon seçimi için basık tutulduğunda gelen add new location kısmında Google Maps Name kısmına seçilen alanın harita bilgileri gelmiyor.
-API Key güvenliğini sağla.
+!!! API Key ler canlıya geçmeden değiştirilecek.

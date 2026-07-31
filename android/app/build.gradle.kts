@@ -9,15 +9,8 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
-// Read the .env file
-val envFile = rootProject.file("../assets/.env")
-val properties = Properties()
-if (envFile.exists()) {
-    val stream = FileInputStream(envFile)
-    properties.load(stream)
-    stream.close()
-}
-
+// Note: The Maps API Key for Rendering is now hardcoded below for simplicity
+// as all sensitive REST calls are handled via the Backend Proxy.
 
 android {
     namespace = "com.cetinsoft.tripbook"
@@ -40,7 +33,8 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        resValue("string", "google_maps_api_key", properties.getProperty("GOOGLE_MAPS_API_KEY_ANDROID") ?: "")
+        // RESTRICT THIS KEY IN CLOUD CONSOLE to "Android Apps" with your Package Name and SHA-1
+        resValue("string", "google_maps_api_key", "AIzaSyC-wXmwQoc_Dxv_D61zq7ehJOgL_xY92uQ")
     }
 
     buildTypes {

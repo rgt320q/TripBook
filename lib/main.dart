@@ -1,18 +1,20 @@
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:tripbook/providers/community_routes_provider.dart';
-import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, PlatformDispatcher;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb, kDebugMode, PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:tripbook/firebase_options.dart';
+import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/non_web_script_loader.dart'
+    if (dart.library.html) 'package:tripbook/web_script_loader.dart';
+import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/providers/locale_provider.dart';
 import 'package:tripbook/services/navigation_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:tripbook/widgets/auth_wrapper.dart';
-import 'package:tripbook/non_web_script_loader.dart' if (dart.library.html) 'package:tripbook/web_script_loader.dart';
 
 // This needs to be a top-level function for background isolate registration.
 @pragma('vm:entry-point')
@@ -28,10 +30,9 @@ void main() async {
   await dotenv.load(fileName: "assets/.env");
 
   if (kIsWeb) {
-    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
-    if (apiKey != null) {
-      loadGoogleMapsScript(apiKey);
-    }
+    // This key is ONLY for rendering the map UI.
+    // RESTRICT THIS KEY IN CLOUD CONSOLE to your specific Web domains.
+    loadGoogleMapsScript("AIzaSyC-wXmwQoc_Dxv_D61zq7ehJOgL_xY92uQ");
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -110,8 +111,10 @@ class MyApp extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
             dialogTheme: DialogThemeData(

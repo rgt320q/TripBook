@@ -27,6 +27,7 @@ import 'package:tripbook/services/database_service.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/services/notification_service.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 import 'package:tripbook/widgets/duration_selector.dart';
 import 'package:tripbook/widgets/loading_overlay.dart';
@@ -174,95 +175,97 @@ class _MapScreenState extends State<MapScreen>
     final result = await showDialog<LocationGroup>(
       context: context,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              scrollable: true,
-              title: Text(l10n.newGroup),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: groupNameController,
-                      decoration: InputDecoration(labelText: l10n.groupName),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return l10n.locationNameEmptyError;
-                        }
-                        final invalidChars = RegExp(r'[<>]');
-                        if (invalidChars.hasMatch(value)) {
-                          return l10n.invalidGroupNameError;
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Text(l10n.selectGroupColor),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: _groupColors.map((color) {
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedColor = color;
-                            });
-                          },
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selectedColor == color
-                                    ? Colors.black
-                                    : Colors.transparent,
-                                width: 2,
+        return PointerInterceptor(
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                scrollable: true,
+                title: Text(l10n.newGroup),
+                content: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: groupNameController,
+                        decoration: InputDecoration(labelText: l10n.groupName),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.locationNameEmptyError;
+                          }
+                          final invalidChars = RegExp(r'[<>]');
+                          if (invalidChars.hasMatch(value)) {
+                            return l10n.invalidGroupNameError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Text(l10n.selectGroupColor),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: _groupColors.map((color) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            },
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selectedColor == color
+                                      ? Colors.black
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
                               ),
                             ),
-                          ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(l10n.cancel),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        final newGroup = LocationGroup(
+                          name: groupNameController.text.trim(),
+                          // ignore: deprecated_member_use
+                          color: selectedColor.value,
+                          createdAt: DateTime.now(),
+                          userId: FirebaseAuth.instance.currentUser!.uid,
                         );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final newGroup = LocationGroup(
-                        name: groupNameController.text.trim(),
-                        // ignore: deprecated_member_use
-                        color: selectedColor.value,
-                        createdAt: DateTime.now(),
-                        userId: FirebaseAuth.instance.currentUser!.uid,
-                      );
-                      final docRef = await _firestoreService.addGroup(newGroup);
-                      final createdGroup = LocationGroup(
-                        firestoreId: docRef.id,
-                        name: newGroup.name,
-                        color: newGroup.color,
-                        createdAt: newGroup.createdAt,
-                        userId: newGroup.userId,
-                      );
-                      Navigator.of(dialogContext).pop(createdGroup);
-                    }
-                  },
-                  child: Text(l10n.save),
-                ),
-              ],
-            );
-          },
+                        final docRef = await _firestoreService.addGroup(newGroup);
+                        final createdGroup = LocationGroup(
+                          firestoreId: docRef.id,
+                          name: newGroup.name,
+                          color: newGroup.color,
+                          createdAt: newGroup.createdAt,
+                          userId: newGroup.userId,
+                        );
+                        Navigator.of(dialogContext).pop(createdGroup);
+                      }
+                    },
+                    child: Text(l10n.save),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       },
     ).whenComplete(() => setState(() => _isAnyModalOpen = false));
@@ -1562,13 +1565,14 @@ class _MapScreenState extends State<MapScreen>
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         final l10n = AppLocalizations.of(modalContext)!;
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: kIsWeb ? 600 : double.infinity,
-              maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
-            ),
-            child: Container(
+        return PointerInterceptor(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: kIsWeb ? 600 : double.infinity,
+                maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
+              ),
+              child: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -2253,9 +2257,10 @@ class _MapScreenState extends State<MapScreen>
               ),
             ),
           ),
-        );
-      },
-    ).whenComplete(() => setState(() => _isAnyModalOpen = false));
+        ),
+      );
+    },
+  ).whenComplete(() => setState(() => _isAnyModalOpen = false));
   }
 
   List<Widget> _buildRawNeeds(
@@ -2779,13 +2784,14 @@ class _MapScreenState extends State<MapScreen>
             ),
           ),
         ),
-        body: Listener(
-          onPointerDown: _onPointerDown,
-          onPointerUp: _onPointerUp,
-          onPointerMove: _onPointerMove,
-          child: Stack(
-            children: [
-              GoogleMap(
+        body: Stack(
+          children: [
+            // Map layer with listener
+            Listener(
+              onPointerDown: _onPointerDown,
+              onPointerUp: _onPointerUp,
+              onPointerMove: _onPointerMove,
+              child: GoogleMap(
                 key: const ValueKey('endpoint_google_map'),
                 onMapCreated: (GoogleMapController controller) {
                   _mapController = controller;
@@ -2810,23 +2816,29 @@ class _MapScreenState extends State<MapScreen>
                 rotateGesturesEnabled: !_isAnyModalOpen,
                 tiltGesturesEnabled: !_isAnyModalOpen,
               ),
-              if (_isLongPressing && _longPressPosition != null)
-                Positioned(
-                  left: _longPressPosition!.dx - 40,
-                  top: _longPressPosition!.dy - 40,
-                  child: AnimatedBuilder(
-                    animation: _longPressController,
-                    builder: (context, child) {
-                      return LongPressIndicator(
-                        progress: _longPressController.value,
-                      );
-                    },
-                  ),
-                ),
+            ),
+            
+            // Long press indicator
+            if (_isLongPressing && _longPressPosition != null)
               Positioned(
-                top: 10,
-                left: 15,
-                right: 15,
+                left: _longPressPosition!.dx - 40,
+                top: _longPressPosition!.dy - 40,
+                child: AnimatedBuilder(
+                  animation: _longPressController,
+                  builder: (context, child) {
+                    return LongPressIndicator(
+                      progress: _longPressController.value,
+                    );
+                  },
+                ),
+              ),
+              
+            // Overlay wrapped in PointerInterceptor
+            Positioned(
+              top: 10,
+              left: 15,
+              right: 15,
+              child: PointerInterceptor(
                 child: Column(
                   children: [
                     Container(
@@ -2954,8 +2966,8 @@ class _MapScreenState extends State<MapScreen>
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 90.0),
@@ -3019,40 +3031,27 @@ class _MapScreenState extends State<MapScreen>
                 );
                 if (!mounted) return;
 
-                // SavedRoutesScreen'den gelen sonucu kontrol et
                 if (result is Map<String, dynamic>) {
-                  // SavedRoutesScreen format: locations ve endLocation
-                  final locations =
-                      result['locations'] as List<TravelLocation>?;
+                  final locations = result['locations'] as List<TravelLocation>?;
                   final endLocation = result['endLocation'] as TravelLocation?;
+                  final waypoints = result['waypoints'] as List<TravelLocation>?;
 
-                  // Alternatif format: waypoints ve endLocation (diğer ekranlar için)
-                  final waypoints =
-                      result['waypoints'] as List<TravelLocation>?;
-
-                  // SavedRoutesScreen formatını kontrol et
                   if (locations != null && endLocation != null) {
                     _drawRoute(locations, endLocation: endLocation);
-                  }
-                  // Alternatif format kontrolü
-                  else if (waypoints != null && endLocation != null) {
+                  } else if (waypoints != null && endLocation != null) {
                     _drawRoute(waypoints, endLocation: endLocation);
                   } else if (waypoints != null && waypoints.isNotEmpty) {
                     _drawRoute(waypoints);
                   } else if (locations != null && locations.isNotEmpty) {
                     _drawRoute(locations);
                   }
-                } else if (result is List<TravelLocation> &&
-                    result.isNotEmpty) {
-                  // Eski format: tüm lokasyonlar liste halinde
+                } else if (result is List<TravelLocation> && result.isNotEmpty) {
                   if (result.length >= 2) {
                     _drawRoute(result);
                   } else {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.locationsNotFoundOrInsufficient),
-                      ),
+                      SnackBar(content: Text(l10n.locationsNotFoundOrInsufficient)),
                     );
                   }
                 }
@@ -3062,8 +3061,7 @@ class _MapScreenState extends State<MapScreen>
               icon: const Icon(Icons.public),
               tooltip: l10n.communityRoutes,
               onPressed: () async {
-                final connectivityResult = await ConnectivityService()
-                    .checkConnection();
+                final connectivityResult = await ConnectivityService().checkConnection();
                 if (!connectivityResult && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -3073,14 +3071,10 @@ class _MapScreenState extends State<MapScreen>
                   );
                   return;
                 }
-
                 if (!mounted) return;
-
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const CommunityRoutesScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const CommunityRoutesScreen()),
                 );
                 if (result is List<TravelLocation>) {
                   _drawRoute(result);
@@ -3093,9 +3087,7 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ReachedLocationsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => ReachedLocationsScreen()),
                 );
               },
             ),
@@ -3105,9 +3097,7 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageLocationsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const ManageLocationsScreen()),
                 );
               },
             ),
@@ -3127,9 +3117,7 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
                 );
               },
             ),
@@ -3149,9 +3137,7 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ReachedLocationsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => ReachedLocationsScreen()),
                 );
               },
             ),
@@ -3178,10 +3164,7 @@ class _MapScreenState extends State<MapScreen>
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Image.asset(
-                    'assets/icon/icon.png',
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset('assets/icon/icon.png', fit: BoxFit.contain),
                 ),
               ),
               const SizedBox(width: 12),
@@ -3228,13 +3211,13 @@ class _MapScreenState extends State<MapScreen>
           ),
         ),
       ),
-      body: Listener(
-        onPointerDown: _onPointerDown,
-        onPointerUp: _onPointerUp,
-        onPointerMove: _onPointerMove,
-        child: Stack(
-          children: [
-            GoogleMap(
+      body: Stack(
+        children: [
+          Listener(
+            onPointerDown: _onPointerDown,
+            onPointerUp: _onPointerUp,
+            onPointerMove: _onPointerMove,
+            child: GoogleMap(
               key: const ValueKey('google_map'),
               onMapCreated: (GoogleMapController controller) async {
                 _mapController = controller;
@@ -3263,21 +3246,21 @@ class _MapScreenState extends State<MapScreen>
                 });
               },
             ),
-            if (_isLongPressing && _longPressPosition != null)
-              Positioned(
-                left: _longPressPosition!.dx - 40,
-                top: _longPressPosition!.dy - 40,
-                child: AnimatedBuilder(
-                  animation: _longPressController,
-                  builder: (context, child) {
-                    return LongPressIndicator(
-                      progress: _longPressController.value,
-                    );
-                  },
-                ),
+          ),
+          if (_isLongPressing && _longPressPosition != null)
+            Positioned(
+              left: _longPressPosition!.dx - 40,
+              top: _longPressPosition!.dy - 40,
+              child: AnimatedBuilder(
+                animation: _longPressController,
+                builder: (context, child) {
+                  return LongPressIndicator(progress: _longPressController.value);
+                },
               ),
-            if (_showApiKeyWarning)
-              Positioned.fill(
+            ),
+          if (_showApiKeyWarning)
+            PointerInterceptor(
+              child: Positioned.fill(
                 child: Container(
                   color: Colors.grey.withValues(alpha: 0.1),
                   child: Center(
@@ -3296,10 +3279,12 @@ class _MapScreenState extends State<MapScreen>
                   ),
                 ),
               ),
-            Positioned(
-              top: 10,
-              left: 15,
-              right: 15,
+            ),
+          Positioned(
+            top: 10,
+            left: 15,
+            right: 15,
+            child: PointerInterceptor(
               child: Column(
                 children: [
                   Container(
@@ -3319,19 +3304,12 @@ class _MapScreenState extends State<MapScreen>
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Icon(
-                            Icons.search,
-                            color: Colors.grey[600],
-                            size: 24,
-                          ),
+                          child: Icon(Icons.search, color: Colors.grey[600], size: 24),
                         ),
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             decoration: InputDecoration(
                               hintText: l10n.searchHint,
                               hintStyle: TextStyle(
@@ -3340,9 +3318,7 @@ class _MapScreenState extends State<MapScreen>
                                 fontWeight: FontWeight.w400,
                               ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
                         ),
@@ -3353,11 +3329,7 @@ class _MapScreenState extends State<MapScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color: Colors.grey[600],
-                              size: 20,
-                            ),
+                            icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
                             onPressed: () {
                               _searchController.clear();
                               FocusScope.of(context).unfocus();
@@ -3386,20 +3358,14 @@ class _MapScreenState extends State<MapScreen>
                         ],
                       ),
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.3,
-                        ),
+                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           child: ListView.separated(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             shrinkWrap: true,
                             itemCount: _placePredictions.length,
-                            separatorBuilder: (context, index) => Divider(
-                              height: 1,
-                              color: Colors.grey[200],
-                              indent: 56,
-                            ),
+                            separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[200], indent: 56),
                             itemBuilder: (context, index) {
                               final prediction = _placePredictions[index];
                               return Material(
@@ -3408,38 +3374,20 @@ class _MapScreenState extends State<MapScreen>
                                   onTap: () async {
                                     final placeId = prediction['place_id'];
                                     if (placeId == null) return;
-
-                                    final details = await _directionsService
-                                        .getPlaceDetails(placeId);
+                                    final details = await _directionsService.getPlaceDetails(placeId);
                                     if (details == null || !mounted) return;
-
-                                    final location =
-                                        details['geometry']?['location'];
+                                    final location = details['geometry']?['location'];
                                     if (location == null) return;
-
                                     final lat = location['lat'];
                                     final lng = location['lng'];
                                     final latLng = LatLng(lat, lng);
-
-                                    _mapController?.animateCamera(
-                                      CameraUpdate.newLatLngZoom(latLng, 15),
-                                    );
-
+                                    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
                                     setState(() {
                                       _searchResultMarker = Marker(
-                                        markerId: const MarkerId(
-                                          'search_result',
-                                        ),
+                                        markerId: const MarkerId('search_result'),
                                         position: latLng,
-                                        infoWindow: InfoWindow(
-                                          title:
-                                              prediction['description'] ??
-                                              l10n.unknownLocation,
-                                        ),
-                                        icon:
-                                            BitmapDescriptor.defaultMarkerWithHue(
-                                              BitmapDescriptor.hueAzure,
-                                            ),
+                                        infoWindow: InfoWindow(title: prediction['description'] ?? l10n.unknownLocation),
+                                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
                                       );
                                       _placePredictions = [];
                                       _searchController.clear();
@@ -3447,44 +3395,27 @@ class _MapScreenState extends State<MapScreen>
                                     });
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                     child: Row(
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: Colors.blue[50],
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: Icon(
-                                            Icons.location_on,
-                                            color: Colors.blue[600],
-                                            size: 20,
-                                          ),
+                                          child: Icon(Icons.location_on, color: Colors.blue[600], size: 20),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            prediction['description'] ??
-                                                l10n.unknownLocation,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            prediction['description'] ?? l10n.unknownLocation,
+                                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(
-                                          Icons.arrow_forward_ios,
-                                          color: Colors.grey[400],
-                                          size: 16,
-                                        ),
+                                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
                                       ],
                                     ),
                                   ),
@@ -3498,8 +3429,36 @@ class _MapScreenState extends State<MapScreen>
                 ],
               ),
             ),
+          ),
+          Positioned(
+            top: 70,
+            right: 15,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                heroTag: 'mapTypeFab',
+                mini: true,
+                onPressed: _toggleMapType,
+                tooltip: l10n.mapTypeTooltip,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.layers, color: Colors.grey[700], size: 20),
+              ),
+            ),
+          ),
+          if (_currentBearing != 0)
             Positioned(
-              top: 70,
+              top: 125,
               right: 15,
               child: Container(
                 decoration: BoxDecoration(
@@ -3513,54 +3472,18 @@ class _MapScreenState extends State<MapScreen>
                   ],
                 ),
                 child: FloatingActionButton(
-                  heroTag: 'mapTypeFab',
+                  heroTag: 'resetBearingFab',
                   mini: true,
-                  onPressed: _toggleMapType,
-                  tooltip: l10n.mapTypeTooltip,
+                  onPressed: _resetBearing,
+                  tooltip: l10n.resetBearingTooltip,
                   backgroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.layers, color: Colors.grey[700], size: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.explore_outlined, color: Colors.grey[700], size: 20),
                 ),
               ),
             ),
-            if (_currentBearing != 0)
-              Positioned(
-                top: 125,
-                right: 15,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: FloatingActionButton(
-                    heroTag: 'resetBearingFab',
-                    mini: true,
-                    onPressed: _resetBearing,
-                    tooltip: l10n.resetBearingTooltip,
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.explore_outlined,
-                      color: Colors.grey[700],
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
@@ -3582,9 +3505,7 @@ class _MapScreenState extends State<MapScreen>
             backgroundColor: Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: const Icon(Icons.my_location, size: 24),
           ),
         ),
@@ -3850,10 +3771,11 @@ class _MapScreenState extends State<MapScreen>
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(l10n.addLocationDialogTitle),
+        return PointerInterceptor(
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text(l10n.addLocationDialogTitle),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -3998,9 +3920,10 @@ class _MapScreenState extends State<MapScreen>
               ],
             );
           },
-        );
-      },
-    ).whenComplete(() => setState(() => _isAnyModalOpen = false));
+        ),
+      );
+    },
+  ).whenComplete(() => setState(() => _isAnyModalOpen = false));
   }
 
   @override
