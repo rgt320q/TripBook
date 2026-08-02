@@ -1,9 +1,7 @@
 import 'dart:convert' as convert;
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -43,37 +41,37 @@ class DirectionsService {
     return _instance;
   }
 
-  late final String _apiKey;
   String? _sessionToken;
   final Uuid _uuid = const Uuid();
 
   DirectionsService._internal() {
-    if (kIsWeb) {
-      _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-    } else {
-      _apiKey =
-          dotenv.env['GOOGLE_MAPS_API_KEY_ANDROID'] ??
-          dotenv.env['GOOGLE_MAPS_API_KEY'] ??
-          '';
-    }
-
-    if (kDebugMode) {
-      final keyDisplay = _apiKey.length > 10
-          ? '${_apiKey.substring(0, 5)}...${_apiKey.substring(_apiKey.length - 6)}'
-          : 'MISSING OR TOO SHORT';
-      print(
-        'DirectionsService: API Key loaded for ${kIsWeb ? "Web" : "Mobile"}: $keyDisplay',
-      );
-    }
-
-    if (_apiKey.isEmpty && !kIsWeb) {
-      FirebaseCrashlytics.instance.recordError(
-        'FATAL ERROR: Maps API Key is not set in the .env file.',
-        null,
-        fatal: true,
-      );
-    }
     _sessionToken = _uuid.v4();
+  }
+
+  /// All Google Maps data calls go through the Firebase Functions proxy so
+  /// the Google Maps API key never leaves the server.
+  static const String _functionsBase =
+      'https://us-central1-tripbook-68238.cloudfunctions.net';
+
+  Future<String?> _idToken() async {
+    try {
+      return await FirebaseAuth.instance.currentUser?.getIdToken();
+    } catch (e) {
+      if (kDebugMode) print('Error getting ID token: $e');
+      return null;
+    }
+  }
+
+  Future<http.Response> _proxyGet(
+    String functionName,
+    String query,
+  ) async {
+    final idToken = await _idToken();
+    final url = '$_functionsBase/$functionName?$query';
+    return http.get(
+      Uri.parse(url),
+      headers: {if (idToken != null) 'Authorization': 'Bearer $idToken'},
+    );
   }
 
   Future<DirectionsInfo?> getHybridDirections(
@@ -213,206 +211,8 @@ class DirectionsService {
 
     if (locations.length < 2) return null;
 
-    if (kIsWeb) {
-      // Use the Firebase Function as a proxy on the web to avoid CORS issues.
-      final origin = locations.first;
-      final destination = locations.last;
-      final waypoints = locations.length > 2
-          ? locations
-                .sublist(1, locations.length - 1)
-                .map((loc) => '${loc.latitude},${loc.longitude}')
-                .join('|')
-          : '';
-
-      final modeStr = mode.name; // driving, walking, transit
-
-      const functionUrl =
-          'https://us-central1-tripbook-68238.cloudfunctions.net/getDirections';
-      final url =
-          '$functionUrl?'
-          'origin=${origin.latitude},${origin.longitude}&'
-          'destination=${destination.latitude},${destination.longitude}&'
-          'mode=$modeStr'
-          '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
-
-      // SECURITY: Get Firebase ID Token to authorize the Cloud Function call
-      String? idToken;
-      try {
-        idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-      } catch (e) {
-        if (kDebugMode) print('Error getting ID token: $e');
-      }
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {if (idToken != null) 'Authorization': 'Bearer $idToken'},
-      );
-      if (response.statusCode == 200) {
-        return _parseLegacyResponse(convert.jsonDecode(response.body));
-      }
-      return null;
-    } else {
-      // Try modern Google Routes API v2 first
-      final directionsInfo = await _getDirectionsV2(locations, mode: mode);
-      if (directionsInfo != null) return directionsInfo;
-
-      // Fallback to legacy Directions API
-      if (kDebugMode) {
-        print('DirectionsService: Falling back to legacy Directions API');
-      }
-      return await _getDirectionsLegacy(locations, mode: mode);
-    }
-  }
-
-  Future<DirectionsInfo?> _getDirectionsV2(
-    List<TravelLocation> locations, {
-    required AppTravelMode mode,
-  }) async {
-    const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
-
-    final origin = locations.first;
-    final destination = locations.last;
-    final intermediates = locations.length > 2
-        ? locations
-              .sublist(1, locations.length - 1)
-              .map(
-                (loc) => {
-                  "location": {
-                    "latLng": {
-                      "latitude": loc.latitude,
-                      "longitude": loc.longitude,
-                    },
-                  },
-                },
-              )
-              .toList()
-        : [];
-
-    final String v2Mode;
-    switch (mode) {
-      case AppTravelMode.driving:
-        v2Mode = "DRIVE";
-        break;
-      case AppTravelMode.walking:
-        v2Mode = "WALK";
-        break;
-    }
-
-    final body = {
-      "origin": {
-        "location": {
-          "latLng": {
-            "latitude": origin.latitude,
-            "longitude": origin.longitude,
-          },
-        },
-      },
-      "destination": {
-        "location": {
-          "latLng": {
-            "latitude": destination.latitude,
-            "longitude": destination.longitude,
-          },
-        },
-      },
-      if (intermediates.isNotEmpty) "intermediates": intermediates,
-      "travelMode": v2Mode,
-      "routingPreference": "TRAFFIC_UNAWARE",
-      "polylineQuality": "OVERVIEW",
-      "computeAlternativeRoutes": false,
-      "languageCode": "tr-TR",
-    };
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': _apiKey,
-          'X-Goog-FieldMask':
-              'routes.duration,routes.distanceMeters,routes.polyline,routes.viewport,routes.legs.polyline',
-        },
-        body: convert.jsonEncode(body),
-      );
-
-      if (kDebugMode) {
-        print('Routes API v2 Response Status: ${response.statusCode}');
-        print('Routes API v2 Response Body: ${response.body}');
-      }
-
-      if (response.statusCode == 200) {
-        final json = convert.jsonDecode(response.body);
-        if ((json["routes"] as List?)?.isEmpty ?? true) return null;
-
-        final route = json["routes"][0];
-
-        // Process Distance and Duration
-        final double totalDistanceMeters =
-            (route['distanceMeters'] as num?)?.toDouble() ?? 0.0;
-        final String durationStr = route['duration'] ?? '0s';
-        final int totalDurationSeconds = int.parse(
-          durationStr.replaceAll('s', ''),
-        );
-
-        final duration = Duration(seconds: totalDurationSeconds);
-        String totalDurationText = '';
-        if (duration.inHours > 0) {
-          totalDurationText += '${duration.inHours} h ';
-        }
-        final remainingMinutes = duration.inMinutes % 60;
-        if (remainingMinutes > 0) {
-          totalDurationText += '$remainingMinutes m';
-        }
-        if (totalDurationText.isEmpty) totalDurationText = '0 m';
-
-        final double totalDistanceKm = totalDistanceMeters / 1000.0;
-
-        // Process Bounds (Viewport)
-        final viewport = route['viewport'];
-        if (viewport == null) return null;
-
-        final bounds = LatLngBounds(
-          southwest: LatLng(
-            viewport['low']['latitude'],
-            viewport['low']['longitude'],
-          ),
-          northeast: LatLng(
-            viewport['high']['latitude'],
-            viewport['high']['longitude'],
-          ),
-        );
-
-        // Process Legs Points
-        final List<List<PointLatLng>> legsPoints = [];
-        final List legs = route['legs'] ?? [];
-        for (final leg in legs) {
-          final String? encodedPolyline = leg['polyline']?['encodedPolyline'];
-          if (encodedPolyline != null) {
-            legsPoints.add(PolylinePoints.decodePolyline(encodedPolyline));
-          }
-        }
-
-        return DirectionsInfo(
-          bounds: bounds,
-          legsPoints: legsPoints,
-          totalDistance: '${totalDistanceKm.toStringAsFixed(1)} km',
-          totalDuration: totalDurationText.trim(),
-          duration: duration,
-          distanceValue: totalDistanceMeters,
-          containsStraightLines: false,
-          legsIsStraight: List.filled(legs.length, false),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) print('Error in _getDirectionsV2: $e');
-    }
-    return null;
-  }
-
-  Future<DirectionsInfo?> _getDirectionsLegacy(
-    List<TravelLocation> locations, {
-    required AppTravelMode mode,
-  }) async {
+    // All platforms go through the Firebase Functions proxy so the Google
+    // Maps API key stays server-side.
     final origin = locations.first;
     final destination = locations.last;
     final waypoints = locations.length > 2
@@ -422,28 +222,17 @@ class DirectionsService {
               .join('|')
         : '';
 
-    final url =
-        'https://maps.googleapis.com/maps/api/directions/json?'
+    final modeStr = mode.name; // driving, walking
+
+    final query =
         'origin=${origin.latitude},${origin.longitude}&'
         'destination=${destination.latitude},${destination.longitude}&'
-        '${waypoints.isNotEmpty ? 'waypoints=$waypoints&' : ''}'
-        'mode=${mode.name}&'
-        'language=tr&'
-        'key=$_apiKey';
+        'mode=$modeStr'
+        '${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}';
 
-    try {
-      final response = await http.get(Uri.parse(url));
-
-      if (kDebugMode) {
-        print('Legacy Directions API Response Status: ${response.statusCode}');
-        print('Legacy Directions API Response Body: ${response.body}');
-      }
-
-      if (response.statusCode == 200) {
-        return _parseLegacyResponse(convert.jsonDecode(response.body));
-      }
-    } catch (e) {
-      if (kDebugMode) print('Error in _getDirectionsLegacy: $e');
+    final response = await _proxyGet('getDirections', query);
+    if (response.statusCode == 200) {
+      return _parseLegacyResponse(convert.jsonDecode(response.body));
     }
     return null;
   }
@@ -513,48 +302,21 @@ class DirectionsService {
     }
 
     try {
-      final dynamic responseData;
-
-      if (kIsWeb) {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          if (kDebugMode)
-            print(
-              'DirectionsService: Cannot get geocode on Web, user not logged in.',
-            );
-          return null;
+      final response = await _proxyGet(
+        'getGeocode',
+        'latlng=${position.latitude},${position.longitude}&language=tr',
+      );
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          print(
+            'DirectionsService: getPlaceName failed with status ${response.statusCode}',
+          );
+          print('Response: ${response.body}');
         }
-        final idToken = await user.getIdToken();
-        final url =
-            'https://us-central1-tripbook-68238.cloudfunctions.net/getGeocode?'
-            'latlng=${position.latitude},${position.longitude}&'
-            'language=tr';
-
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {if (idToken != null) 'Authorization': 'Bearer $idToken'},
-        );
-        if (response.statusCode != 200) {
-          if (kDebugMode) {
-            print(
-              'DirectionsService: getPlaceName failed with status ${response.statusCode}',
-            );
-            print('Response: ${response.body}');
-          }
-          return null;
-        }
-        responseData = convert.jsonDecode(response.body);
-      } else {
-        final url =
-            'https://maps.googleapis.com/maps/api/geocode/json?'
-            'latlng=${position.latitude},${position.longitude}&'
-            'key=$_apiKey&'
-            'language=tr';
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode != 200) return null;
-        responseData = convert.jsonDecode(response.body);
+        return null;
       }
 
+      final responseData = convert.jsonDecode(response.body);
       if ((responseData["results"] as List).isNotEmpty) {
         return responseData["results"][0]["formatted_address"];
       } else {
@@ -572,47 +334,24 @@ class DirectionsService {
     }
 
     try {
-      final dynamic responseData;
-
-      if (kIsWeb) {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) return [];
-
-        final idToken = await user.getIdToken();
-        final url =
-            'https://us-central1-tripbook-68238.cloudfunctions.net/getAutocomplete?'
-            'input=${Uri.encodeComponent(input)}&'
-            'sessiontoken=$_sessionToken&'
-            'language=tr&'
-            'components=country:tr';
-
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {if (idToken != null) 'Authorization': 'Bearer $idToken'},
-        );
-        if (response.statusCode != 200) {
-          if (kDebugMode) {
-            print(
-              'DirectionsService: getAutocomplete failed with status ${response.statusCode}',
-            );
-            print('Response: ${response.body}');
-          }
-          return [];
+      final response = await _proxyGet(
+        'getAutocomplete',
+        'input=${Uri.encodeComponent(input)}&'
+        'sessiontoken=$_sessionToken&'
+        'language=tr&'
+        'components=country:tr',
+      );
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          print(
+            'DirectionsService: getAutocomplete failed with status ${response.statusCode}',
+          );
+          print('Response: ${response.body}');
         }
-        responseData = convert.jsonDecode(response.body);
-      } else {
-        final url =
-            'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
-            'input=${Uri.encodeComponent(input)}&'
-            'key=$_apiKey&'
-            'sessiontoken=$_sessionToken&'
-            'language=tr&'
-            'components=country:tr';
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode != 200) return [];
-        responseData = convert.jsonDecode(response.body);
+        return [];
       }
 
+      final responseData = convert.jsonDecode(response.body);
       return responseData['predictions'] ?? [];
     } catch (e) {
       if (kDebugMode) print('Error getting autocomplete: $e');
@@ -624,46 +363,25 @@ class DirectionsService {
     if (!await ConnectivityService().checkConnection()) return null;
 
     try {
-      final dynamic responseData;
-
-      if (kIsWeb) {
-        final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-        final url =
-            'https://us-central1-tripbook-68238.cloudfunctions.net/getPlaceDetails?'
-            'place_id=$placeId&'
-            'sessiontoken=$_sessionToken&'
-            'language=tr&'
-            'fields=geometry';
-
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {if (idToken != null) 'Authorization': 'Bearer $idToken'},
-        );
-        _sessionToken = _uuid.v4(); // Reset token
-        if (response.statusCode != 200) {
-          if (kDebugMode) {
-            print(
-              'DirectionsService: getPlaceDetails failed with status ${response.statusCode}',
-            );
-            print('Response: ${response.body}');
-          }
-          return null;
+      final response = await _proxyGet(
+        'getPlaceDetails',
+        'place_id=$placeId&'
+        'sessiontoken=$_sessionToken&'
+        'language=tr&'
+        'fields=geometry',
+      );
+      _sessionToken = _uuid.v4(); // Reset token
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          print(
+            'DirectionsService: getPlaceDetails failed with status ${response.statusCode}',
+          );
+          print('Response: ${response.body}');
         }
-        responseData = convert.jsonDecode(response.body);
-      } else {
-        final url =
-            'https://maps.googleapis.com/maps/api/place/details/json?'
-            'place_id=$placeId&'
-            'key=$_apiKey&'
-            'sessiontoken=$_sessionToken&'
-            'language=tr&'
-            'fields=geometry';
-        final response = await http.get(Uri.parse(url));
-        _sessionToken = _uuid.v4(); // Reset token
-        if (response.statusCode != 200) return null;
-        responseData = convert.jsonDecode(response.body);
+        return null;
       }
 
+      final responseData = convert.jsonDecode(response.body);
       return responseData['result'];
     } catch (e) {
       _sessionToken = _uuid.v4();
