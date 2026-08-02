@@ -73,6 +73,7 @@ class _MapScreenState extends State<MapScreen>
   Marker? _searchResultMarker;
   CameraPosition? _cameraPosition;
   double _currentBearing = 0.0;
+  bool _isMapRotated = false;
 
   final List<Color> _groupColors = [
     Colors.red,
@@ -846,6 +847,20 @@ class _MapScreenState extends State<MapScreen>
     _scheduleMapUpdate();
   }
 
+  List<LatLng> _decimatePoints(
+    List<LatLng> points, {
+    int maxPoints = 500,
+  }) {
+    if (points.length <= maxPoints) return points;
+    final step = points.length / maxPoints;
+    final result = <LatLng>[];
+    for (int i = 0; i < maxPoints; i++) {
+      result.add(points[(i * step).floor()]);
+    }
+    result.add(points.last);
+    return result;
+  }
+
   Future<void> _updateMapElementsInternal() async {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
@@ -999,7 +1014,9 @@ class _MapScreenState extends State<MapScreen>
           polylineId: const PolylineId('userPath'),
           color: Colors.purpleAccent,
           width: 5,
-          points: List.from(_userPathHistory),
+          // Decimate the path so long trips don't rebuild a huge polyline
+          // (or blow up the native map) on every position update.
+          points: _decimatePoints(_userPathHistory),
         ),
       );
     }
@@ -3241,9 +3258,18 @@ class _MapScreenState extends State<MapScreen>
               tiltGesturesEnabled: !_isAnyModalOpen,
               onCameraMove: (position) {
                 _cameraPosition = position;
-                setState(() {
+                // Only rebuild when the "rotated" state actually flips (i.e.
+                // the reset-bearing FAB appears/disappears). Panning and
+                // zooming keep bearing unchanged, so no rebuild is needed.
+                final rotated = position.bearing != 0;
+                if (rotated != _isMapRotated) {
+                  _isMapRotated = rotated;
+                  setState(() {
+                    _currentBearing = position.bearing;
+                  });
+                } else {
                   _currentBearing = position.bearing;
-                });
+                }
               },
             ),
           ),

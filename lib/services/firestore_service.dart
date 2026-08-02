@@ -1,7 +1,10 @@
+import 'dart:convert' as convert;
+
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:tripbook/models/reached_location_log.dart';
 import 'package:tripbook/models/route_comment.dart';
 import 'package:tripbook/models/travel_location.dart';
@@ -26,7 +29,19 @@ class FirestoreService {
   @visibleForTesting
   FirestoreService.internal(this._db, this._auth);
 
+  static const String _functionsBase =
+      'https://us-central1-tripbook-68238.cloudfunctions.net';
+
   User? get _currentUser => _auth.currentUser;
+
+  Future<String?> _idToken() async {
+    try {
+      return await _currentUser?.getIdToken();
+    } catch (e) {
+      if (kDebugMode) print('Error getting ID token: $e');
+      return null;
+    }
+  }
 
   // Get user-specific locations collection
   CollectionReference<TravelLocation> get _locationsCollection {
@@ -289,12 +304,17 @@ class FirestoreService {
   }
 
   Future<void> deleteGroup(String id) async {
-    // Delete all locations associated with this group
+    // Delete all locations associated with this group.
+    // Note: locations store group membership in the `groupIds` array.
     final locationsToDelete = await _locationsCollection
-        .where('groupId', isEqualTo: id)
+        .where('groupIds', arrayContains: id)
         .get();
-    for (final doc in locationsToDelete.docs) {
-      await doc.reference.delete();
+    if (locationsToDelete.docs.isNotEmpty) {
+      final WriteBatch batch = _db.batch();
+      for (final doc in locationsToDelete.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
     }
     // Then delete the group itself
     await _groupsCollection.doc(id).delete();
@@ -400,16 +420,25 @@ class FirestoreService {
         });
       }
     } else {
-      // Unshare the route
+      // Unshare the route. The subcollections (comments/ratings) are removed
+      // by the Cloud Function because a client cannot delete other users'
+      // comments/ratings directly (and cannot forge counter updates).
       try {
-        final communityRouteRef = _communityRoutesCollection.doc(routeId);
+        final idToken = await _idToken();
+        if (idToken == null) throw Exception('User not authenticated');
 
-        // Delete subcollections
-        await _deleteSubcollection(communityRouteRef.collection('comments'));
-        await _deleteSubcollection(communityRouteRef.collection('ratings'));
-
-        // Delete the main document
-        await communityRouteRef.delete();
+        final response = await http.get(
+          Uri.parse(
+            '$_functionsBase/unshareRoute?routeId='
+            '${Uri.encodeComponent(routeId)}',
+          ),
+          headers: {'Authorization': 'Bearer $idToken'},
+        );
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Failed to unshare route: ${response.statusCode}',
+          );
+        }
 
         await originalRouteDoc.update({'isShared': false, 'sharedBy': null});
       } catch (e, s) {
@@ -424,17 +453,6 @@ class FirestoreService {
         rethrow;
       }
     }
-  }
-
-  Future<void> _deleteSubcollection(CollectionReference collection) async {
-    final snapshot = await collection.get();
-    if (snapshot.docs.isEmpty) return;
-
-    final batch = _db.batch();
-    for (final doc in snapshot.docs) {
-      batch.delete(doc.reference);
-    }
-    await batch.commit();
   }
 
   Future<List<TravelRoute>> getRoutesOnce() async {
@@ -473,31 +491,25 @@ class FirestoreService {
 
   Future<void> addOrUpdateRating(String routeId, double rating) async {
     if (_currentUser == null) throw Exception('User not logged in');
-    final userId = _currentUser!.uid;
+    if (rating < 1 || rating > 5) {
+      throw Exception('Rating must be between 1 and 5');
+    }
 
-    final ratingDoc = _communityRoutesCollection
-        .doc(routeId)
-        .collection('ratings')
-        .doc(userId);
-    await ratingDoc.set({'rating': rating});
+    final idToken = await _idToken();
+    if (idToken == null) throw Exception('User not authenticated');
 
-    // Update average rating on the main route document
-    final ratingsSnapshot = await _communityRoutesCollection
-        .doc(routeId)
-        .collection('ratings')
-        .get();
-    final ratings = ratingsSnapshot.docs
-        .map((doc) => doc.data()['rating'] as double)
-        .toList();
-    final double averageRating = ratings.isNotEmpty
-        ? ratings.reduce((a, b) => a + b) / ratings.length
-        : 0.0;
-    final int ratingCount = ratings.length;
-
-    await _communityRoutesCollection.doc(routeId).update({
-      'averageRating': averageRating,
-      'ratingCount': ratingCount,
-    });
+    // Ratings are written by the Cloud Function so the average/count are
+    // computed atomically on the server and cannot be forged by clients.
+    final response = await http.get(
+      Uri.parse(
+        '$_functionsBase/rateRoute?routeId='
+        '${Uri.encodeComponent(routeId)}&rating=$rating',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to rate route: ${response.statusCode}');
+    }
   }
 
   Future<double?> getUserRating(String routeId) async {
@@ -526,22 +538,23 @@ class FirestoreService {
 
   Future<void> addComment(String routeId, String comment) async {
     if (_currentUser == null) throw Exception('User not logged in');
-    final userProfile = await getUserProfile().first;
-    final userName = userProfile?.name ?? 'Anonymous';
 
-    final routeRef = _communityRoutesCollection.doc(routeId);
-    final commentCollection = routeRef.collection('comments');
+    final idToken = await _idToken();
+    if (idToken == null) throw Exception('User not authenticated');
 
-    // Add the comment
-    await commentCollection.add({
-      'userId': _currentUser!.uid,
-      'userName': userName,
-      'comment': comment,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    // Atomically increment the comment count
-    await routeRef.update({'commentCount': FieldValue.increment(1)});
+    // Comments are created by the Cloud Function so the content is validated
+    // server-side and the commentCount is incremented atomically.
+    final response = await http.post(
+      Uri.parse('$_functionsBase/addComment'),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+      body: convert.jsonEncode({'routeId': routeId, 'comment': comment}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add comment: ${response.statusCode}');
+    }
   }
 
   Stream<List<RouteComment>> getComments(String routeId) {
@@ -723,5 +736,31 @@ class FirestoreService {
       }
       return {};
     }
+  }
+
+  // FCM TOKENS
+  // Tokens are stored in their own owner-only collection so they are never
+  // exposed through the publicly-readable /users profile documents.
+
+  Future<void> saveFcmToken(String token) async {
+    if (_currentUser == null) return;
+    await _db.collection('user_tokens').doc(_currentUser!.uid).set({
+      'fcmToken': token,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<String?> getFcmToken() async {
+    if (_currentUser == null) return null;
+    final doc = await _db.collection('user_tokens').doc(_currentUser!.uid).get();
+    return doc.data()?['fcmToken'] as String?;
+  }
+
+  Future<void> clearFcmToken() async {
+    if (_currentUser == null) return;
+    await _db.collection('user_tokens').doc(_currentUser!.uid).set({
+      'fcmToken': '',
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

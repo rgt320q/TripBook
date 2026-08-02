@@ -12,9 +12,11 @@ service cloud.firestore {
     }
 
     // --- USER DATA ---
+    // Profiles are readable by signed-in users for community features.
+    // NOTE: Firestore rules cannot filter individual fields, so sensitive data
+    // (e.g. fcmToken) must NOT live in this document. See /user_tokens below.
     match /users/{userId} {
       // Allow getting profile info if signed in (needed for community features)
-      // Note: In production, consider splitting public/private data into separate collections
       allow get: if isSignedIn();
       allow list, write: if isOwner(userId);
     }
@@ -32,32 +34,37 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
     }
 
+    // FCM tokens are device credentials. They are only readable/writable by
+    // their owner, so a stolen token can never be used to push to other users.
+    match /user_tokens/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // --- COMMUNITY ROUTES ---
     match /community_routes/{routeId} {
       allow read: if isSignedIn();
       // Ensure sharedBy matches the actual user creating the route
       allow create: if isSignedIn() && request.resource.data.sharedBy == request.auth.uid;
-      // Only the owner can update the route metadata (ratings/comment counts are updated by functions or restricted updates)
-      // Fixed the previous vulnerability where anyone could update any route
-      allow update: if isSignedIn() && (
-        resource.data.sharedBy == request.auth.uid ||
-        // Allow updating only rating/comment counts if the core data hasn't changed
-        // This is a simplified check; ideally use Cloud Functions for atomic increments
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'ratingCount', 'commentCount']))
-      );
+      // Only the owner can update route metadata. Rating/comment counters are
+      // updated exclusively by Cloud Functions (admin SDK), never by clients,
+      // so they cannot be forged or corrupted.
+      allow update: if isSignedIn() && resource.data.sharedBy == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.sharedBy == request.auth.uid;
 
-      // Comments
+      // Comments: only created by the Cloud Function (server-validated content
+      // and atomic commentCount increment). Owners may still edit/delete their
+      // own existing comments.
       match /comments/{commentId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow create: if false;
         allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       }
 
-      // Ratings
+      // Ratings: only written by the Cloud Function (atomic average, 1-5 range
+      // validated server-side). Reads remain available for clients.
       match /ratings/{ratingUserId} {
         allow read: if isSignedIn();
-        allow write: if isSignedIn() && ratingUserId == request.auth.uid;
+        allow write: if false;
       }
     }
   }

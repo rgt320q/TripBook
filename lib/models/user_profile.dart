@@ -11,7 +11,6 @@ class UserProfile {
   final String? bio;
   final String? languageCode;
   final GeoPoint? homeLocation;
-  final String? fcmToken;
   final Timestamp? birthDate;
   final String? gender;
   final String? profileImageUrl; // Firebase Storage URL'i - artık kullanılmıyor
@@ -37,7 +36,6 @@ class UserProfile {
     this.bio,
     this.languageCode,
     this.homeLocation,
-    this.fcmToken,
     this.birthDate,
     this.gender,
     this.profileImageUrl,
@@ -68,7 +66,6 @@ class UserProfile {
       bio: data['bio'] as String?,
       languageCode: data['languageCode'] as String?,
       homeLocation: data['homeLocation'] as GeoPoint?,
-      fcmToken: data['fcmToken'] as String?,
       birthDate: data['birthDate'] as Timestamp?,
       gender: data['gender'] as String?,
       profileImageUrl: data['profileImageUrl'] as String?,
@@ -97,7 +94,6 @@ class UserProfile {
       if (bio != null) 'bio': bio,
       if (languageCode != null) 'languageCode': languageCode,
       if (homeLocation != null) 'homeLocation': homeLocation,
-      if (fcmToken != null) 'fcmToken': fcmToken,
       if (birthDate != null) 'birthDate': birthDate,
       if (gender != null) 'gender': gender,
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
@@ -125,7 +121,6 @@ class UserProfile {
     String? bio,
     String? languageCode,
     GeoPoint? homeLocation,
-    String? fcmToken,
     Timestamp? birthDate,
     String? gender,
     String? profileImageUrl,
@@ -151,7 +146,6 @@ class UserProfile {
       bio: bio ?? this.bio,
       languageCode: languageCode ?? this.languageCode,
       homeLocation: homeLocation ?? this.homeLocation,
-      fcmToken: fcmToken ?? this.fcmToken,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,

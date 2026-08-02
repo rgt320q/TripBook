@@ -79,7 +79,6 @@ class NotificationService {
     }
 
     // --- Firebase Messaging Initialization ---
-    await _requestPermissions();
     // await _getAndSaveToken(); // DO NOT CALL THIS HERE. It will be called on login.
     _listenForTokenRefresh();
 
@@ -117,8 +116,11 @@ class NotificationService {
     }
   }
 
-  Future<void> _requestPermissions() async {
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+  /// Requests notification permission. Call this when the user opts in
+  /// (e.g. after login) rather than at app startup, so browsers do not
+  /// auto-block the prompt after it is ignored a few times.
+  Future<NotificationSettings> requestPermission() async {
+    final settings = await _firebaseMessaging.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -128,8 +130,9 @@ class NotificationService {
       sound: true,
     );
     if (kDebugMode) {
-      print('User granted permission: ${settings.authorizationStatus}');
+      print('Notification permission: ${settings.authorizationStatus}');
     }
+    return settings;
   }
 
   Future<void> _getAndSaveToken() async {
@@ -142,12 +145,8 @@ class NotificationService {
         if (kDebugMode) {
           print("FCM Token: $token");
         }
-        // Save the token to the user's profile in Firestore
-        final userProfile = await _firestoreService.getUserProfile().first;
-        if (userProfile != null) {
-          final updatedProfile = userProfile.copyWith(fcmToken: token);
-          await _firestoreService.updateUserProfile(updatedProfile);
-        }
+        // Save the token to the user's private token document (owner-only).
+        await _firestoreService.saveFcmToken(token);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -213,11 +212,7 @@ class NotificationService {
 
     try {
       // It's good practice to clear the token on logout
-      final userProfile = await _firestoreService.getUserProfile().first;
-      if (userProfile != null && userProfile.fcmToken != null) {
-        final updatedProfile = userProfile.copyWith(fcmToken: ''); // Clear token
-        await _firestoreService.updateUserProfile(updatedProfile);
-      }
+      await _firestoreService.clearFcmToken();
     } catch (e) {
       if (kDebugMode) {
         print("Error clearing FCM token on logout: $e");
