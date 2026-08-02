@@ -19,7 +19,7 @@ if (secretsFile.exists()) {
 android {
     namespace = "com.cetinsoft.tripbook"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    buildToolsVersion = "36.0.0"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -27,14 +27,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         applicationId = "com.cetinsoft.tripbook"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         resValue("string", "google_maps_api_key", secrets.getProperty("GOOGLE_MAPS_API_KEY") ?: "")
@@ -44,6 +40,12 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
