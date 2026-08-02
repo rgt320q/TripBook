@@ -46,6 +46,7 @@ GoogleService-Info.plist
 **/google_
 client_secret*.json
 **\assets\.env
+.firebase/
 
 
 # Flutter repo-specific
