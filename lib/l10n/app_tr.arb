@@ -21,6 +21,7 @@
   "delete": "Sil",
       "groups": "Gruplar",
       "groupName": "Grup Adı",  "apiKeyWarning": "Google Haritalar yüklenemedi. Web için API anahtarı eksik veya geçersiz. Lütfen .env dosyasını ve Google Cloud proje yapılandırmanızı kontrol edin.",
+  "notificationsBlockedMessage": "Bildirimler tarayıcınız tarafından engellendi. Adres çubuğunun yanındaki ayar simgesine tıklayıp bildirimlere izin vererek seyahat uyarıları alabilirsiniz.",
   "invalidGroupNameError": "Grup adı < veya > karakterlerini içeremez.",
   "newGroup": "Yeni Grup Oluştur",
   "editGroup": "Grup Düzenle",

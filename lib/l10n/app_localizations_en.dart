@@ -831,6 +831,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google Maps could not be loaded. The API key for the web is missing or invalid. Please check the .env file and your Google Cloud project configuration.';
 
   @override
+  String get notificationsBlockedMessage =>
+      'Notifications are blocked by your browser. Click the tune icon next to the address bar and allow notifications to receive travel alerts.';
+
+  @override
   String get invalidGroupNameError =>
       'Group name cannot contain < or > characters.';
 

@@ -833,6 +833,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Google Haritalar yüklenemedi. Web için API anahtarı eksik veya geçersiz. Lütfen .env dosyasını ve Google Cloud proje yapılandırmanızı kontrol edin.';
 
   @override
+  String get notificationsBlockedMessage =>
+      'Bildirimler tarayıcınız tarafından engellendi. Adres çubuğunun yanındaki ayar simgesine tıklayıp bildirimlere izin vererek seyahat uyarıları alabilirsiniz.';
+
+  @override
   String get invalidGroupNameError => 'Grup adı geçersiz karakterler içeriyor.';
 
   @override
