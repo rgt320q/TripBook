@@ -178,7 +178,9 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           ],
                           border: Border.all(color: Colors.purple[200]!, width: 2),
                         ),
-                        child: ListTile(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
                           title: Text(
                             _selectedLocations[index].name,
@@ -274,7 +276,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                             ),
                           ),
                         ),
-                      )
+                      ))
                     else
                       Container(
                         key: Key(
@@ -294,7 +296,9 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           ],
                           border: Border.all(color: Colors.grey[200]!),
                         ),
-                        child: ListTile(
+                        child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
                           title: Text(
                             _selectedLocations[index].name,
@@ -346,6 +350,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           ),
                         ),
                       ),
+                    ),
                 ],
                 onReorder: (int oldIndex, int newIndex) {
                   setState(() {

@@ -299,6 +299,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapTypeTooltip => 'Map Type';
 
   @override
+  String get mapTypeNormal => 'Standard';
+
+  @override
+  String get mapTypeSatellite => 'Satellite';
+
+  @override
+  String get mapTypeTerrain => 'Terrain';
+
+  @override
+  String get mapTypeHybrid => 'Hybrid';
+
+  @override
+  String get zoomInTooltip => 'Zoom In';
+
+  @override
+  String get zoomOutTooltip => 'Zoom Out';
+
+  @override
   String get resetBearingTooltip => 'Reset Bearing';
 
   @override

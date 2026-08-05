@@ -387,10 +387,8 @@ class _MapScreenState extends State<MapScreen>
 
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
       if (_searchController.text.isNotEmpty) {
-        if (!await ConnectivityService().checkConnection()) return;
-
         final predictions = await _directionsService.getAutocomplete(
           _searchController.text,
         );
@@ -410,15 +408,100 @@ class _MapScreenState extends State<MapScreen>
   }
 
   void _toggleMapType() {
-    setState(() {
-      if (_currentMapType == MapType.normal) {
-        _currentMapType = MapType.satellite;
-      } else if (_currentMapType == MapType.satellite) {
-        _currentMapType = MapType.terrain;
-      } else {
-        _currentMapType = MapType.normal;
-      }
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isAnyModalOpen = true);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  l10n.mapTypeTooltip,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _mapTypeOption(
+                sheetContext,
+                MapType.normal,
+                l10n.mapTypeNormal,
+              ),
+              _mapTypeOption(
+                sheetContext,
+                MapType.satellite,
+                l10n.mapTypeSatellite,
+              ),
+              _mapTypeOption(
+                sheetContext,
+                MapType.terrain,
+                l10n.mapTypeTerrain,
+              ),
+              _mapTypeOption(
+                sheetContext,
+                MapType.hybrid,
+                l10n.mapTypeHybrid,
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    ).whenComplete(() {
+      if (mounted) setState(() => _isAnyModalOpen = false);
     });
+  }
+
+  Widget _mapTypeOption(
+    BuildContext sheetContext,
+    MapType type,
+    String label,
+  ) {
+    final selected = _currentMapType == type;
+    return ListTile(
+      leading: _MapTypePreview(type: type),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+      trailing: selected
+          ? Icon(Icons.check_circle, color: Theme.of(sheetContext).primaryColor)
+          : null,
+      onTap: () {
+        Navigator.of(sheetContext).pop();
+        if (selected) return;
+        setState(() => _currentMapType = type);
+      },
+    );
+  }
+
+  Widget _buildMapControlButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Icon(icon, color: Colors.grey[700], size: 22),
+        ),
+      ),
+    );
   }
 
   void _resetBearing() {
@@ -2826,6 +2909,7 @@ class _MapScreenState extends State<MapScreen>
                   zoom: widget.initialLocation != null ? 15 : 5,
                 ),
                 markers: endPointMarkers,
+                zoomControlsEnabled: false,
                 myLocationButtonEnabled: false,
                 myLocationEnabled: true,
                 scrollGesturesEnabled: !_isAnyModalOpen,
@@ -3185,12 +3269,16 @@ class _MapScreenState extends State<MapScreen>
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'TripBook',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+              const Flexible(
+                child: Text(
+                  'TripBook',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
               ),
             ],
@@ -3250,6 +3338,7 @@ class _MapScreenState extends State<MapScreen>
               polylines: _polylines,
               mapType: _currentMapType,
               compassEnabled: false,
+              zoomControlsEnabled: false,
               myLocationButtonEnabled: false,
               myLocationEnabled: false,
               scrollGesturesEnabled: !_isAnyModalOpen,
@@ -3419,6 +3508,7 @@ class _MapScreenState extends State<MapScreen>
                                       _searchController.clear();
                                       FocusScope.of(context).unfocus();
                                     });
+                                    _updateMapElements();
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -3460,8 +3550,10 @@ class _MapScreenState extends State<MapScreen>
             top: 70,
             right: 15,
             child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -3470,49 +3562,42 @@ class _MapScreenState extends State<MapScreen>
                   ),
                 ],
               ),
-              child: FloatingActionButton(
-                heroTag: 'mapTypeFab',
-                mini: true,
-                onPressed: _toggleMapType,
-                tooltip: l10n.mapTypeTooltip,
-                backgroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.layers, color: Colors.grey[700], size: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Tooltip(
+                    message: l10n.resetBearingTooltip,
+                    child: InkWell(
+                      onTap: _resetBearing,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: AnimatedRotation(
+                          turns: _currentBearing / 360,
+                          duration: const Duration(milliseconds: 250),
+                          child: const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: _MapCompass(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 12, endIndent: 12),
+                  _buildMapControlButton(
+                    icon: Icons.layers,
+                    tooltip: l10n.mapTypeTooltip,
+                    onPressed: _toggleMapType,
+                  ),
+                ],
               ),
             ),
           ),
-          if (_currentBearing != 0)
-            Positioned(
-              top: 125,
-              right: 15,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  heroTag: 'resetBearingFab',
-                  mini: true,
-                  onPressed: _resetBearing,
-                  tooltip: l10n.resetBearingTooltip,
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Icon(Icons.explore_outlined, color: Colors.grey[700], size: 20),
-                ),
-              ),
-            ),
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90.0),
+        padding: const EdgeInsets.only(bottom: 146.0),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -3959,5 +4044,184 @@ class _MapScreenState extends State<MapScreen>
         widget.initialLocation != oldWidget.initialLocation) {
       _goToInitialLocation();
     }
+  }
+}
+
+class _MapCompass extends StatelessWidget {
+  const _MapCompass();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _CompassPainter());
+  }
+}
+
+class _CompassPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Outer ring
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      center,
+      radius - 0.5,
+      Paint()
+        ..color = Colors.grey[400]!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    // North (red) half
+    final northPath = Path()
+      ..moveTo(center.dx, center.dy - radius + 1)
+      ..lineTo(center.dx - 5, center.dy)
+      ..lineTo(center.dx + 5, center.dy)
+      ..close();
+    canvas.drawPath(northPath, Paint()..color = const Color(0xFFE53935));
+
+    // South (grey) half
+    final southPath = Path()
+      ..moveTo(center.dx, center.dy + radius - 1)
+      ..lineTo(center.dx - 5, center.dy)
+      ..lineTo(center.dx + 5, center.dy)
+      ..close();
+    canvas.drawPath(southPath, Paint()..color = Colors.grey[500]!);
+
+    // "N" label
+    final painter = TextPainter(
+      text: const TextSpan(
+        text: 'N',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      Offset(center.dx - painter.width / 2, center.dy - radius + 0.5),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompassPainter oldDelegate) => false;
+}
+
+class _MapTypePreview extends StatelessWidget {
+  final MapType type;
+  const _MapTypePreview({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 32,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+      ),
+      child: CustomPaint(
+        painter: _MapTypePreviewPainter(type: type),
+      ),
+    );
+  }
+}
+
+class _MapTypePreviewPainter extends CustomPainter {
+  final MapType type;
+  _MapTypePreviewPainter({required this.type});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    switch (type) {
+      case MapType.normal:
+        canvas.drawColor(const Color(0xFFE8E3D8), BlendMode.src);
+        _drawRoad(canvas, Offset(0, h * 0.4), Offset(w, h * 0.35), 2.2, Colors.white);
+        _drawRoad(canvas, Offset(w * 0.25, 0), Offset(w * 0.3, h), 1.6, Colors.white);
+        _drawRoad(canvas, Offset(0, h * 0.75), Offset(w, h * 0.7), 1.4, const Color(0xFFFFD98A));
+        _drawPark(canvas, Rect.fromLTWH(w * 0.62, h * 0.1, w * 0.28, h * 0.2), const Color(0xFFA8D5A2));
+        _drawPark(canvas, Rect.fromLTWH(w * 0.12, h * 0.72, w * 0.2, h * 0.22), const Color(0xFF9FD49E));
+      case MapType.satellite:
+        canvas.drawColor(const Color(0xFF3E5A38), BlendMode.src);
+        _drawPark(canvas, Rect.fromLTWH(0, h * 0.45, w, h * 0.55), const Color(0xFF2F4A2E));
+        _drawPark(canvas, Rect.fromLTWH(0, 0, w * 0.5, h * 0.3), const Color(0xFF354F2F));
+        _drawWater(canvas, Rect.fromLTWH(w * 0.6, h * 0.65, w * 0.4, h * 0.35), const Color(0xFF2E4A63));
+        _drawRoad(canvas, Offset(0, h * 0.5), Offset(w, h * 0.45), 2, const Color(0xFF8A8A80));
+      case MapType.terrain:
+        canvas.drawColor(const Color(0xFFEDE6D4), BlendMode.src);
+        _drawPark(canvas, Rect.fromLTWH(0, 0, w, h * 0.3), const Color(0xFFBCD9A8));
+        _drawPark(canvas, Rect.fromLTWH(w * 0.5, h * 0.2, w * 0.5, h * 0.35), const Color(0xFFB5D4A0));
+        _drawContour(canvas, Offset(w * 0.5, h * 0.85), 18, const Color(0xFFCBB894));
+        _drawContour(canvas, Offset(w * 0.55, h * 0.85), 13, const Color(0xFFC2AE8A));
+        _drawRoad(canvas, Offset(0, h * 0.6), Offset(w, h * 0.55), 1.6, Colors.white);
+      case MapType.hybrid:
+        canvas.drawColor(const Color(0xFF3E5A38), BlendMode.src);
+        _drawWater(canvas, Rect.fromLTWH(w * 0.6, h * 0.6, w * 0.4, h * 0.4), const Color(0xFF2E4A63));
+        _drawRoad(canvas, Offset(0, h * 0.5), Offset(w, h * 0.45), 2.2, Colors.white);
+        _drawLabel(canvas, Offset(w * 0.18, h * 0.15), 'AŞ');
+        _drawLabel(canvas, Offset(w * 0.42, h * 0.32), 'Lnk');
+      case MapType.none:
+        canvas.drawColor(Colors.grey[300]!, BlendMode.src);
+    }
+  }
+
+  void _drawRoad(Canvas canvas, Offset a, Offset b, double width, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(a, b, paint);
+  }
+
+  void _drawPark(Canvas canvas, Rect rect, Color color) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(2)),
+      Paint()..color = color,
+    );
+  }
+
+  void _drawWater(Canvas canvas, Rect rect, Color color) {
+    canvas.drawRect(rect, Paint()..color = color);
+  }
+
+  void _drawContour(Canvas canvas, Offset center, double radius, Color color) {
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  void _drawLabel(Canvas canvas, Offset offset, String text) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MapTypePreviewPainter oldDelegate) {
+    return oldDelegate.type != type;
   }
 }

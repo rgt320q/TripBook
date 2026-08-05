@@ -300,6 +300,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String get mapTypeTooltip => 'Harita Tipi';
 
   @override
+  String get mapTypeNormal => 'Standart';
+
+  @override
+  String get mapTypeSatellite => 'Uydu';
+
+  @override
+  String get mapTypeTerrain => 'Arazi';
+
+  @override
+  String get mapTypeHybrid => 'Hibrit';
+
+  @override
+  String get zoomInTooltip => 'Yakınlaştır';
+
+  @override
+  String get zoomOutTooltip => 'Uzaklaştır';
+
+  @override
   String get resetBearingTooltip => 'Kuzeyi Göster';
 
   @override

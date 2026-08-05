@@ -644,6 +644,42 @@ abstract class AppLocalizations {
   /// **'Map Type'**
   String get mapTypeTooltip;
 
+  /// No description provided for @mapTypeNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get mapTypeNormal;
+
+  /// No description provided for @mapTypeSatellite.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellite'**
+  String get mapTypeSatellite;
+
+  /// No description provided for @mapTypeTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain'**
+  String get mapTypeTerrain;
+
+  /// No description provided for @mapTypeHybrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid'**
+  String get mapTypeHybrid;
+
+  /// No description provided for @zoomInTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom In'**
+  String get zoomInTooltip;
+
+  /// No description provided for @zoomOutTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom Out'**
+  String get zoomOutTooltip;
+
   /// No description provided for @resetBearingTooltip.
   ///
   /// In en, this message translates to:

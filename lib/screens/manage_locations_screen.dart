@@ -107,11 +107,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -212,9 +208,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
         stream: _firestoreService.getLocations(),
         builder: (context, locationSnapshot) {
           if (locationSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
           if (!locationSnapshot.hasData || locationSnapshot.data!.isEmpty) {
             return Container(
@@ -247,10 +241,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     const SizedBox(height: 12),
                     Text(
                       l10n.addLocationsFromMapHint,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -289,10 +280,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     const SizedBox(height: 12),
                     Text(
                       l10n.error(locationSnapshot.error.toString()),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -380,7 +368,10 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue[600],
                               borderRadius: BorderRadius.circular(20),
@@ -397,7 +388,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                         ],
                       ),
                     ),
-                    
+
                     // Locations list
                     Expanded(
                       child: ListView.builder(
@@ -407,9 +398,13 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                           final bool isTarget = index == targetLocationIndex;
 
                           Widget listItem = LocationListItem(
-                            key: ValueKey(location.firestoreId ?? location.hashCode),
+                            key: ValueKey(
+                              location.firestoreId ?? location.hashCode,
+                            ),
                             location: location,
-                            groupNames: location.groupIds.map((id) => groupMap[id] ?? l10n.groupNone).toList(),
+                            groupNames: location.groupIds
+                                .map((id) => groupMap[id] ?? l10n.groupNone)
+                                .toList(),
                             allGroups: groups,
                             firestoreService: _firestoreService,
                             isInitiallyExpanded: isTarget,
@@ -562,7 +557,7 @@ class _LocationListItemState extends State<LocationListItem> {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Group name input
                         Container(
                           decoration: BoxDecoration(
@@ -596,7 +591,7 @@ class _LocationListItemState extends State<LocationListItem> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Color selection
                         Text(
                           l10n.selectGroupColor,
@@ -631,11 +626,13 @@ class _LocationListItemState extends State<LocationListItem> {
                                     color: color,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: isSelected ? Colors.white : Colors.transparent,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.transparent,
                                       width: 3,
                                     ),
                                     boxShadow: [
-                                      if (isSelected) 
+                                      if (isSelected)
                                         BoxShadow(
                                           color: color.withOpacity(0.3),
                                           spreadRadius: 2,
@@ -656,7 +653,7 @@ class _LocationListItemState extends State<LocationListItem> {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        
+
                         // Action buttons
                         Row(
                           children: [
@@ -668,7 +665,8 @@ class _LocationListItemState extends State<LocationListItem> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: TextButton(
-                                  onPressed: () => Navigator.of(dialogContext).pop(),
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
                                   style: TextButton.styleFrom(
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -690,7 +688,10 @@ class _LocationListItemState extends State<LocationListItem> {
                                 height: 48,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Colors.blue[600]!, Colors.blue[800]!],
+                                    colors: [
+                                      Colors.blue[600]!,
+                                      Colors.blue[800]!,
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -702,9 +703,14 @@ class _LocationListItemState extends State<LocationListItem> {
                                         // ignore: deprecated_member_use
                                         color: selectedColor.value,
                                         createdAt: DateTime.now(),
-                                        userId: FirebaseAuth.instance.currentUser!.uid,
+                                        userId: FirebaseAuth
+                                            .instance
+                                            .currentUser!
+                                            .uid,
                                       );
-                                      final docRef = await widget.firestoreService.addGroup(newGroup);
+                                      final docRef = await widget
+                                          .firestoreService
+                                          .addGroup(newGroup);
                                       final createdGroup = LocationGroup(
                                         firestoreId: docRef.id,
                                         name: newGroup.name,
@@ -712,7 +718,9 @@ class _LocationListItemState extends State<LocationListItem> {
                                         createdAt: newGroup.createdAt,
                                         userId: newGroup.userId,
                                       );
-                                      Navigator.of(dialogContext).pop(createdGroup);
+                                      Navigator.of(
+                                        dialogContext,
+                                      ).pop(createdGroup);
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -856,7 +864,8 @@ class _LocationListItemState extends State<LocationListItem> {
       notes: notes,
       needsList: needsList,
       estimatedDuration: _selectedDuration,
-      createdAt: widget.location.createdAt, userId: widget.location.userId,
+      createdAt: widget.location.createdAt,
+      userId: widget.location.userId,
     );
 
     try {
@@ -893,10 +902,12 @@ class _LocationListItemState extends State<LocationListItem> {
     final theme = Theme.of(context);
 
     // Group color for the location
-    final groupColor = widget.allGroups
-        .where((g) => widget.location.groupIds.contains(g.firestoreId))
-        .map((g) => Color(g.color!))
-        .firstOrNull ?? Colors.grey[400]!;
+    final groupColor =
+        widget.allGroups
+            .where((g) => widget.location.groupIds.contains(g.firestoreId))
+            .map((g) => Color(g.color!))
+            .firstOrNull ??
+        Colors.grey[400]!;
 
     return Container(
       decoration: BoxDecoration(
@@ -917,285 +928,333 @@ class _LocationListItemState extends State<LocationListItem> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: ExpansionTile(
-          leading: widget.onSelected != null
-              ? Container(
-                  decoration: BoxDecoration(
-                    color: widget.isSelected ? theme.primaryColor : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: widget.isSelected ? theme.primaryColor : Colors.grey[300]!,
-                      width: 2,
-                    ),
-                  ),
-                  child: Checkbox(
-                    value: widget.isSelected,
-                    activeColor: Colors.transparent,
-                    checkColor: Colors.white,
-                    side: BorderSide.none,
-                    onChanged: (value) {
-                      widget.onSelected!(widget.location, value!);
-                    },
-                  ),
-                )
-              : Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: groupColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.location_on,
-                    color: groupColor,
-                    size: 24,
-                  ),
-                ),
-          initiallyExpanded: _isExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _isExpanded = expanded;
-            });
-          },
-          title: Text(
-            widget.location.name,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: widget.location.groupIds.map((gid) {
-                  final group = widget.allGroups.firstWhere((g) => g.firestoreId == gid, orElse: () => LocationGroup(name: l10n.groupNone, userId: ''));
-                  final color = group.color != null ? Color(group.color!) : Colors.grey[400]!;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            leading: widget.onSelected != null
+                ? Container(
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: widget.isSelected
+                          ? theme.primaryColor
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: widget.isSelected
+                            ? theme.primaryColor
+                            : Colors.grey[300]!,
+                        width: 2,
+                      ),
+                    ),
+                    child: Checkbox(
+                      value: widget.isSelected,
+                      activeColor: Colors.transparent,
+                      checkColor: Colors.white,
+                      side: BorderSide.none,
+                      onChanged: (value) {
+                        widget.onSelected!(widget.location, value!);
+                      },
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: groupColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withOpacity(0.3)),
                     ),
-                    child: Text(
-                      group.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: color.computeLuminance() > 0.5 
-                            ? Colors.grey[800] 
-                            : color,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      widget.location.geoName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Icon(Icons.location_on, color: groupColor, size: 24),
                   ),
-                ],
+            initiallyExpanded: _isExpanded,
+            onExpansionChanged: (expanded) {
+              setState(() {
+                _isExpanded = expanded;
+              });
+            },
+            title: Text(
+              widget.location.name,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
               ),
-              if (widget.location.estimatedDuration != null && widget.location.estimatedDuration! > 0) ...[
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: widget.location.groupIds.map((gid) {
+                    final group = widget.allGroups.firstWhere(
+                      (g) => g.firestoreId == gid,
+                      orElse: () =>
+                          LocationGroup(name: l10n.groupNone, userId: ''),
+                    );
+                    final color = group.color != null
+                        ? Color(group.color!)
+                        : Colors.grey[400]!;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        group.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: color.computeLuminance() > 0.5
+                              ? Colors.grey[800]
+                              : color,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                    Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
-                    Text(
-                      '${widget.location.estimatedDuration} ${l10n.minutes}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    Expanded(
+                      child: Text(
+                        widget.location.geoName,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ],
-          ),
-          trailing: _isExpanded
-              ? null
-              : Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: widget.isReadOnly ? Colors.grey[200] : Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.delete_outline,
-                    color: widget.isReadOnly ? Colors.grey[400] : Colors.red[600],
-                    size: 20,
-                  ),
-                ),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTextField(_nameController, l10n.customLocationNameLabel, readOnly: widget.isReadOnly),
-                  const SizedBox(height: 16),
-                  _buildTextField(_descriptionController, l10n.descriptionLabel, readOnly: widget.isReadOnly),
-                  const SizedBox(height: 16),
-                  _buildTextField(_notesController, l10n.notesLabel, readOnly: widget.isReadOnly),
-                  const SizedBox(height: 16),
-                  _buildTextField(_needsController, l10n.needsLabel, hint: l10n.needsHint, readOnly: widget.isReadOnly),
-                  const SizedBox(height: 16),
-                  DurationSelector(
-                    initialDurationMinutes: _selectedDuration,
-                    readOnly: widget.isReadOnly,
-                    onChanged: (value) => _selectedDuration = value,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildGroupsSelection(),
-                  const SizedBox(height: 24),
-                  
-                  // Action buttons
+                if (widget.location.estimatedDuration != null &&
+                    widget.location.estimatedDuration! > 0) ...[
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.blue[600]!, Colors.blue[800]!],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.map, size: 20),
-                            label: Text(l10n.showOnMap),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: widget.isReadOnly
-                                ? null
-                                : () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            MapScreen(initialLocation: widget.location),
-                                      ),
-                                    );
-                                  },
-                          ),
-                        ),
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Colors.grey[500],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.copy, size: 20),
-                            label: Text(l10n.copyLocationInfo),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.grey[700],
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: widget.isReadOnly ? null : () {
-                              final lat = widget.location.latitude;
-                              final lon = widget.location.longitude;
-                              Clipboard.setData(ClipboardData(text: '$lat,$lon'));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.locationCopiedSuccess),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.green[600]!, Colors.green[800]!],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.save, size: 20),
-                            label: Text(l10n.saveChanges),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: widget.isReadOnly ? null : _saveChanges,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.red[600]!, Colors.red[800]!],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.delete, size: 20),
-                            label: Text(l10n.deleteLocation),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: widget.isReadOnly ? null : () => _deleteLocation(context),
-                          ),
-                        ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${widget.location.estimatedDuration} ${l10n.minutes}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ],
-              ),
+              ],
             ),
-          ],
+            trailing: _isExpanded
+                ? null
+                : Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: widget.isReadOnly
+                          ? Colors.grey[200]
+                          : Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: widget.isReadOnly
+                          ? Colors.grey[400]
+                          : Colors.red[600],
+                      size: 20,
+                    ),
+                  ),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTextField(
+                      _nameController,
+                      l10n.customLocationNameLabel,
+                      readOnly: widget.isReadOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      _descriptionController,
+                      l10n.descriptionLabel,
+                      readOnly: widget.isReadOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      _notesController,
+                      l10n.notesLabel,
+                      readOnly: widget.isReadOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      _needsController,
+                      l10n.needsLabel,
+                      hint: l10n.needsHint,
+                      readOnly: widget.isReadOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    DurationSelector(
+                      initialDurationMinutes: _selectedDuration,
+                      readOnly: widget.isReadOnly,
+                      onChanged: (value) => _selectedDuration = value,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildGroupsSelection(),
+                    const SizedBox(height: 24),
+
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.blue[600]!, Colors.blue[800]!],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.map, size: 20),
+                              label: Text(l10n.showOnMap),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: widget.isReadOnly
+                                  ? null
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MapScreen(
+                                            initialLocation: widget.location,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.copy, size: 20),
+                              label: Text(l10n.copyLocationInfo),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.grey[700],
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: widget.isReadOnly
+                                  ? null
+                                  : () {
+                                      final lat = widget.location.latitude;
+                                      final lon = widget.location.longitude;
+                                      Clipboard.setData(
+                                        ClipboardData(text: '$lat,$lon'),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            l10n.locationCopiedSuccess,
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green[600]!,
+                                  Colors.green[800]!,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.save, size: 20),
+                              label: Text(l10n.saveChanges),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: widget.isReadOnly
+                                  ? null
+                                  : _saveChanges,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.red[600]!, Colors.red[800]!],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.delete, size: 20),
+                              label: Text(l10n.deleteLocation),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: widget.isReadOnly
+                                  ? null
+                                  : () => _deleteLocation(context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1229,7 +1288,7 @@ class _LocationListItemState extends State<LocationListItem> {
             fontWeight: FontWeight.w500,
           ),
           hintStyle: TextStyle(color: Colors.grey[400]),
-          suffixIcon: readOnly 
+          suffixIcon: readOnly
               ? Icon(Icons.lock, color: Colors.grey[400], size: 20)
               : null,
         ),
@@ -1256,7 +1315,9 @@ class _LocationListItemState extends State<LocationListItem> {
         final newGroup = await _showAddNewGroupDialog(context);
         if (newGroup != null) {
           setState(() {
-            if (!widget.allGroups.any((g) => g.firestoreId == newGroup.firestoreId)) {
+            if (!widget.allGroups.any(
+              (g) => g.firestoreId == newGroup.firestoreId,
+            )) {
               widget.allGroups.add(newGroup);
             }
           });
