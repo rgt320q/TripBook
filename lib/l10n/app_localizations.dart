@@ -344,6 +344,18 @@ abstract class AppLocalizations {
   /// **'Manual Selection'**
   String get manualSelection;
 
+  /// No description provided for @fromGroupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a saved group and build the route from all its locations.'**
+  String get fromGroupDescription;
+
+  /// No description provided for @manualSelectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose individual locations from your list and order them yourself.'**
+  String get manualSelectionDescription;
+
   /// No description provided for @endPointDialogTitle.
   ///
   /// In en, this message translates to:
@@ -2137,6 +2149,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system'**
+  String get themeSystem;
 
   /// No description provided for @custom.
   ///

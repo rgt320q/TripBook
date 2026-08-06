@@ -8,6 +8,7 @@ import 'package:tripbook/models/travel_route.dart';
 import 'package:tripbook/screens/location_selection_screen.dart';
 import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 
 class SavedRoutesScreen extends StatefulWidget {
   const SavedRoutesScreen({super.key});
@@ -156,6 +157,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
   void _showRouteDetailsDialog(TravelRoute route) {
     final l10n = AppLocalizations.of(context)!;
     final parentContext = context;
+    final colorScheme = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
       context: context,
@@ -185,8 +187,8 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.blue[600]!,
-                          Colors.blue[800]!,
+                          brandButtonBlue(Theme.of(context).brightness),
+                          brandGradientEndBlue(Theme.of(context).brightness),
                         ],
                       ),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -336,7 +338,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: Colors.green[200]!,
@@ -413,7 +415,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: Colors.blue[200]!,
@@ -702,7 +704,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                             l10n.downloadedFromCommunity,
                             style: TextStyle(
                               fontStyle: FontStyle.italic,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -790,7 +792,7 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

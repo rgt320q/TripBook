@@ -28,6 +28,7 @@ import 'package:tripbook/services/directions_service.dart';
 import 'package:tripbook/services/firestore_service.dart';
 import 'package:tripbook/services/notification_service.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/utils/marker_utils.dart' as marker_utils;
 import 'package:tripbook/widgets/duration_selector.dart';
 import 'package:tripbook/widgets/loading_overlay.dart';
@@ -58,6 +59,7 @@ class _MapScreenState extends State<MapScreen>
   late AnimationController _longPressController;
   Offset? _longPressPosition;
   bool _isLongPressing = false;
+  DateTime? _suppressMarkerTapUntil;
 
   GoogleMapController? _mapController;
   Position? _currentPosition;
@@ -361,8 +363,7 @@ class _MapScreenState extends State<MapScreen>
     _longPressController.dispose();
     WidgetsBinding.instance.removeObserver(this);
 
-    // Map controller'ı temizle
-    _mapController?.dispose();
+    // Map controller referansını temizle (widget kendi dispose'unu yapar)
     _mapController = null;
     _isMapInitialized = false;
 
@@ -409,10 +410,11 @@ class _MapScreenState extends State<MapScreen>
 
   void _toggleMapType() {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isAnyModalOpen = true);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -491,6 +493,7 @@ class _MapScreenState extends State<MapScreen>
     required String tooltip,
     required VoidCallback onPressed,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -498,7 +501,7 @@ class _MapScreenState extends State<MapScreen>
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Icon(icon, color: Colors.grey[700], size: 22),
+          child: Icon(icon, color: colorScheme.onSurfaceVariant, size: 22),
         ),
       ),
     );
@@ -1032,6 +1035,7 @@ class _MapScreenState extends State<MapScreen>
           // ignore: deprecated_member_use
           zIndex: isEndpoint ? 4 : (isVisited ? 1 : 2),
           onTap: () {
+            if (_isSuppressedMarkerTap()) return;
             if (loc.firestoreId != 'end') {
               Navigator.push(
                 context,
@@ -1317,13 +1321,14 @@ class _MapScreenState extends State<MapScreen>
     required Color color,
     bool isHighlighted = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isHighlighted ? color.withValues(alpha: 0.1) : Colors.grey[50],
+        color: isHighlighted ? color.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isHighlighted ? color : Colors.grey[200]!,
+          color: isHighlighted ? color : colorScheme.outlineVariant,
           width: isHighlighted ? 2 : 1,
         ),
         boxShadow: isHighlighted
@@ -1355,7 +1360,7 @@ class _MapScreenState extends State<MapScreen>
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 2,
@@ -1370,7 +1375,7 @@ class _MapScreenState extends State<MapScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: isHighlighted ? color : Colors.grey[800],
+              color: isHighlighted ? color : colorScheme.onSurface,
             ),
           ),
         ],
@@ -1665,6 +1670,7 @@ class _MapScreenState extends State<MapScreen>
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         final l10n = AppLocalizations.of(modalContext)!;
+        final colorScheme = Theme.of(modalContext).colorScheme;
         return PointerInterceptor(
           child: Center(
             child: ConstrainedBox(
@@ -1673,8 +1679,8 @@ class _MapScreenState extends State<MapScreen>
                 maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
               ),
               child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 boxShadow: [
                   BoxShadow(
@@ -1695,7 +1701,7 @@ class _MapScreenState extends State<MapScreen>
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: colorScheme.outlineVariant,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1706,7 +1712,10 @@ class _MapScreenState extends State<MapScreen>
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.blue[600]!, Colors.blue[800]!],
+                            colors: [
+                              brandButtonBlue(Theme.of(context).brightness),
+                              brandGradientEndBlue(Theme.of(context).brightness),
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -2125,16 +2134,18 @@ class _MapScreenState extends State<MapScreen>
                                   return Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue[50],
+                                      color: colorScheme.primaryContainer,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: Colors.blue[200]!,
                                       ),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
                                         Row(
                                           children: [
                                             Icon(
@@ -2226,6 +2237,7 @@ class _MapScreenState extends State<MapScreen>
                                             setModalState,
                                           ),
                                       ],
+                                      ),
                                     ),
                                   );
                                 },
@@ -2237,7 +2249,7 @@ class _MapScreenState extends State<MapScreen>
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.amber[50],
+                                    color: colorScheme.tertiaryContainer,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: Colors.amber[200]!,
@@ -2273,7 +2285,7 @@ class _MapScreenState extends State<MapScreen>
                                           ),
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: colorScheme.surface,
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
@@ -2310,7 +2322,8 @@ class _MapScreenState extends State<MapScreen>
                                                 Text(
                                                   loc.notes!,
                                                   style: TextStyle(
-                                                    color: Colors.grey[700],
+                                                    color:
+                                                        colorScheme.onSurfaceVariant,
                                                   ),
                                                 ),
                                               ],
@@ -2323,7 +2336,9 @@ class _MapScreenState extends State<MapScreen>
                                                   children: [
                                                     Icon(
                                                       Icons.schedule,
-                                                      color: Colors.grey[600],
+                                                      color:
+                                                          colorScheme
+                                                              .onSurfaceVariant,
                                                       size: 14,
                                                     ),
                                                     const SizedBox(width: 4),
@@ -2333,7 +2348,9 @@ class _MapScreenState extends State<MapScreen>
                                                         fontSize: 12,
                                                         fontStyle:
                                                             FontStyle.italic,
-                                                        color: Colors.grey[600],
+                                                        color:
+                                                            colorScheme
+                                                                .onSurfaceVariant,
                                                       ),
                                                     ),
                                                   ],
@@ -2620,6 +2637,9 @@ class _MapScreenState extends State<MapScreen>
       return;
 
     final Offset pos = _longPressPosition!;
+    // On device platform views (Android/iOS) the map coordinates are in
+    // physical pixels; convert the Flutter logical position accordingly.
+    final double scale = kIsWeb ? 1.0 : MediaQuery.of(context).devicePixelRatio;
 
     final connectivityResult = await ConnectivityService().checkConnection();
     if (!connectivityResult && mounted) {
@@ -2645,7 +2665,10 @@ class _MapScreenState extends State<MapScreen>
 
     // Ekran koordinatını LatLng'e çevir
     final LatLng latLng = await _mapController!.getLatLng(
-      ScreenCoordinate(x: pos.dx.round(), y: pos.dy.round()),
+      ScreenCoordinate(
+        x: (pos.dx * scale).round(),
+        y: (pos.dy * scale).round(),
+      ),
     );
 
     if (widget.isChangingEndPoint) {
@@ -2671,6 +2694,12 @@ class _MapScreenState extends State<MapScreen>
     if (_isSelectingEndpoint) {
       _handleEndpointSelection(latLng);
     } else {
+      final savedLocation = await _markerAtScreenPosition(pos);
+      if (savedLocation != null) {
+        _openLocationDetails(savedLocation);
+        return;
+      }
+
       if (mounted) LoadingOverlay.show(context);
       final geoName =
           await _directionsService.getPlaceName(latLng) ??
@@ -2680,6 +2709,56 @@ class _MapScreenState extends State<MapScreen>
         _showAddLocationDialog(latLng, geoName);
       }
     }
+  }
+
+  Future<TravelLocation?> _markerAtScreenPosition(Offset pos) async {
+    const double hitRadiusPx = 56;
+    final double scale =
+        kIsWeb ? 1.0 : MediaQuery.of(context).devicePixelRatio;
+    TravelLocation? nearest;
+    double nearestDistance = double.infinity;
+    for (final loc in _allLocations) {
+      final screen = await _mapController!.getScreenCoordinate(
+        LatLng(loc.latitude, loc.longitude),
+      );
+      final markerLogical = Offset(
+        screen.x / scale,
+        screen.y / scale,
+      );
+      final distance = (markerLogical - pos).distance;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = loc;
+      }
+    }
+    if (nearest != null && nearestDistance <= hitRadiusPx) {
+      return nearest;
+    }
+    return null;
+  }
+
+  void _openLocationDetails(TravelLocation loc) {
+    if (!mounted) return;
+    _suppressMarkerTapUntil =
+        DateTime.now().add(const Duration(milliseconds: 900));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageLocationsScreen(
+          initiallyExpandedLocationId: loc.firestoreId,
+          isReadOnly: _activeRouteLocations != null,
+        ),
+      ),
+    );
+  }
+
+  bool _isSuppressedMarkerTap() {
+    if (_suppressMarkerTapUntil != null &&
+        DateTime.now().isBefore(_suppressMarkerTapUntil!)) {
+      _suppressMarkerTapUntil = null;
+      return true;
+    }
+    return false;
   }
 
   void _handleEndpointSelection(LatLng pos) async {
@@ -2825,6 +2904,7 @@ class _MapScreenState extends State<MapScreen>
     }
 
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (widget.isChangingEndPoint) {
       final Set<Marker> endPointMarkers = {};
@@ -2946,7 +3026,7 @@ class _MapScreenState extends State<MapScreen>
                       height: 50,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black26,
@@ -2957,9 +3037,12 @@ class _MapScreenState extends State<MapScreen>
                       ),
                       child: Row(
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(Icons.search, color: Colors.grey),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Icon(
+                              Icons.search,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
                           Expanded(
                             child: TextField(
@@ -2971,7 +3054,10 @@ class _MapScreenState extends State<MapScreen>
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            icon: Icon(
+                              Icons.clear,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                             onPressed: () {
                               _searchController.clear();
                               FocusScope.of(context).unfocus();
@@ -3311,7 +3397,10 @@ class _MapScreenState extends State<MapScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.blue[700]!, Colors.blue[900]!],
+              colors: [
+                brandAppBarBlue(Theme.of(context).brightness),
+                Colors.blue[900]!,
+              ],
             ),
           ),
         ),
@@ -3406,7 +3495,7 @@ class _MapScreenState extends State<MapScreen>
                     height: 56,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
+                      color: colorScheme.surface,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.1),
@@ -3419,7 +3508,11 @@ class _MapScreenState extends State<MapScreen>
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Icon(Icons.search, color: Colors.grey[600], size: 24),
+                          child: Icon(
+                            Icons.search,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 24,
+                          ),
                         ),
                         Expanded(
                           child: TextField(
@@ -3428,7 +3521,7 @@ class _MapScreenState extends State<MapScreen>
                             decoration: InputDecoration(
                               hintText: l10n.searchHint,
                               hintStyle: TextStyle(
-                                color: Colors.grey[500],
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -3440,11 +3533,15 @@ class _MapScreenState extends State<MapScreen>
                         Container(
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
-                            icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
+                            icon: Icon(
+                              Icons.clear,
+                              color: colorScheme.onSurfaceVariant,
+                              size: 20,
+                            ),
                             onPressed: () {
                               _searchController.clear();
                               FocusScope.of(context).unfocus();
@@ -3462,7 +3559,7 @@ class _MapScreenState extends State<MapScreen>
                     Container(
                       margin: const EdgeInsets.only(top: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -3480,7 +3577,7 @@ class _MapScreenState extends State<MapScreen>
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             shrinkWrap: true,
                             itemCount: _placePredictions.length,
-                            separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[200], indent: 56),
+                            separatorBuilder: (context, index) => Divider(height: 1, color: colorScheme.outlineVariant, indent: 56),
                             itemBuilder: (context, index) {
                               final prediction = _placePredictions[index];
                               return Material(
@@ -3517,10 +3614,18 @@ class _MapScreenState extends State<MapScreen>
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue[50],
-                                            borderRadius: BorderRadius.circular(8),
+                                            color:
+                                                colorScheme.primaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
-                                          child: Icon(Icons.location_on, color: Colors.blue[600], size: 20),
+                                          child: Icon(
+                                            Icons.location_on,
+                                            color:
+                                                colorScheme.onPrimaryContainer,
+                                            size: 20,
+                                          ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -3531,7 +3636,7 @@ class _MapScreenState extends State<MapScreen>
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                                        Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
                                       ],
                                     ),
                                   ),
@@ -3552,7 +3657,7 @@ class _MapScreenState extends State<MapScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -3666,6 +3771,71 @@ class _MapScreenState extends State<MapScreen>
     return optimized;
   }
 
+  Widget _buildRouteOptionCard(
+    BuildContext context, {
+    required IconData icon,
+    required List<Color> gradient,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.3,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showRouteCreationDialog() async {
     final l10n = AppLocalizations.of(context)!;
     final userProfile = await _firestoreService.getUserProfile().first;
@@ -3686,181 +3856,272 @@ class _MapScreenState extends State<MapScreen>
     setState(() => _isAnyModalOpen = true);
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.createRouteDialogTitle),
-        content: Text(l10n.createRouteDialogContent),
-        actions: [
-          TextButton(
-            child: Text(l10n.fromGroup),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final result = await Navigator.push<Map<String, String>>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const GroupsScreen(isForSelection: true),
-                ),
-              );
-
-              if (!mounted || result == null) return;
-
-              final selectedGroupId = result['id'];
-
-              if (selectedGroupId != null) {
-                if (mounted) LoadingOverlay.show(context);
-                try {
-                  final locations = await _firestoreService
-                      .getLocationsForGroup(selectedGroupId);
-                  if (locations.isNotEmpty) {
-                    if (_currentPosition == null) {
-                      if (mounted) LoadingOverlay.hide(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.currentLocationError)),
-                      );
-                      return;
-                    }
-
-                    // Respect the group's internal order (manual or createdAt)
-                    final orderedLocations = locations;
-
-                    String defaultEndLocationGeoName;
-                    try {
-                      defaultEndLocationGeoName =
-                          await _directionsService.getPlaceName(
-                            LatLng(
-                              _currentPosition!.latitude,
-                              _currentPosition!.longitude,
-                            ),
-                          ) ??
-                          l10n.unknownLocation;
-                    } catch (e) {
-                      defaultEndLocationGeoName = l10n.unknownLocation;
-                    }
-                    final defaultEndLocation = TravelLocation(
-                      name: l10n.endPoint,
-                      geoName: defaultEndLocationGeoName,
-                      description: l10n.routeEnd,
-                      latitude: _currentPosition!.latitude,
-                      longitude: _currentPosition!.longitude,
-                      firestoreId: 'end',
-                      userId: '',
-                    );
-
-                    if (mounted) LoadingOverlay.hide(context);
-
-                    final result = await Navigator.push<dynamic>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LocationSelectionScreen(
-                          initialLocations: orderedLocations,
-                          endLocation: homeEndLocation ?? defaultEndLocation,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return Dialog(
+          backgroundColor: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        brandButtonBlue(
+                          Theme.of(dialogContext).brightness,
+                        ),
+                        brandGradientEndBlue(
+                          Theme.of(dialogContext).brightness,
+                        ),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.alt_route,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
-                    );
-                    if (result is List<TravelLocation>) {
-                      _drawRoute(result);
-                    } else if (result == 'change_end_location') {
-                      setState(() {
-                        _isSelectingEndpoint = true;
-                        _locationsForRoute = orderedLocations;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.selectNewEndpoint)),
-                      );
-                    }
-                  } else {
-                    if (mounted) LoadingOverlay.hide(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.minTwoLocationsError)),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) LoadingOverlay.hide(context);
-                  rethrow;
-                }
-              }
-            },
-          ),
-          TextButton(
-            child: Text(l10n.manualSelection),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final List<TravelLocation>? selectedLocations =
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const ManageLocationsScreen(isForSelection: true),
-                    ),
-                  );
-              if (selectedLocations != null && selectedLocations.isNotEmpty) {
-                if (mounted) LoadingOverlay.show(context);
-                try {
-                  if (_currentPosition == null) {
-                    if (mounted) LoadingOverlay.hide(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.currentLocationError)),
-                    );
-                    return;
-                  }
-                  final optimizedLocations = _optimizeRouteByProximity(
-                    selectedLocations,
-                    _currentPosition!,
-                  );
-                  String defaultEndLocationGeoName;
-                  try {
-                    defaultEndLocationGeoName =
-                        await _directionsService.getPlaceName(
-                          LatLng(
-                            _currentPosition!.latitude,
-                            _currentPosition!.longitude,
-                          ),
-                        ) ??
-                        l10n.unknownLocation;
-                  } catch (e) {
-                    defaultEndLocationGeoName = l10n.unknownLocation;
-                  }
-                  final defaultEndLocation = TravelLocation(
-                    name: l10n.endPoint,
-                    geoName: defaultEndLocationGeoName,
-                    description: l10n.routeEnd,
-                    latitude: _currentPosition!.latitude,
-                    longitude: _currentPosition!.longitude,
-                    firestoreId: 'end',
-                    userId: '',
-                  );
-
-                  if (mounted) LoadingOverlay.hide(context);
-
-                  final result = await Navigator.push<dynamic>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LocationSelectionScreen(
-                        initialLocations: optimizedLocations,
-                        endLocation: homeEndLocation ?? defaultEndLocation,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.createRouteDialogTitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              l10n.createRouteDialogContent,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 12.5,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                  if (result is List<TravelLocation>) {
-                    _drawRoute(result);
-                  } else if (result == 'change_end_location') {
-                    setState(() {
-                      _isSelectingEndpoint = true;
-                      _locationsForRoute = optimizedLocations;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.selectNewEndpoint)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildRouteOptionCard(
+                  dialogContext,
+                  icon: Icons.folder_copy_outlined,
+                  gradient: [Colors.blue.shade600, Colors.blue.shade800],
+                  title: l10n.fromGroup,
+                  description: l10n.fromGroupDescription,
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    final result = await Navigator.push<Map<String, String>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const GroupsScreen(isForSelection: true),
+                      ),
                     );
-                  }
-                } catch (e) {
-                  if (mounted) LoadingOverlay.hide(context);
-                  rethrow;
-                }
-              }
-            },
+
+                    if (!mounted || result == null) return;
+
+                    final selectedGroupId = result['id'];
+
+                    if (selectedGroupId != null) {
+                      if (mounted) LoadingOverlay.show(context);
+                      try {
+                        final locations = await _firestoreService
+                            .getLocationsForGroup(selectedGroupId);
+                        if (locations.isNotEmpty) {
+                          if (_currentPosition == null) {
+                            if (mounted) LoadingOverlay.hide(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.currentLocationError)),
+                            );
+                            return;
+                          }
+
+                          // Respect the group's internal order (manual or createdAt)
+                          final orderedLocations = locations;
+
+                          String defaultEndLocationGeoName;
+                          try {
+                            defaultEndLocationGeoName =
+                                await _directionsService.getPlaceName(
+                                  LatLng(
+                                    _currentPosition!.latitude,
+                                    _currentPosition!.longitude,
+                                  ),
+                                ) ??
+                                l10n.unknownLocation;
+                          } catch (e) {
+                            defaultEndLocationGeoName = l10n.unknownLocation;
+                          }
+                          final defaultEndLocation = TravelLocation(
+                            name: l10n.endPoint,
+                            geoName: defaultEndLocationGeoName,
+                            description: l10n.routeEnd,
+                            latitude: _currentPosition!.latitude,
+                            longitude: _currentPosition!.longitude,
+                            firestoreId: 'end',
+                            userId: '',
+                          );
+
+                          if (mounted) LoadingOverlay.hide(context);
+
+                          final result = await Navigator.push<dynamic>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LocationSelectionScreen(
+                                initialLocations: orderedLocations,
+                                endLocation: homeEndLocation ?? defaultEndLocation,
+                              ),
+                            ),
+                          );
+                          if (result is List<TravelLocation>) {
+                            _drawRoute(result);
+                          } else if (result == 'change_end_location') {
+                            setState(() {
+                              _isSelectingEndpoint = true;
+                              _locationsForRoute = orderedLocations;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.selectNewEndpoint)),
+                            );
+                          }
+                        } else {
+                          if (mounted) LoadingOverlay.hide(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.minTwoLocationsError)),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) LoadingOverlay.hide(context);
+                        rethrow;
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildRouteOptionCard(
+                  dialogContext,
+                  icon: Icons.touch_app_outlined,
+                  gradient: [Colors.teal.shade600, Colors.teal.shade800],
+                  title: l10n.manualSelection,
+                  description: l10n.manualSelectionDescription,
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    final List<TravelLocation>? selectedLocations =
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ManageLocationsScreen(isForSelection: true),
+                          ),
+                        );
+                    if (selectedLocations != null &&
+                        selectedLocations.isNotEmpty) {
+                      if (mounted) LoadingOverlay.show(context);
+                      try {
+                        if (_currentPosition == null) {
+                          if (mounted) LoadingOverlay.hide(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.currentLocationError)),
+                          );
+                          return;
+                        }
+                        final optimizedLocations = _optimizeRouteByProximity(
+                          selectedLocations,
+                          _currentPosition!,
+                        );
+                        String defaultEndLocationGeoName;
+                        try {
+                          defaultEndLocationGeoName =
+                              await _directionsService.getPlaceName(
+                                LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                              ) ??
+                              l10n.unknownLocation;
+                        } catch (e) {
+                          defaultEndLocationGeoName = l10n.unknownLocation;
+                        }
+                        final defaultEndLocation = TravelLocation(
+                          name: l10n.endPoint,
+                          geoName: defaultEndLocationGeoName,
+                          description: l10n.routeEnd,
+                          latitude: _currentPosition!.latitude,
+                          longitude: _currentPosition!.longitude,
+                          firestoreId: 'end',
+                          userId: '',
+                        );
+
+                        if (mounted) LoadingOverlay.hide(context);
+
+                        final result = await Navigator.push<dynamic>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LocationSelectionScreen(
+                              initialLocations: optimizedLocations,
+                              endLocation: homeEndLocation ?? defaultEndLocation,
+                            ),
+                          ),
+                        );
+                        if (result is List<TravelLocation>) {
+                          _drawRoute(result);
+                        } else if (result == 'change_end_location') {
+                          setState(() {
+                            _isSelectingEndpoint = true;
+                            _locationsForRoute = optimizedLocations;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.selectNewEndpoint)),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) LoadingOverlay.hide(context);
+                        rethrow;
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(l10n.cancel),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     ).whenComplete(() => setState(() => _isAnyModalOpen = false));
   }
 

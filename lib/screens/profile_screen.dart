@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/providers/locale_provider.dart';
+import 'package:tripbook/providers/theme_provider.dart';
 import 'package:tripbook/screens/home_location_picker_screen.dart';
 import 'package:tripbook/screens/avatar_selection_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
@@ -13,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/utils/avatar_utils.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/services/auth_service.dart';
 
 
@@ -44,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   GeoPoint? _homeLocation;
   DateTime? _birthDate;
   String? _gender;
+  ThemeMode _selectedThemeMode = ThemeMode.system;
   bool _isPasswordVisible = false;
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -64,6 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedThemeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     _userProfileFuture = _loadUserProfile().then((profile) async {
       if (profile != null && mounted) {
         _usernameController.text = profile.name ?? '';
@@ -176,6 +180,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   listen: false,
                 ).setLocale(Locale(_selectedLanguage!));
               }
+              await Provider.of<ThemeProvider>(
+                context,
+                listen: false,
+              ).setThemeMode(_selectedThemeMode);
 
               ScaffoldMessenger.of(
                 context,
@@ -485,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.blue[700]!,
+                brandAppBarBlue(Theme.of(context).brightness),
                 Colors.blue[900]!,
               ],
             ),
@@ -518,6 +526,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildForm(AppLocalizations l10n, UserProfile profile) {
     final user = FirebaseAuth.instance.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       child: Column(
@@ -532,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.blue[700]!,
-                  Colors.blue[50]!,
+                  isDark ? Colors.blue[900]! : Colors.blue[50]!,
                 ],
               ),
             ),
@@ -682,23 +692,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: colorScheme.surfaceContainerHighest,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
                               decoration: BoxDecoration(
-                                color: _displayNameInPublic == 'fullName' ? Colors.blue[50] : Colors.grey[100],
+                                color: _displayNameInPublic == 'fullName' ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[300]! : Colors.grey[300]!,
+                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[300]! : colorScheme.outlineVariant,
                                 ),
                               ),
                               child: IconButton(
                                 icon: Icon(
                                   _displayNameInPublic == 'fullName' ? Icons.visibility : Icons.visibility_off,
-                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[600] : Colors.grey[600],
+                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[600] : colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -776,23 +786,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: colorScheme.surfaceContainerHighest,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
                               decoration: BoxDecoration(
-                                color: _displayNameInPublic == 'nickname' ? Colors.orange[50] : Colors.grey[100],
+                                color: _displayNameInPublic == 'nickname' ? colorScheme.tertiaryContainer : colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[300]! : Colors.grey[300]!,
+                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[300]! : colorScheme.outlineVariant,
                                 ),
                               ),
                               child: IconButton(
                                 icon: Icon(
                                   _displayNameInPublic == 'nickname' ? Icons.visibility : Icons.visibility_off,
-                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[600] : Colors.grey[600],
+                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[600] : colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -820,7 +830,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.grey[50],
+                            fillColor: colorScheme.surfaceContainerHighest,
                             helperText: 'Eski sistem için - yeni kullanıcılar yukarıdaki alanları kullanın',
                           ),
                         ),
@@ -855,7 +865,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     filled: true,
-                                    fillColor: Colors.grey[50],
+                                    fillColor: colorScheme.surfaceContainerHighest,
                                   ),
                                   child: Text(
                                     _birthDate != null 
@@ -863,7 +873,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       : l10n.select,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: _birthDate != null ? Colors.black : Colors.grey[600],
+                                      color: _birthDate != null ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -872,16 +882,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 8),
                             Container(
                               decoration: BoxDecoration(
-                                color: _showBirthDateInPublic ? Colors.green[50] : Colors.grey[100],
+                                color: _showBirthDateInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: _showBirthDateInPublic ? Colors.green[300]! : Colors.grey[300]!,
+                                  color: _showBirthDateInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
                                 ),
                               ),
                               child: IconButton(
                                 icon: Icon(
                                   _showBirthDateInPublic ? Icons.visibility : Icons.visibility_off,
-                                  color: _showBirthDateInPublic ? Colors.green[600] : Colors.grey[600],
+                                  color: _showBirthDateInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -909,7 +919,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: colorScheme.surfaceContainerHighest,
                                 ),
                                 items: [
                                   DropdownMenuItem(value: 'Erkek', child: Text(l10n.male)),
@@ -926,16 +936,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 8),
                             Container(
                               decoration: BoxDecoration(
-                                color: _showGenderInPublic ? Colors.green[50] : Colors.grey[100],
+                                color: _showGenderInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: _showGenderInPublic ? Colors.green[300]! : Colors.grey[300]!,
+                                  color: _showGenderInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
                                 ),
                               ),
                               child: IconButton(
                                 icon: Icon(
                                   _showGenderInPublic ? Icons.visibility : Icons.visibility_off,
-                                  color: _showGenderInPublic ? Colors.green[600] : Colors.grey[600],
+                                  color: _showGenderInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -974,7 +984,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: colorScheme.surfaceContainerHighest,
                               alignLabelWithHint: true,
                             ),
                             maxLength: 200,
@@ -984,16 +994,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           margin: const EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
-                            color: _showBioInPublic ? Colors.green[50] : Colors.grey[100],
+                            color: _showBioInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: _showBioInPublic ? Colors.green[300]! : Colors.grey[300]!,
+                              color: _showBioInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
                             ),
                           ),
                           child: IconButton(
                             icon: Icon(
                               _showBioInPublic ? Icons.visibility : Icons.visibility_off,
-                              color: _showBioInPublic ? Colors.green[600] : Colors.grey[600],
+                              color: _showBioInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
                               size: 20,
                             ),
                             onPressed: () {
@@ -1023,9 +1033,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: colorScheme.outlineVariant),
                               borderRadius: BorderRadius.circular(12),
-                              color: Colors.grey[50],
+                              color: colorScheme.surfaceContainerHighest,
                             ),
                             child: Row(
                               children: [
@@ -1049,7 +1059,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         Text(
                                           '${_homeLocation!.latitude.toStringAsFixed(4)}, ${_homeLocation!.longitude.toStringAsFixed(4)}',
                                           style: TextStyle(
-                                            color: Colors.grey[600],
+                                            color: colorScheme.onSurfaceVariant,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -1057,7 +1067,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ),
-                                Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                                Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
                               ],
                             ),
                           ),
@@ -1074,7 +1084,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.grey[50],
+                            fillColor: colorScheme.surfaceContainerHighest,
                           ),
                           items: [
                             DropdownMenuItem(value: 'tr', child: Text(l10n.languageTurkish)),
@@ -1083,6 +1093,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onChanged: (value) {
                             setState(() {
                               _selectedLanguage = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Theme
+                        DropdownButtonFormField<ThemeMode>(
+                          initialValue: _selectedThemeMode,
+                          decoration: InputDecoration(
+                            labelText: l10n.theme,
+                            prefixIcon: const Icon(Icons.dark_mode_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: colorScheme.surfaceContainerHighest,
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: ThemeMode.system,
+                              child: Text(l10n.themeSystem),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.light,
+                              child: Text(l10n.themeLight),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.dark,
+                              child: Text(l10n.themeDark),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedThemeMode = value ?? ThemeMode.system;
                             });
                           },
                         ),
@@ -1136,7 +1180,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
+                            backgroundColor: brandButtonBlue(
+                              Theme.of(context).brightness,
+                            ),
                             foregroundColor: Colors.white,
                             elevation: 2,
                             shape: RoundedRectangleBorder(
@@ -1222,13 +1268,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required Widget child,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -1245,18 +1292,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: Colors.blue[600], size: 20),
+                child: Icon(
+                  icon,
+                  color: colorScheme.onPrimaryContainer,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -1278,6 +1329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextInputType? keyboardType,
   }) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
@@ -1292,7 +1344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: colorScheme.surfaceContainerHighest,
             ),
             validator: validator,
           ),
@@ -1300,16 +1352,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(width: 8),
         Container(
           decoration: BoxDecoration(
-            color: isPublic ? Colors.green[50] : Colors.grey[100],
+            color: isPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isPublic ? Colors.green[300]! : Colors.grey[300]!,
+              color: isPublic ? Colors.green[300]! : colorScheme.outlineVariant,
             ),
           ),
           child: IconButton(
             icon: Icon(
               isPublic ? Icons.visibility : Icons.visibility_off,
-              color: isPublic ? Colors.green[600] : Colors.grey[600],
+              color: isPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
               size: 20,
             ),
             onPressed: () => onPrivacyChanged(!isPublic),

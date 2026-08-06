@@ -3,6 +3,7 @@ import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/map_screen.dart';
 
 import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 
 class LocationSelectionScreen extends StatefulWidget {
   final List<TravelLocation>? initialLocations;
@@ -38,8 +39,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           l10n.sortAndEdit,
@@ -86,12 +89,16 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue[50]!, Colors.blue[100]!],
+                colors: isDark
+                    ? [Colors.blue[900]!, Colors.blue[800]!]
+                    : [colorScheme.primaryContainer, Colors.blue[100]!],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.blue[200]!),
+              border: Border.all(
+                color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+              ),
             ),
             child: Row(
               children: [
@@ -117,14 +124,14 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+                          color: isDark ? Colors.white : colorScheme.onPrimaryContainer,
                         ),
                       ),
                       Text(
                         l10n.numLocationsDragToOrder(_selectedLocations.length),
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.blue[600],
+                          color: isDark ? Colors.blue[200] : colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ],
@@ -154,6 +161,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               child: ReorderableListView(
+                buildDefaultDragHandles: false,
                 padding: const EdgeInsets.only(bottom: 16),
                 children: <Widget>[
                   for (int index = 0; index < _selectedLocations.length; index++)
@@ -166,7 +174,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         ),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -228,7 +236,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           trailing: Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.blue[600]!, Colors.blue[800]!],
+                                colors: [
+                                  brandButtonBlue(Theme.of(context).brightness),
+                                  brandGradientEndBlue(Theme.of(context).brightness),
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -284,7 +295,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         ),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -294,7 +305,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                               offset: const Offset(0, 2),
                             ),
                           ],
-                          border: Border.all(color: Colors.grey[200]!),
+                          border: Border.all(color: colorScheme.outlineVariant),
                         ),
                         child: Material(
                             color: Colors.transparent,
@@ -310,21 +321,21 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           subtitle: Text(
                             _selectedLocations[index].geoName,
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurfaceVariant,
                               fontSize: 13,
                             ),
                           ),
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue[50],
+                              color: colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ReorderableDragStartListener(
                               index: index,
                               child: Icon(
                                 Icons.drag_handle,
-                                color: Colors.blue[600],
+                                color: colorScheme.onPrimaryContainer,
                                 size: 24,
                               ),
                             ),
@@ -378,7 +389,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.1),

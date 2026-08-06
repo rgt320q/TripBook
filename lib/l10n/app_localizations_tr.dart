@@ -137,6 +137,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get manualSelection => 'Manuel Seçim';
 
   @override
+  String get fromGroupDescription =>
+      'Kayıtlı bir grup seçin ve rotayı gruptaki tüm konumlardan oluşturun.';
+
+  @override
+  String get manualSelectionDescription =>
+      'Listeden tek tek konumları seçin ve kendi sıralamanızı belirleyin.';
+
+  @override
   String get endPointDialogTitle => 'Bitiş Noktası';
 
   @override
@@ -1131,6 +1139,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings => 'Ayarlar';
+
+  @override
+  String get theme => 'Tema';
+
+  @override
+  String get themeLight => 'Açık';
+
+  @override
+  String get themeDark => 'Koyu';
+
+  @override
+  String get themeSystem => 'Sistemle aynı';
 
   @override
   String get custom => 'Özel';

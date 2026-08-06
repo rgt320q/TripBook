@@ -27,6 +27,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -97,7 +98,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
               gradient: LinearGradient(
                 colors: [
                   Theme.of(context).primaryColor.withOpacity(0.1),
-                  Colors.white,
+                  colorScheme.surface,
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -129,7 +130,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                             selectedAvatar!,
                             fit: BoxFit.cover,
                             placeholderBuilder: (context) => Container(
-                              color: Colors.grey[200],
+                              color: colorScheme.surfaceContainerHighest,
                               child: const Icon(
                                 Icons.person,
                                 size: 60,
@@ -138,7 +139,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                             ),
                           )
                         : Container(
-                            color: Colors.grey[200],
+                            color: colorScheme.surfaceContainerHighest,
                             child: const Icon(
                               Icons.person,
                               size: 60,
@@ -152,10 +153,10 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                   selectedAvatar != null 
                       ? AvatarUtils.getAvatarName(selectedAvatar!)
                       : l10n.selectAvatarLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -165,7 +166,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                       : l10n.selectAvatarDescription,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -203,7 +204,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).primaryColor
-                              : Colors.grey[300]!,
+                              : colorScheme.outlineVariant,
                           width: isSelected ? 3 : 1,
                         ),
                         boxShadow: isSelected
@@ -223,7 +224,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                               ],
                         color: isSelected
                             ? Theme.of(context).primaryColor.withOpacity(0.1)
-                            : Colors.white,
+                            : colorScheme.surface,
                       ),
                       child: Column(
                         children: [
@@ -235,7 +236,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                                 avatarPath,
                                 fit: BoxFit.contain,
                                 placeholderBuilder: (context) => Container(
-                                  color: Colors.grey[200],
+                                  color: colorScheme.surfaceContainerHighest,
                                   child: const Icon(
                                     Icons.person,
                                     size: 40,
@@ -256,7 +257,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? Theme.of(context).primaryColor
-                                    : Colors.grey[100],
+                                    : colorScheme.surfaceContainerHighest,
                                 borderRadius: const BorderRadius.only(
                                   bottomLeft: Radius.circular(13),
                                   bottomRight: Radius.circular(13),
@@ -272,7 +273,7 @@ class _AvatarSelectionScreenState extends State<AvatarSelectionScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: isSelected
                                           ? Colors.white
-                                          : Colors.black87,
+                                          : colorScheme.onSurface,
                                     ),
                                     textAlign: TextAlign.center,
                                     maxLines: 2,

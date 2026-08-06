@@ -6,6 +6,7 @@ import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/screens/community_route_detail_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/widgets/route_mini_map.dart';
 
 class CommunityRoutesScreen extends StatefulWidget {
@@ -35,9 +36,10 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           l10n.communityRoutes,
@@ -94,8 +96,8 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.8),
+                brandAppBarBlue(Theme.of(context).brightness),
+                brandAppBarBlue(Theme.of(context).brightness).withOpacity(0.8),
               ],
             ),
           ),
@@ -119,13 +121,13 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
                         Icons.public_off,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -134,7 +136,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -142,7 +144,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                       'Henüz paylaşılmış bir rota bulunmuyor',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[500],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -167,7 +169,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.green[50],
+                        color: colorScheme.secondaryContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
@@ -284,7 +286,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -295,7 +297,9 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                             ),
                           ],
                           border: Border.all(
-                            color: item.isDownloaded ? Colors.green[200]! : Colors.grey[200]!,
+                            color: item.isDownloaded
+                                ? Colors.green[200]!
+                                : colorScheme.outlineVariant,
                             width: item.isDownloaded ? 2 : 1,
                           ),
                         ),
@@ -382,7 +386,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                                   Icon(
                                                     Icons.route,
                                                     size: 16,
-                                                    color: Colors.grey[600],
+                                                    color: colorScheme.onSurfaceVariant,
                                                   ),
                                                   const SizedBox(width: 4),
                                                   Text(
@@ -391,7 +395,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                                       route.totalTravelTime,
                                                     ),
                                                     style: TextStyle(
-                                                      color: Colors.grey[600],
+                                                      color: colorScheme.onSurfaceVariant,
                                                       fontSize: 14,
                                                     ),
                                                   ),
@@ -419,7 +423,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                               vertical: 6,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.blue[50],
+                                              color: colorScheme.primaryContainer,
                                               borderRadius: BorderRadius.circular(12),
                                               border: Border.all(color: Colors.blue[200]!),
                                             ),
@@ -452,7 +456,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.blue[50],
+                                          color: colorScheme.primaryContainer,
                                           borderRadius: BorderRadius.circular(12),
                                           border: Border.all(color: Colors.blue[200]!),
                                         ),
@@ -521,7 +525,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[100],
+                                            color: colorScheme.surfaceContainerHighest,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Row(
@@ -529,7 +533,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                             children: [
                                               Icon(
                                                 Icons.comment_outlined,
-                                                color: Colors.grey[600],
+                                                color: colorScheme.onSurfaceVariant,
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 4),
@@ -538,7 +542,7 @@ class _CommunityRoutesScreenState extends State<CommunityRoutesScreen> {
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.grey[600],
+                                                  color: colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                             ],

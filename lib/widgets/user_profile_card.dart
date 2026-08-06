@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/models/user_profile.dart';
 import 'package:tripbook/utils/avatar_utils.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 
 class UserProfileCard extends StatelessWidget {
   final UserProfile userProfile;
@@ -24,6 +25,7 @@ class UserProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Herkese açık profil bilgilerini al
     final publicProfile = isCurrentUser ? userProfile : userProfile.getPublicProfile();
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Container(
       margin: margin ?? const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -39,8 +41,8 @@ class UserProfileCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
                 colors: [
-                  Colors.blue[50]!,
-                  Colors.white,
+                  colorScheme.primaryContainer,
+                  colorScheme.surface,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -60,10 +62,10 @@ class UserProfileCard extends StatelessWidget {
                       // İsim - Yeni displayNameInPublic mantığıyla
                       Text(
                         isCurrentUser ? userProfile.getDisplayName() : userProfile.getPublicDisplayName(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -76,7 +78,7 @@ class UserProfileCard extends StatelessWidget {
                           publicProfile.bio!,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurfaceVariant,
                             height: 1.3,
                           ),
                           maxLines: showFullProfile ? 3 : 1,
@@ -90,7 +92,7 @@ class UserProfileCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green[100],
+                            color: colorScheme.secondaryContainer,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -112,7 +114,7 @@ class UserProfileCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Icon(
                     Icons.chevron_right,
-                    color: Colors.grey[400],
+                    color: colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                 ],
@@ -182,14 +184,16 @@ class UserDetailSheet {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -199,7 +203,7 @@ class UserDetailSheet {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -209,7 +213,10 @@ class UserDetailSheet {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue[600]!, Colors.blue[800]!],
+                  colors: [
+                    brandButtonBlue(Theme.of(context).brightness),
+                    brandGradientEndBlue(Theme.of(context).brightness),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -242,7 +249,7 @@ class UserDetailSheet {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -250,7 +257,7 @@ class UserDetailSheet {
                         l10n.privacyNotice,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ] else ...[
@@ -259,7 +266,7 @@ class UserDetailSheet {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -267,7 +274,7 @@ class UserDetailSheet {
                         l10n.publicProfileInfo,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -278,7 +285,7 @@ class UserDetailSheet {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange[50],
+                        color: colorScheme.tertiaryContainer,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.orange[200]!),
                       ),
@@ -306,9 +313,10 @@ class UserDetailSheet {
                 ),
               ),
             ),
-          ],
-        ),
+],
       ),
+      );
+    },
     );
   }
 }

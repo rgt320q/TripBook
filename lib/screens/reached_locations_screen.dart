@@ -6,6 +6,7 @@ import 'package:tripbook/services/firestore_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:tripbook/l10n/app_localizations.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 
 class ReachedLocationsScreen extends StatefulWidget {
   final String? highlightedLogId;
@@ -35,7 +36,7 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(l10n.reachedLocationsLog),
-              backgroundColor: Colors.blue[700],
+              backgroundColor: brandAppBarBlue(Theme.of(context).brightness),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -44,7 +45,7 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(l10n.reachedLocationsLog),
-              backgroundColor: Colors.blue[700],
+              backgroundColor: brandAppBarBlue(Theme.of(context).brightness),
             ),
             body: Center(
               child: Text(l10n.noReachedLocations, textAlign: TextAlign.center),
@@ -178,7 +179,7 @@ class _ReachedLocationsScreenState extends State<ReachedLocationsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.blue[700]!,
+                    brandAppBarBlue(Theme.of(context).brightness),
                     Colors.blue[900]!,
                   ],
                 ),

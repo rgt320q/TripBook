@@ -299,6 +299,7 @@ class _CommunityRouteDetailScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
@@ -306,7 +307,7 @@ class _CommunityRouteDetailScreenState
         Navigator.of(context).pop(_madeChanges);
       },
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: colorScheme.surface,
         appBar: AppBar(
           title: Text(
             widget.route.name,
@@ -427,7 +428,7 @@ class _CommunityRouteDetailScreenState
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -447,12 +448,12 @@ class _CommunityRouteDetailScreenState
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue[50],
+                                  color: colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
                                   Icons.person,
-                                  color: Colors.blue[600],
+                                  color: colorScheme.primaryContainer,
                                   size: 20,
                                 ),
                               ),
@@ -565,7 +566,7 @@ class _CommunityRouteDetailScreenState
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -621,8 +622,9 @@ class _CommunityRouteDetailScreenState
     );
   }
 
-  Widget _buildRatingSection() {
+Widget _buildRatingSection() {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final currentUser = FirebaseAuth.instance.currentUser;
     final isMyRoute = currentUser != null && currentUser.uid == widget.route.sharedBy;
 
@@ -630,7 +632,7 @@ class _CommunityRouteDetailScreenState
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -674,10 +676,10 @@ class _CommunityRouteDetailScreenState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey[200]!,
+                  color: colorScheme.outlineVariant,
                   width: 1,
                 ),
               ),
@@ -685,7 +687,7 @@ class _CommunityRouteDetailScreenState
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -694,7 +696,7 @@ class _CommunityRouteDetailScreenState
                       l10n.mySharedRoute,
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 14,
                       ),
                     ),
@@ -787,11 +789,12 @@ class _CommunityRouteDetailScreenState
 
   Widget _buildNeedsSection() {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -810,12 +813,12 @@ class _CommunityRouteDetailScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange[50],
+                  color: colorScheme.tertiaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.shopping_bag,
-                  color: Colors.orange[600],
+                  color: colorScheme.tertiaryContainer,
                   size: 20,
                 ),
               ),
@@ -841,7 +844,7 @@ class _CommunityRouteDetailScreenState
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange[50],
+                        color: colorScheme.tertiaryContainer,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: Colors.orange[200]!,
@@ -865,11 +868,12 @@ class _CommunityRouteDetailScreenState
 
   Widget _buildNotesSection() {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -888,12 +892,12 @@ class _CommunityRouteDetailScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.note,
-                  color: Colors.blue[600],
+                  color: colorScheme.primaryContainer,
                   size: 20,
                 ),
               ),
@@ -1009,6 +1013,7 @@ class _CommunityRouteDetailScreenState
 
   Widget _buildCommentsList() {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     if (widget.route.firestoreId == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -1090,10 +1095,10 @@ class _CommunityRouteDetailScreenState
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.grey[200]!,
+                color: colorScheme.outlineVariant,
                 width: 1,
               ),
             ),
@@ -1101,7 +1106,7 @@ class _CommunityRouteDetailScreenState
               children: [
                 Icon(
                   Icons.chat_bubble_outline,
-                  color: Colors.grey[400],
+                  color: colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -1109,7 +1114,7 @@ class _CommunityRouteDetailScreenState
                   child: Text(
                     l10n.noCommentsYet,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                     ),
                   ),

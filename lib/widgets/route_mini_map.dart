@@ -96,11 +96,12 @@ class _RouteMiniMapState extends State<RouteMiniMap> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(8.0),
       child: Container(
         height: 150,
-        color: Colors.grey[300],
+        color: colorScheme.outlineVariant,
         child: GestureDetector(
           onTap: widget.onTap,
           child: GoogleMap(

@@ -6,6 +6,7 @@ import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/models/travel_location.dart';
 import 'package:tripbook/screens/map_screen.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/widgets/duration_selector.dart';
 import 'package:tripbook/widgets/multi_group_selector.dart';
 
@@ -31,6 +32,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
   final List<TravelLocation> _selectedLocations = [];
   SortBy _currentSortBy = SortBy.dateNewest;
   GlobalKey? _scrollKey;
+  final ScrollController _scrollController = ScrollController();
 
   void _sortLocations(List<TravelLocation> locations) {
     switch (_currentSortBy) {
@@ -57,20 +59,36 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
     }
   }
 
-  void _scrollToSelected() {
-    if (_scrollKey != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollKey?.currentContext != null) {
-          Scrollable.ensureVisible(
-            _scrollKey!.currentContext!,
-            duration: const Duration(milliseconds: 600),
-            alignment: 0.0, // Align to the top of the viewport
-            curve: Curves.easeInOut,
-          );
-        }
-      });
+  void _scrollToSelected(int targetIndex) {
+  if (_scrollKey == null) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _scrollTargetIntoView(targetIndex, retries: 5);
+  });
+}
+
+Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) async {
+  for (int attempt = 0; attempt <= retries; attempt++) {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+    final ctx = _scrollKey?.currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 500),
+        alignment: 0.0,
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+    if (_scrollController.hasClients && attempt == 0) {
+      await _scrollController.animateTo(
+        (targetIndex * 100).toDouble(),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+      );
     }
   }
+}
 
   String _getSortLabel(AppLocalizations l10n) {
     switch (_currentSortBy) {
@@ -86,10 +104,38 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSelected(TravelLocation location, bool selected) {
+    final double? offset = _scrollController.hasClients
+        ? _scrollController.offset
+        : null;
+    setState(() {
+      if (selected) {
+        _selectedLocations.add(location);
+      } else {
+        _selectedLocations.remove(location);
+      }
+    });
+    if (offset != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(offset);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           l10n.manageLocationsScreenTitle,
@@ -220,13 +266,13 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
                         Icons.location_off,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -235,13 +281,13 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       l10n.addLocationsFromMapHint,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -259,13 +305,13 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
+                        color: colorScheme.errorContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
                         Icons.error_outline,
                         size: 64,
-                        color: Colors.red[400],
+                        color: colorScheme.onErrorContainer,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -280,7 +326,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     const SizedBox(height: 12),
                     Text(
                       l10n.error(locationSnapshot.error.toString()),
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -302,7 +348,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
 
           if (targetLocationIndex != -1) {
             _scrollKey = GlobalKey();
-            _scrollToSelected();
+            _scrollToSelected(targetLocationIndex);
           }
 
           return StreamBuilder<List<LocationGroup>>(
@@ -323,12 +369,16 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.blue[50]!, Colors.blue[100]!],
+                          colors: isDark
+                              ? [Colors.blue[900]!, Colors.blue[800]!]
+                              : [colorScheme.primaryContainer, Colors.blue[100]!],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue[200]!),
+                        border: Border.all(
+                          color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -354,14 +404,18 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800],
+                                    color: isDark
+                                        ? Colors.white
+                                        : colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                                 Text(
                                   l10n.savedLocationsHeader,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.blue[600],
+                                    color: isDark
+                                        ? Colors.blue[200]
+                                        : colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                               ],
@@ -392,6 +446,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                     // Locations list
                     Expanded(
                       child: ListView.builder(
+                        controller: _scrollController,
                         itemCount: locations.length,
                         itemBuilder: (context, index) {
                           final location = locations[index];
@@ -412,13 +467,7 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
                             isReadOnly: widget.isReadOnly,
                             onSelected: widget.isForSelection
                                 ? (location, selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedLocations.add(location);
-                                      } else {
-                                        _selectedLocations.remove(location);
-                                      }
-                                    });
+                                    _toggleSelected(location, selected);
                                   }
                                 : null,
                           );
@@ -512,6 +561,7 @@ class _LocationListItemState extends State<LocationListItem> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final colorScheme = Theme.of(context).colorScheme;
             return Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -519,7 +569,7 @@ class _LocationListItemState extends State<LocationListItem> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Form(
@@ -535,12 +585,12 @@ class _LocationListItemState extends State<LocationListItem> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.add,
-                                color: Colors.blue[600],
+                                color: colorScheme.onPrimaryContainer,
                                 size: 24,
                               ),
                             ),
@@ -561,9 +611,11 @@ class _LocationListItemState extends State<LocationListItem> {
                         // Group name input
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant,
+                            ),
                           ),
                           child: TextFormField(
                             controller: groupNameController,
@@ -574,7 +626,7 @@ class _LocationListItemState extends State<LocationListItem> {
                               focusedBorder: InputBorder.none,
                               contentPadding: const EdgeInsets.all(16),
                               labelStyle: TextStyle(
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -604,9 +656,11 @@ class _LocationListItemState extends State<LocationListItem> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant,
+                            ),
                           ),
                           child: Wrap(
                             spacing: 12.0,
@@ -661,7 +715,9 @@ class _LocationListItemState extends State<LocationListItem> {
                               child: Container(
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey[300]!),
+                                  border: Border.all(
+                                    color: colorScheme.outlineVariant,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: TextButton(
@@ -675,7 +731,7 @@ class _LocationListItemState extends State<LocationListItem> {
                                   child: Text(
                                     l10n.cancel,
                                     style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -689,8 +745,8 @@ class _LocationListItemState extends State<LocationListItem> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Colors.blue[600]!,
-                                      Colors.blue[800]!,
+                                      brandButtonBlue(Theme.of(context).brightness),
+                                      brandGradientEndBlue(Theme.of(context).brightness),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -900,6 +956,7 @@ class _LocationListItemState extends State<LocationListItem> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Group color for the location
     final groupColor =
@@ -911,7 +968,7 @@ class _LocationListItemState extends State<LocationListItem> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -922,7 +979,9 @@ class _LocationListItemState extends State<LocationListItem> {
           ),
         ],
         border: Border.all(
-          color: _isExpanded ? theme.primaryColor : Colors.grey[200]!,
+          color: _isExpanded
+              ? theme.primaryColor
+              : colorScheme.outlineVariant,
           width: _isExpanded ? 2 : 1,
         ),
       ),
@@ -941,7 +1000,7 @@ class _LocationListItemState extends State<LocationListItem> {
                       border: Border.all(
                         color: widget.isSelected
                             ? theme.primaryColor
-                            : Colors.grey[300]!,
+                            : colorScheme.outlineVariant,
                         width: 2,
                       ),
                     ),
@@ -973,7 +1032,7 @@ class _LocationListItemState extends State<LocationListItem> {
               widget.location.name,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: colorScheme.onSurface,
               ),
             ),
             subtitle: Column(
@@ -1018,12 +1077,19 @@ class _LocationListItemState extends State<LocationListItem> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
+                    Icon(
+                      Icons.location_on,
+                      size: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         widget.location.geoName,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1038,12 +1104,15 @@ class _LocationListItemState extends State<LocationListItem> {
                       Icon(
                         Icons.access_time,
                         size: 14,
-                        color: Colors.grey[500],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${widget.location.estimatedDuration} ${l10n.minutes}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -1056,14 +1125,14 @@ class _LocationListItemState extends State<LocationListItem> {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: widget.isReadOnly
-                          ? Colors.grey[200]
+                          ? colorScheme.surfaceContainerHighest
                           : Colors.red[50],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.delete_outline,
                       color: widget.isReadOnly
-                          ? Colors.grey[400]
+                          ? colorScheme.onSurfaceVariant
                           : Colors.red[600],
                       size: 20,
                     ),
@@ -1116,13 +1185,19 @@ class _LocationListItemState extends State<LocationListItem> {
                             height: 48,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.blue[600]!, Colors.blue[800]!],
+                                colors: [
+                                  brandButtonBlue(Theme.of(context).brightness),
+                                  brandGradientEndBlue(Theme.of(context).brightness),
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.map, size: 20),
-                              label: Text(l10n.showOnMap),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(l10n.showOnMap),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
@@ -1151,15 +1226,20 @@ class _LocationListItemState extends State<LocationListItem> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.copy, size: 20),
-                              label: Text(l10n.copyLocationInfo),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(l10n.copyLocationInfo),
+                              ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.grey[700],
+                                backgroundColor: colorScheme.surface,
+                                foregroundColor: colorScheme.onSurface,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -1206,7 +1286,10 @@ class _LocationListItemState extends State<LocationListItem> {
                             ),
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.save, size: 20),
-                              label: Text(l10n.saveChanges),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(l10n.saveChanges),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
@@ -1233,7 +1316,10 @@ class _LocationListItemState extends State<LocationListItem> {
                             ),
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.delete, size: 20),
-                              label: Text(l10n.deleteLocation),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(l10n.deleteLocation),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
@@ -1267,11 +1353,12 @@ class _LocationListItemState extends State<LocationListItem> {
     String? hint,
     bool readOnly = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: TextFormField(
         controller: controller,
@@ -1284,17 +1371,23 @@ class _LocationListItemState extends State<LocationListItem> {
           focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.all(16),
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
-          hintStyle: TextStyle(color: Colors.grey[400]),
+          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
           suffixIcon: readOnly
-              ? Icon(Icons.lock, color: Colors.grey[400], size: 20)
+              ? Icon(
+                  Icons.lock,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                )
               : null,
         ),
         keyboardType: inputType,
         style: TextStyle(
-          color: readOnly ? Colors.grey[600] : Colors.grey[800],
+          color: readOnly
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.onSurface,
           fontWeight: FontWeight.w500,
         ),
       ),

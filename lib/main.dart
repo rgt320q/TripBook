@@ -12,8 +12,10 @@ import 'package:tripbook/non_web_script_loader.dart'
     if (dart.library.html) 'package:tripbook/web_script_loader.dart';
 import 'package:tripbook/providers/community_routes_provider.dart';
 import 'package:tripbook/providers/locale_provider.dart';
+import 'package:tripbook/providers/theme_provider.dart';
 import 'package:tripbook/services/navigation_service.dart';
 import 'package:tripbook/services/notification_service.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/widgets/auth_wrapper.dart';
 
 // This needs to be a top-level function for background isolate registration.
@@ -76,6 +78,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => LocaleProvider()),
+        ChangeNotifierProvider(
+          create: (context) => ThemeProvider()..loadThemeMode(),
+        ),
         ChangeNotifierProvider(create: (context) => CommunityRoutesProvider()),
       ],
       child: const MyApp(),
@@ -90,64 +95,107 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LocaleProvider>(
       builder: (context, provider, child) {
-        return MaterialApp(
-          // Use the navigatorKey from our singleton NavigationService.
-          navigatorKey: NavigationService().navigatorKey,
-          title: 'Trip Book',
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue.shade700,
-              brightness: Brightness.light,
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-            ),
-            dialogTheme: DialogThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            floatingActionButtonTheme: FloatingActionButtonThemeData(
-              backgroundColor: Colors.blue.shade700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            appBarTheme: AppBarTheme(
-              backgroundColor: Colors.blue.shade700,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              titleTextStyle: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-              iconTheme: const IconThemeData(color: Colors.white),
-            ),
-          ),
-          locale: provider.locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: AuthWrapper(),
+        return Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return MaterialApp(
+              // Use the navigatorKey from our singleton NavigationService.
+              navigatorKey: NavigationService().navigatorKey,
+              title: 'Trip Book',
+              theme: buildAppTheme(Brightness.light),
+              darkTheme: buildAppTheme(Brightness.dark),
+              themeMode: themeProvider.themeMode,
+              locale: provider.locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: AuthWrapper(),
+            );
+          },
         );
       },
     );
   }
+}
+
+/// Builds the app theme for the given [brightness]. Brand colors (blue) stay
+/// consistent across light and dark mode; surfaces/text adapt via the
+/// generated [ColorScheme].
+ThemeData buildAppTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: Colors.blue.shade700,
+    brightness: brightness,
+  );
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: isDark
+        ? const Color(0xFF121212)
+        : colorScheme.surface,
+    cardTheme: CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: brandButtonBlue(brightness),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 12,
+        ),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: brandButtonBlue(brightness),
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: brandAppBarBlue(brightness),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      titleTextStyle: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+      iconTheme: const IconThemeData(color: Colors.white),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: isDark
+          ? colorScheme.surfaceContainerHighest
+          : Colors.grey[50],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: isDark ? const Color(0xFF303030) : Colors.grey[900],
+      behavior: SnackBarBehavior.floating,
+    ),
+    dividerTheme: DividerThemeData(
+      color: isDark ? Colors.white24 : Colors.grey[300],
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: Colors.blue.shade600,
+    ),
+  );
 }

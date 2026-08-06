@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:tripbook/models/location_group.dart';
 import 'package:tripbook/services/firestore_service.dart';
+import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/screens/group_detail_screen.dart';
 
 enum GroupSortBy { nameAsc, nameDesc, dateNewest, dateOldest }
@@ -279,7 +280,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.blue[700]!,
+                brandAppBarBlue(Theme.of(context).brightness),
                 Colors.blue[900]!,
               ],
             ),

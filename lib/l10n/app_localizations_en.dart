@@ -137,6 +137,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualSelection => 'Manual Selection';
 
   @override
+  String get fromGroupDescription =>
+      'Pick a saved group and build the route from all its locations.';
+
+  @override
+  String get manualSelectionDescription =>
+      'Choose individual locations from your list and order them yourself.';
+
+  @override
   String get endPointDialogTitle => 'Endpoint';
 
   @override
@@ -1127,6 +1135,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings => 'Settings';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'Follow system';
 
   @override
   String get custom => 'Custom';
