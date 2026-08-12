@@ -497,6 +497,128 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
+  double _measureTextWidth(String text, TextStyle style) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    return textPainter.width;
+  }
+
+  Widget _wrapAppBarAction({
+    required Widget icon,
+    required VoidCallback? onPressed,
+    String? tooltip,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IconButton(
+          icon: icon,
+          onPressed: onPressed,
+          tooltip: tooltip,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _layoutAppBarActions(List<Widget> actions) {
+    if (actions.isEmpty) return const [];
+    if (actions.length <= 1) {
+      return [for (final a in actions) _wrapAppBarActionFrom(a)];
+    }
+
+    // Reserve generous space for the app logo + title so the trailing
+    // actions never collide with it, even on small phones.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = (screenWidth - 72).clamp(0.0, double.infinity);
+    const double slotWidth = 56.0;
+    final int maxSlots = (availableWidth / slotWidth).floor();
+
+    // One slot is reserved for the overflow "more" button below.
+    final int directCount = actions.length < maxSlots
+        ? actions.length
+        : (maxSlots - 1).clamp(1, actions.length - 1);
+
+    final direct = actions.take(directCount).toList();
+    final overflow = actions.skip(directCount).toList();
+
+    final rendered = <Widget>[for (final a in direct) _wrapAppBarActionFrom(a)];
+
+    if (overflow.isNotEmpty) {
+      final colorScheme = Theme.of(context).colorScheme;
+      rendered.add(
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: PopupMenuButton<IconButton>(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              tooltip: '',
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (selected) {
+                selected.onPressed?.call();
+              },
+              itemBuilder: (context) => [
+                for (final item in overflow)
+                  PopupMenuItem<IconButton>(
+                    value: (item is IconButton) ? item : null,
+                    enabled: item is IconButton,
+                    child: Row(
+                      children: [
+                        Icon(
+                          item is IconButton
+                              ? (item.icon is Icon
+                                    ? (item.icon as Icon).icon
+                                    : Icons.arrow_forward)
+                              : Icons.arrow_forward,
+                          size: 20,
+                          color: colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            item is IconButton ? (item.tooltip ?? '') : '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: colorScheme.onSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return rendered;
+  }
+
+  Widget _wrapAppBarActionFrom(Widget action) {
+    if (action is IconButton) {
+      return _wrapAppBarAction(
+        icon: action.icon,
+        onPressed: action.onPressed,
+        tooltip: action.tooltip,
+      );
+    }
+    return action;
+  }
+
   void _resetBearing() {
     if (_mapController == null || _cameraPosition == null) return;
     _mapController!.animateCamera(
@@ -3208,6 +3330,28 @@ class _MapScreenState extends State<MapScreen>
               onPressed: _showRouteCreationDialog,
             ),
             IconButton(
+              icon: const Icon(Icons.list_alt),
+              tooltip: l10n.manageLocations,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageLocationsScreen(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.folder_copy_outlined),
+              tooltip: l10n.manageGroups,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GroupsScreen()),
+                );
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.route_sharp),
               tooltip: l10n.savedRoutes,
               onPressed: () async {
@@ -3290,28 +3434,6 @@ class _MapScreenState extends State<MapScreen>
               },
             ),
             IconButton(
-              icon: const Icon(Icons.list_alt),
-              tooltip: l10n.manageLocations,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageLocationsScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.folder_copy_outlined),
-              tooltip: l10n.manageGroups,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const GroupsScreen()),
-                );
-              },
-            ),
-            IconButton(
               icon: const Icon(Icons.person_outline),
               tooltip: l10n.profileScreenTitle,
               onPressed: () {
@@ -3354,62 +3476,53 @@ class _MapScreenState extends State<MapScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: GestureDetector(
-          onTap: _showAboutDialog,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SizedBox(
-                  height: 32,
-                  width: 32,
-                  child: Image.asset(
-                    'assets/icon/icon.png',
-                    fit: BoxFit.contain,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            const textStyle = TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            );
+            const double iconBoxWidth = 48;
+            const double gap = 12;
+            final textWidth = _measureTextWidth('TripBook', textStyle);
+            final canShowText =
+                constraints.maxWidth >= iconBoxWidth + gap + textWidth;
+            return GestureDetector(
+              onTap: _showAboutDialog,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: Image.asset(
+                        'assets/icon/icon.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Flexible(
-                child: Text(
-                  'TripBook',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: appBarActions.map((action) {
-          if (action is IconButton) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: action.icon,
-                  onPressed: action.onPressed,
-                  tooltip: action.tooltip,
-                  color: Colors.white,
-                ),
+                  if (canShowText) ...[
+                    const SizedBox(width: gap),
+                    const Text(
+                      'TripBook',
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      style: textStyle,
+                    ),
+                  ],
+                ],
               ),
             );
-          }
-          return action;
-        }).toList(),
+          },
+        ),
+        actions: _layoutAppBarActions(appBarActions),
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
