@@ -337,6 +337,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noSavedLocations => 'No saved locations found.';
 
   @override
+  String get searchLocationsHint =>
+      'Search locations by name, place or group...';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get noSearchResults => 'No locations found matching your search.';
+
+  @override
   String get groupNone => 'None';
 
   @override

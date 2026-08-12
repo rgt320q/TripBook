@@ -716,6 +716,24 @@ abstract class AppLocalizations {
   /// **'No saved locations found.'**
   String get noSavedLocations;
 
+  /// No description provided for @searchLocationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search locations by name, place or group...'**
+  String get searchLocationsHint;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No locations found matching your search.'**
+  String get noSearchResults;
+
   /// No description provided for @groupNone.
   ///
   /// In en, this message translates to:

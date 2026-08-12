@@ -338,6 +338,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noSavedLocations => 'Kaydedilmiş konum bulunamadı.';
 
   @override
+  String get searchLocationsHint => 'Konumları ad, yer veya gruba göre ara...';
+
+  @override
+  String get clearSearch => 'Aramayı temizle';
+
+  @override
+  String get noSearchResults => 'Aramanızla eşleşen konum bulunamadı.';
+
+  @override
   String get groupNone => 'Yok';
 
   @override

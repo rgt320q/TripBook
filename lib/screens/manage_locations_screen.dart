@@ -29,10 +29,14 @@ enum SortBy { nameAsc, nameDesc, dateNewest, dateOldest }
 
 class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  late final Stream<List<TravelLocation>> _locationsStream;
+  late final Stream<List<LocationGroup>> _groupsStream;
   final List<TravelLocation> _selectedLocations = [];
   SortBy _currentSortBy = SortBy.dateNewest;
   GlobalKey? _scrollKey;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   void _sortLocations(List<TravelLocation> locations) {
     switch (_currentSortBy) {
@@ -60,35 +64,38 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
   }
 
   void _scrollToSelected(int targetIndex) {
-  if (_scrollKey == null) return;
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _scrollTargetIntoView(targetIndex, retries: 5);
-  });
-}
+    if (_scrollKey == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollTargetIntoView(targetIndex, retries: 5);
+    });
+  }
 
-Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) async {
-  for (int attempt = 0; attempt <= retries; attempt++) {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (!mounted) return;
-    final ctx = _scrollKey?.currentContext;
-    if (ctx != null) {
-      await Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 500),
-        alignment: 0.0,
-        curve: Curves.easeInOut,
-      );
-      return;
-    }
-    if (_scrollController.hasClients && attempt == 0) {
-      await _scrollController.animateTo(
-        (targetIndex * 100).toDouble(),
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-      );
+  Future<void> _scrollTargetIntoView(
+    int targetIndex, {
+    required int retries,
+  }) async {
+    for (int attempt = 0; attempt <= retries; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+      final ctx = _scrollKey?.currentContext;
+      if (ctx != null) {
+        await Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 500),
+          alignment: 0.0,
+          curve: Curves.easeInOut,
+        );
+        return;
+      }
+      if (_scrollController.hasClients && attempt == 0) {
+        await _scrollController.animateTo(
+          (targetIndex * 100).toDouble(),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
-}
 
   String _getSortLabel(AppLocalizations l10n) {
     switch (_currentSortBy) {
@@ -104,7 +111,23 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
   }
 
   @override
+  void initState() {
+    super.initState();
+    _locationsStream = _firestoreService.getLocations();
+    _groupsStream = _firestoreService.getGroups();
+    _searchController.addListener(() {
+      final query = _searchController.text.trim();
+      if (query != _searchQuery) {
+        setState(() {
+          _searchQuery = query;
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -127,6 +150,83 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
         }
       });
     }
+  }
+
+  Widget _buildSearchField(AppLocalizations l10n, ColorScheme colorScheme) {
+    final hasQuery = _searchQuery.isNotEmpty;
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: hasQuery
+              ? Theme.of(context).primaryColor
+              : colorScheme.outlineVariant,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: l10n.searchLocationsHint,
+          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+          prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+          suffixIcon: hasQuery
+              ? IconButton(
+                  tooltip: l10n.clearSearch,
+                  icon: Icon(Icons.clear, color: colorScheme.onSurfaceVariant),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoSearchResults(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.search_off,
+              size: 64,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.noSearchResults,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -251,7 +351,7 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
         ),
       ),
       body: StreamBuilder<List<TravelLocation>>(
-        stream: _firestoreService.getLocations(),
+        stream: _locationsStream,
         builder: (context, locationSnapshot) {
           if (locationSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -287,7 +387,10 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
                     const SizedBox(height: 12),
                     Text(
                       l10n.addLocationsFromMapHint,
-                      style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -326,7 +429,10 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
                     const SizedBox(height: 12),
                     Text(
                       l10n.error(locationSnapshot.error.toString()),
-                      style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -352,11 +458,33 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
           }
 
           return StreamBuilder<List<LocationGroup>>(
-            stream: _firestoreService.getGroups(),
+            stream: _groupsStream,
             builder: (context, groupSnapshot) {
               final groups = groupSnapshot.data ?? [];
               groups.sort((a, b) => a.name.compareTo(b.name));
               final groupMap = {for (var g in groups) g.firestoreId: g.name};
+
+              final query = _searchQuery.trim().toLowerCase();
+              final filteredLocations = query.isEmpty
+                  ? locations
+                  : locations.where((loc) {
+                      bool matches(String? value) =>
+                          value != null && value.toLowerCase().contains(query);
+                      final groupMatch = loc.groupIds.any(
+                        (gid) => matches(groupMap[gid]),
+                      );
+                      return matches(loc.name) ||
+                          matches(loc.geoName) ||
+                          groupMatch;
+                    }).toList();
+
+              final filteredTargetIndex =
+                  widget.initiallyExpandedLocationId != null
+                  ? filteredLocations.indexWhere(
+                      (loc) =>
+                          loc.firestoreId == widget.initiallyExpandedLocationId,
+                    )
+                  : -1;
 
               return Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -371,7 +499,10 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
                         gradient: LinearGradient(
                           colors: isDark
                               ? [Colors.blue[900]!, Colors.blue[800]!]
-                              : [colorScheme.primaryContainer, Colors.blue[100]!],
+                              : [
+                                  colorScheme.primaryContainer,
+                                  Colors.blue[100]!,
+                                ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -443,42 +574,68 @@ Future<void> _scrollTargetIntoView(int targetIndex, {required int retries}) asyn
                       ),
                     ),
 
+                    // Search bar
+                    _buildSearchField(l10n, colorScheme),
+                    const SizedBox(height: 12),
+
+                    if (query.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          '${filteredLocations.length} ${l10n.locationsLabel}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+
                     // Locations list
                     Expanded(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        itemCount: locations.length,
-                        itemBuilder: (context, index) {
-                          final location = locations[index];
-                          final bool isTarget = index == targetLocationIndex;
+                      child: filteredLocations.isEmpty
+                          ? _buildNoSearchResults(l10n, colorScheme)
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.only(bottom: 16),
+                              itemCount: filteredLocations.length,
+                              itemBuilder: (context, index) {
+                                final location = filteredLocations[index];
+                                final bool isTarget =
+                                    index == filteredTargetIndex;
 
-                          Widget listItem = LocationListItem(
-                            key: ValueKey(
-                              location.firestoreId ?? location.hashCode,
+                                Widget listItem = LocationListItem(
+                                  key: ValueKey(
+                                    location.firestoreId ?? location.hashCode,
+                                  ),
+                                  location: location,
+                                  groupNames: location.groupIds
+                                      .map(
+                                        (id) => groupMap[id] ?? l10n.groupNone,
+                                      )
+                                      .toList(),
+                                  allGroups: groups,
+                                  firestoreService: _firestoreService,
+                                  isInitiallyExpanded: isTarget,
+                                  isSelected: _selectedLocations.contains(
+                                    location,
+                                  ),
+                                  isReadOnly: widget.isReadOnly,
+                                  onSelected: widget.isForSelection
+                                      ? (location, selected) {
+                                          _toggleSelected(location, selected);
+                                        }
+                                      : null,
+                                );
+
+                                return Container(
+                                  key: isTarget ? _scrollKey : null,
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: listItem,
+                                );
+                              },
                             ),
-                            location: location,
-                            groupNames: location.groupIds
-                                .map((id) => groupMap[id] ?? l10n.groupNone)
-                                .toList(),
-                            allGroups: groups,
-                            firestoreService: _firestoreService,
-                            isInitiallyExpanded: isTarget,
-                            isSelected: _selectedLocations.contains(location),
-                            isReadOnly: widget.isReadOnly,
-                            onSelected: widget.isForSelection
-                                ? (location, selected) {
-                                    _toggleSelected(location, selected);
-                                  }
-                                : null,
-                          );
-
-                          return Container(
-                            key: isTarget ? _scrollKey : null,
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: listItem,
-                          );
-                        },
-                      ),
                     ),
                   ],
                 ),
@@ -745,8 +902,12 @@ class _LocationListItemState extends State<LocationListItem> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      brandButtonBlue(Theme.of(context).brightness),
-                                      brandGradientEndBlue(Theme.of(context).brightness),
+                                      brandButtonBlue(
+                                        Theme.of(context).brightness,
+                                      ),
+                                      brandGradientEndBlue(
+                                        Theme.of(context).brightness,
+                                      ),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -979,9 +1140,7 @@ class _LocationListItemState extends State<LocationListItem> {
           ),
         ],
         border: Border.all(
-          color: _isExpanded
-              ? theme.primaryColor
-              : colorScheme.outlineVariant,
+          color: _isExpanded ? theme.primaryColor : colorScheme.outlineVariant,
           width: _isExpanded ? 2 : 1,
         ),
       ),
@@ -1187,7 +1346,9 @@ class _LocationListItemState extends State<LocationListItem> {
                               gradient: LinearGradient(
                                 colors: [
                                   brandButtonBlue(Theme.of(context).brightness),
-                                  brandGradientEndBlue(Theme.of(context).brightness),
+                                  brandGradientEndBlue(
+                                    Theme.of(context).brightness,
+                                  ),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
@@ -1376,11 +1537,7 @@ class _LocationListItemState extends State<LocationListItem> {
           ),
           hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
           suffixIcon: readOnly
-              ? Icon(
-                  Icons.lock,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                )
+              ? Icon(Icons.lock, color: colorScheme.onSurfaceVariant, size: 20)
               : null,
         ),
         keyboardType: inputType,
