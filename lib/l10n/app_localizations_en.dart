@@ -403,6 +403,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeLocationAuto => 'Home Location (Auto)';
 
   @override
+  String get useHomeAsEndTitle => 'Use Home as Route End';
+
+  @override
+  String get useHomeAsEndDescription =>
+      'Adds your home location as the final stop of the route.';
+
+  @override
   String get currentLocation => 'Current Location';
 
   @override

@@ -404,6 +404,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get homeLocationAuto => 'Ev Konumu (Otomatik)';
 
   @override
+  String get useHomeAsEndTitle => 'Ev Konumunu Rota Bitişi Olarak Kullan';
+
+  @override
+  String get useHomeAsEndDescription =>
+      'Ev konumunuzu rotanın son durağı olarak ekler.';
+
+  @override
   String get currentLocation => 'Mevcut Konum';
 
   @override

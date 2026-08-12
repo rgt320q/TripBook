@@ -252,7 +252,9 @@ class _MapScreenState extends State<MapScreen>
                           createdAt: DateTime.now(),
                           userId: FirebaseAuth.instance.currentUser!.uid,
                         );
-                        final docRef = await _firestoreService.addGroup(newGroup);
+                        final docRef = await _firestoreService.addGroup(
+                          newGroup,
+                        );
                         final createdGroup = LocationGroup(
                           firestoreId: docRef.id,
                           name: newGroup.name,
@@ -433,11 +435,7 @@ class _MapScreenState extends State<MapScreen>
                   ),
                 ),
               ),
-              _mapTypeOption(
-                sheetContext,
-                MapType.normal,
-                l10n.mapTypeNormal,
-              ),
+              _mapTypeOption(sheetContext, MapType.normal, l10n.mapTypeNormal),
               _mapTypeOption(
                 sheetContext,
                 MapType.satellite,
@@ -448,11 +446,7 @@ class _MapScreenState extends State<MapScreen>
                 MapType.terrain,
                 l10n.mapTypeTerrain,
               ),
-              _mapTypeOption(
-                sheetContext,
-                MapType.hybrid,
-                l10n.mapTypeHybrid,
-              ),
+              _mapTypeOption(sheetContext, MapType.hybrid, l10n.mapTypeHybrid),
               const SizedBox(height: 8),
             ],
           ),
@@ -463,11 +457,7 @@ class _MapScreenState extends State<MapScreen>
     });
   }
 
-  Widget _mapTypeOption(
-    BuildContext sheetContext,
-    MapType type,
-    String label,
-  ) {
+  Widget _mapTypeOption(BuildContext sheetContext, MapType type, String label) {
     final selected = _currentMapType == type;
     return ListTile(
       leading: _MapTypePreview(type: type),
@@ -933,10 +923,7 @@ class _MapScreenState extends State<MapScreen>
     _scheduleMapUpdate();
   }
 
-  List<LatLng> _decimatePoints(
-    List<LatLng> points, {
-    int maxPoints = 500,
-  }) {
+  List<LatLng> _decimatePoints(List<LatLng> points, {int maxPoints = 500}) {
     if (points.length <= maxPoints) return points;
     final step = points.length / maxPoints;
     final result = <LatLng>[];
@@ -1325,7 +1312,9 @@ class _MapScreenState extends State<MapScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isHighlighted ? color.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
+        color: isHighlighted
+            ? color.withValues(alpha: 0.1)
+            : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted ? color : colorScheme.outlineVariant,
@@ -1679,705 +1668,720 @@ class _MapScreenState extends State<MapScreen>
                 maxHeight: MediaQuery.of(modalContext).size.height * 0.85,
               ),
               child: Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setModalState) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Handle bar
-                      Container(
-                        margin: const EdgeInsets.only(top: 8, bottom: 8),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(2),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setModalState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Handle bar
+                        Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 8),
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: colorScheme.outlineVariant,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
 
-                      // Header
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              brandButtonBlue(Theme.of(context).brightness),
-                              brandGradientEndBlue(Theme.of(context).brightness),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Top Row: Icon and Action Buttons
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.route_rounded,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
+                        // Header
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                brandButtonBlue(Theme.of(context).brightness),
+                                brandGradientEndBlue(
+                                  Theme.of(context).brightness,
                                 ),
-                                const Spacer(),
-                                if (!_isNavigationStarted) ...[
-                                  // Action buttons wrapped in a Row to prevent vertical overlap
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Travel Mode Selector
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: PopupMenuButton<AppTravelMode>(
-                                          icon: Icon(
-                                            _selectedTravelMode ==
-                                                    AppTravelMode.driving
-                                                ? Icons.drive_eta
-                                                : _selectedTravelMode ==
-                                                      AppTravelMode.walking
-                                                ? Icons.directions_walk
-                                                : Icons.directions_bus,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          tooltip: l10n.change,
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(
-                                            minWidth: 40,
-                                          ),
-                                          onSelected: (AppTravelMode mode) {
-                                            setState(() {
-                                              _selectedTravelMode = mode;
-                                            });
-                                            Navigator.pop(context);
-                                            _drawRoute(locations);
-                                          },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: AppTravelMode.driving,
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.drive_eta,
-                                                    size: 20,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(l10n.modeDriving),
-                                                ],
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: AppTravelMode.walking,
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.directions_walk,
-                                                    size: 20,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(l10n.modeWalking),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Top Row: Icon and Action Buttons
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.bookmark_outline,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          tooltip: l10n.saveRouteDialogTitle,
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            _showSaveRouteDialog(
-                                              info,
-                                              locations,
-                                              totalStopDuration:
-                                                  _activeRouteTotalStopDuration,
-                                              totalTripDuration:
-                                                  _activeRouteTotalTripDuration,
-                                              needs: _activeRouteNeeds,
-                                              notes: _activeRouteNotes,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.greenAccent[700],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.2,
-                                              ),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.route_rounded,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (!_isNavigationStarted) ...[
+                                    // Action buttons wrapped in a Row to prevent vertical overlap
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Travel Mode Selector
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
                                             ),
-                                          ],
-                                        ),
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            onTap: () {
+                                          ),
+                                          child: PopupMenuButton<AppTravelMode>(
+                                            icon: Icon(
+                                              _selectedTravelMode ==
+                                                      AppTravelMode.driving
+                                                  ? Icons.drive_eta
+                                                  : _selectedTravelMode ==
+                                                        AppTravelMode.walking
+                                                  ? Icons.directions_walk
+                                                  : Icons.directions_bus,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            tooltip: l10n.change,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 40,
+                                            ),
+                                            onSelected: (AppTravelMode mode) {
                                               setState(() {
-                                                _isNavigationStarted = true;
+                                                _selectedTravelMode = mode;
                                               });
                                               Navigator.pop(context);
-                                              _launchGoogleMaps(locations);
+                                              _drawRoute(locations);
                                             },
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 14,
-                                                    vertical: 10,
-                                                  ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.navigation_rounded,
-                                                    color: Colors.white,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    l10n.startNavigation,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 14,
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: AppTravelMode.driving,
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.drive_eta,
+                                                      size: 20,
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 8),
+                                                    Text(l10n.modeDriving),
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: AppTravelMode.walking,
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.directions_walk,
+                                                      size: 20,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(l10n.modeWalking),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.bookmark_outline,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            tooltip: l10n.saveRouteDialogTitle,
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              _showSaveRouteDialog(
+                                                info,
+                                                locations,
+                                                totalStopDuration:
+                                                    _activeRouteTotalStopDuration,
+                                                totalTripDuration:
+                                                    _activeRouteTotalTripDuration,
+                                                needs: _activeRouteNeeds,
+                                                notes: _activeRouteNotes,
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.greenAccent[700],
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              onTap: () {
+                                                setState(() {
+                                                  _isNavigationStarted = true;
+                                                });
+                                                Navigator.pop(context);
+                                                _launchGoogleMaps(locations);
+                                              },
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 10,
+                                                    ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.navigation_rounded,
+                                                      color: Colors.white,
+                                                      size: 18,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      l10n.startNavigation,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            // Middle Area: The "Hybrid Route" text in its own thin row
-                            if (info.containsStraightLines)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    l10n.hybridRouteTitle(
-                                      _selectedTravelMode ==
-                                              AppTravelMode.driving
-                                          ? l10n.modeDriving
-                                          : l10n.modeWalking,
-                                    ),
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ),
                               ),
-                            // Main Title and Chips Area
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.routeSummaryTitle,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
+                              const SizedBox(height: 16),
+                              // Middle Area: The "Hybrid Route" text in its own thin row
+                              if (info.containsStraightLines)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      l10n.hybridRouteTitle(
+                                        _selectedTravelMode ==
+                                                AppTravelMode.driving
+                                            ? l10n.modeDriving
+                                            : l10n.modeWalking,
+                                      ),
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    if (info.containsStraightLines) ...[
+                              // Main Title and Chips Area
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.routeSummaryTitle,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      if (info.containsStraightLines) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange[400]!
+                                                .withValues(alpha: 0.9),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.auto_fix_high,
+                                                color: Colors.white,
+                                                size: 12,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                l10n.noRoadAccessWarning,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w900,
+                                                  letterSpacing: 0.2,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                      ],
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
                                           vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.orange[400]!.withValues(
-                                            alpha: 0.9,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.15,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.auto_fix_high,
-                                              color: Colors.white,
-                                              size: 12,
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
                                             ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              l10n.noRoadAccessWarning,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w900,
-                                                letterSpacing: 0.2,
-                                              ),
-                                            ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                    ],
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
+                                        child: Text(
+                                          '${locations.length} ${l10n.locationsLabel}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
-                                      child: Text(
-                                        '${locations.length} ${l10n.locationsLabel}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Content
+                        Flexible(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Route Stats Cards
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        icon: Icons.access_time,
+                                        label: l10n.estimatedTravelTime,
+                                        value: _formatDuration(
+                                          info.duration.inMinutes,
                                         ),
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        icon: Icons.straighten,
+                                        label: l10n.totalDistance,
+                                        value: info.totalDistance,
+                                        color: Colors.blue,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Content
-                      Flexible(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Route Stats Cards
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      icon: Icons.access_time,
-                                      label: l10n.estimatedTravelTime,
-                                      value: _formatDuration(
-                                        info.duration.inMinutes,
-                                      ),
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      icon: Icons.straighten,
-                                      label: l10n.totalDistance,
-                                      value: info.totalDistance,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      icon: Icons.pause_circle,
-                                      label: l10n.totalTimeAtStops,
-                                      value: _formatDuration(totalStopDuration),
-                                      color: Colors.purple,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      icon: info.containsStraightLines
-                                          ? Icons.priority_high
-                                          : Icons.schedule,
-                                      label: l10n.totalTripTime,
-                                      value: _formatDuration(totalTripDuration),
-                                      color: info.containsStraightLines
-                                          ? Colors.orange
-                                          : Colors.green,
-                                      isHighlighted: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              if (info.containsStraightLines) ...[
                                 const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.orange.withValues(
-                                        alpha: 0.3,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        icon: Icons.pause_circle,
+                                        label: l10n.totalTimeAtStops,
+                                        value: _formatDuration(
+                                          totalStopDuration,
+                                        ),
+                                        color: Colors.purple,
                                       ),
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.info_outline,
-                                        color: Colors.orange,
-                                        size: 20,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        icon: info.containsStraightLines
+                                            ? Icons.priority_high
+                                            : Icons.schedule,
+                                        label: l10n.totalTripTime,
+                                        value: _formatDuration(
+                                          totalTripDuration,
+                                        ),
+                                        color: info.containsStraightLines
+                                            ? Colors.orange
+                                            : Colors.green,
+                                        isHighlighted: true,
                                       ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          l10n.approximateDurationWarning,
-                                          style: TextStyle(
-                                            color: Colors.orange[900],
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                    ),
+                                  ],
+                                ),
+
+                                if (info.containsStraightLines) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: Colors.orange.withValues(
+                                          alpha: 0.3,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-
-                              const SizedBox(height: 24),
-
-                              // Needs Section
-                              Builder(
-                                builder: (context) {
-                                  final allRawNeeds = locations
-                                      .expand((loc) => loc.needsList ?? [])
-                                      .toList();
-
-                                  if (allRawNeeds.isEmpty) {
-                                    return const SizedBox.shrink();
-                                  }
-
-                                  return Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.blue[200]!,
-                                      ),
                                     ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                        Row(
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.info_outline,
+                                          color: Colors.orange,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            l10n.approximateDurationWarning,
+                                            style: TextStyle(
+                                              color: Colors.orange[900],
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+
+                                const SizedBox(height: 24),
+
+                                // Needs Section
+                                Builder(
+                                  builder: (context) {
+                                    final allRawNeeds = locations
+                                        .expand((loc) => loc.needsList ?? [])
+                                        .toList();
+
+                                    if (allRawNeeds.isEmpty) {
+                                      return const SizedBox.shrink();
+                                    }
+
+                                    return Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primaryContainer,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.blue[200]!,
+                                        ),
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Icon(
-                                              Icons.shopping_cart,
-                                              color: Colors.blue[600],
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                l10n.needsForTrip,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.blue[800],
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.shopping_cart,
+                                                  color: Colors.blue[600],
+                                                  size: 20,
                                                 ),
-                                              ),
-                                            ),
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue[100],
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                  onTap: () {
-                                                    setModalState(() {
-                                                      _activeRouteNeedsState
-                                                          .clear();
-                                                      _isNeedsListConsolidated =
-                                                          !_isNeedsListConsolidated;
-                                                    });
-                                                  },
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 6,
-                                                        ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          _isNeedsListConsolidated
-                                                              ? Icons
-                                                                    .expand_more
-                                                              : Icons.compress,
-                                                          size: 16,
-                                                          color:
-                                                              Colors.blue[700],
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 4,
-                                                        ),
-                                                        Text(
-                                                          _isNeedsListConsolidated
-                                                              ? l10n.expand
-                                                              : l10n.consolidate,
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: Colors
-                                                                .blue[700],
-                                                          ),
-                                                        ),
-                                                      ],
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    l10n.needsForTrip,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.blue[800],
                                                     ),
                                                   ),
                                                 ),
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue[100],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                  child: Material(
+                                                    color: Colors.transparent,
+                                                    child: InkWell(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      onTap: () {
+                                                        setModalState(() {
+                                                          _activeRouteNeedsState
+                                                              .clear();
+                                                          _isNeedsListConsolidated =
+                                                              !_isNeedsListConsolidated;
+                                                        });
+                                                      },
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 6,
+                                                            ),
+                                                        child: Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(
+                                                              _isNeedsListConsolidated
+                                                                  ? Icons
+                                                                        .expand_more
+                                                                  : Icons
+                                                                        .compress,
+                                                              size: 16,
+                                                              color: Colors
+                                                                  .blue[700],
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              _isNeedsListConsolidated
+                                                                  ? l10n.expand
+                                                                  : l10n.consolidate,
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .blue[700],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            if (_isNeedsListConsolidated)
+                                              ..._buildConsolidatedNeeds(
+                                                locations,
+                                                setModalState,
+                                              )
+                                            else
+                                              ..._buildRawNeeds(
+                                                locations,
+                                                setModalState,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                                // Notes Section
+                                if (locationsWithInfo.isNotEmpty) ...[
+                                  const SizedBox(height: 20),
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.tertiaryContainer,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.amber[200]!,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.note_alt,
+                                              color: Colors.amber[700],
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              l10n.notesForTrip,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.amber[800],
                                               ),
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 12),
-                                        if (_isNeedsListConsolidated)
-                                          ..._buildConsolidatedNeeds(
-                                            locations,
-                                            setModalState,
-                                          )
-                                        else
-                                          ..._buildRawNeeds(
-                                            locations,
-                                            setModalState,
-                                          ),
-                                      ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              // Notes Section
-                              if (locationsWithInfo.isNotEmpty) ...[
-                                const SizedBox(height: 20),
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.tertiaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.amber[200]!,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.note_alt,
-                                            color: Colors.amber[700],
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            l10n.notesForTrip,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.amber[800],
+                                        ...locationsWithInfo.map((loc) {
+                                          return Container(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 12,
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      ...locationsWithInfo.map((loc) {
-                                        return Container(
-                                          margin: const EdgeInsets.only(
-                                            bottom: 12,
-                                          ),
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.surface,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.amber[200]!,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.location_on,
-                                                    color: Colors.amber[700],
-                                                    size: 16,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: Text(
-                                                      loc.name,
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: Colors.amber[200]!,
                                               ),
-                                              if (loc.notes != null &&
-                                                  loc.notes!.isNotEmpty) ...[
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  loc.notes!,
-                                                  style: TextStyle(
-                                                    color:
-                                                        colorScheme.onSurfaceVariant,
-                                                  ),
-                                                ),
-                                              ],
-                                              if (loc.estimatedDuration !=
-                                                      null &&
-                                                  loc.estimatedDuration! >
-                                                      0) ...[
-                                                const SizedBox(height: 4),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
                                                 Row(
                                                   children: [
                                                     Icon(
-                                                      Icons.schedule,
-                                                      color:
-                                                          colorScheme
-                                                              .onSurfaceVariant,
-                                                      size: 14,
+                                                      Icons.location_on,
+                                                      color: Colors.amber[700],
+                                                      size: 16,
                                                     ),
                                                     const SizedBox(width: 4),
-                                                    Text(
-                                                      '${l10n.estimatedDurationLabel}: ${_formatDuration(loc.estimatedDuration!)}',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        color:
-                                                            colorScheme
-                                                                .onSurfaceVariant,
+                                                    Expanded(
+                                                      child: Text(
+                                                        loc.name,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
+                                                if (loc.notes != null &&
+                                                    loc.notes!.isNotEmpty) ...[
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    loc.notes!,
+                                                    style: TextStyle(
+                                                      color: colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ],
+                                                if (loc.estimatedDuration !=
+                                                        null &&
+                                                    loc.estimatedDuration! >
+                                                        0) ...[
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.schedule,
+                                                        color: colorScheme
+                                                            .onSurfaceVariant,
+                                                        size: 14,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${l10n.estimatedDurationLabel}: ${_formatDuration(loc.estimatedDuration!)}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontStyle:
+                                                              FontStyle.italic,
+                                                          color: colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
                                               ],
-                                            ],
-                                          ),
-                                        );
-                                      }),
-                                    ],
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  ).whenComplete(() => setState(() => _isAnyModalOpen = false));
+        );
+      },
+    ).whenComplete(() => setState(() => _isAnyModalOpen = false));
   }
 
   List<Widget> _buildRawNeeds(
@@ -2713,18 +2717,14 @@ class _MapScreenState extends State<MapScreen>
 
   Future<TravelLocation?> _markerAtScreenPosition(Offset pos) async {
     const double hitRadiusPx = 56;
-    final double scale =
-        kIsWeb ? 1.0 : MediaQuery.of(context).devicePixelRatio;
+    final double scale = kIsWeb ? 1.0 : MediaQuery.of(context).devicePixelRatio;
     TravelLocation? nearest;
     double nearestDistance = double.infinity;
     for (final loc in _allLocations) {
       final screen = await _mapController!.getScreenCoordinate(
         LatLng(loc.latitude, loc.longitude),
       );
-      final markerLogical = Offset(
-        screen.x / scale,
-        screen.y / scale,
-      );
+      final markerLogical = Offset(screen.x / scale, screen.y / scale);
       final distance = (markerLogical - pos).distance;
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -2739,8 +2739,9 @@ class _MapScreenState extends State<MapScreen>
 
   void _openLocationDetails(TravelLocation loc) {
     if (!mounted) return;
-    _suppressMarkerTapUntil =
-        DateTime.now().add(const Duration(milliseconds: 900));
+    _suppressMarkerTapUntil = DateTime.now().add(
+      const Duration(milliseconds: 900),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -2998,7 +2999,7 @@ class _MapScreenState extends State<MapScreen>
                 tiltGesturesEnabled: !_isAnyModalOpen,
               ),
             ),
-            
+
             // Long press indicator
             if (_isLongPressing && _longPressPosition != null)
               Positioned(
@@ -3013,7 +3014,7 @@ class _MapScreenState extends State<MapScreen>
                   },
                 ),
               ),
-              
+
             // Overlay wrapped in PointerInterceptor
             Positioned(
               top: 10,
@@ -3219,9 +3220,11 @@ class _MapScreenState extends State<MapScreen>
                 if (!mounted) return;
 
                 if (result is Map<String, dynamic>) {
-                  final locations = result['locations'] as List<TravelLocation>?;
+                  final locations =
+                      result['locations'] as List<TravelLocation>?;
                   final endLocation = result['endLocation'] as TravelLocation?;
-                  final waypoints = result['waypoints'] as List<TravelLocation>?;
+                  final waypoints =
+                      result['waypoints'] as List<TravelLocation>?;
 
                   if (locations != null && endLocation != null) {
                     _drawRoute(locations, endLocation: endLocation);
@@ -3232,13 +3235,16 @@ class _MapScreenState extends State<MapScreen>
                   } else if (locations != null && locations.isNotEmpty) {
                     _drawRoute(locations);
                   }
-                } else if (result is List<TravelLocation> && result.isNotEmpty) {
+                } else if (result is List<TravelLocation> &&
+                    result.isNotEmpty) {
                   if (result.length >= 2) {
                     _drawRoute(result);
                   } else {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.locationsNotFoundOrInsufficient)),
+                      SnackBar(
+                        content: Text(l10n.locationsNotFoundOrInsufficient),
+                      ),
                     );
                   }
                 }
@@ -3248,7 +3254,8 @@ class _MapScreenState extends State<MapScreen>
               icon: const Icon(Icons.public),
               tooltip: l10n.communityRoutes,
               onPressed: () async {
-                final connectivityResult = await ConnectivityService().checkConnection();
+                final connectivityResult = await ConnectivityService()
+                    .checkConnection();
                 if (!connectivityResult && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -3261,7 +3268,9 @@ class _MapScreenState extends State<MapScreen>
                 if (!mounted) return;
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CommunityRoutesScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const CommunityRoutesScreen(),
+                  ),
                 );
                 if (result is List<TravelLocation>) {
                   _drawRoute(result);
@@ -3274,7 +3283,9 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ReachedLocationsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => ReachedLocationsScreen(),
+                  ),
                 );
               },
             ),
@@ -3284,7 +3295,9 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ManageLocationsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const ManageLocationsScreen(),
+                  ),
                 );
               },
             ),
@@ -3304,7 +3317,9 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
                 );
               },
             ),
@@ -3324,7 +3339,9 @@ class _MapScreenState extends State<MapScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ReachedLocationsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => ReachedLocationsScreen(),
+                  ),
                 );
               },
             ),
@@ -3351,7 +3368,10 @@ class _MapScreenState extends State<MapScreen>
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Image.asset('assets/icon/icon.png', fit: BoxFit.contain),
+                  child: Image.asset(
+                    'assets/icon/icon.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -3458,7 +3478,9 @@ class _MapScreenState extends State<MapScreen>
               child: AnimatedBuilder(
                 animation: _longPressController,
                 builder: (context, child) {
-                  return LongPressIndicator(progress: _longPressController.value);
+                  return LongPressIndicator(
+                    progress: _longPressController.value,
+                  );
                 },
               ),
             ),
@@ -3517,7 +3539,10 @@ class _MapScreenState extends State<MapScreen>
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
                             decoration: InputDecoration(
                               hintText: l10n.searchHint,
                               hintStyle: TextStyle(
@@ -3526,7 +3551,9 @@ class _MapScreenState extends State<MapScreen>
                                 fontWeight: FontWeight.w400,
                               ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -3570,14 +3597,20 @@ class _MapScreenState extends State<MapScreen>
                         ],
                       ),
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3),
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.3,
+                        ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           child: ListView.separated(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             shrinkWrap: true,
                             itemCount: _placePredictions.length,
-                            separatorBuilder: (context, index) => Divider(height: 1, color: colorScheme.outlineVariant, indent: 56),
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              color: colorScheme.outlineVariant,
+                              indent: 56,
+                            ),
                             itemBuilder: (context, index) {
                               final prediction = _placePredictions[index];
                               return Material(
@@ -3586,20 +3619,33 @@ class _MapScreenState extends State<MapScreen>
                                   onTap: () async {
                                     final placeId = prediction['place_id'];
                                     if (placeId == null) return;
-                                    final details = await _directionsService.getPlaceDetails(placeId);
+                                    final details = await _directionsService
+                                        .getPlaceDetails(placeId);
                                     if (details == null || !mounted) return;
-                                    final location = details['geometry']?['location'];
+                                    final location =
+                                        details['geometry']?['location'];
                                     if (location == null) return;
                                     final lat = location['lat'];
                                     final lng = location['lng'];
                                     final latLng = LatLng(lat, lng);
-                                    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+                                    _mapController?.animateCamera(
+                                      CameraUpdate.newLatLngZoom(latLng, 15),
+                                    );
                                     setState(() {
                                       _searchResultMarker = Marker(
-                                        markerId: const MarkerId('search_result'),
+                                        markerId: const MarkerId(
+                                          'search_result',
+                                        ),
                                         position: latLng,
-                                        infoWindow: InfoWindow(title: prediction['description'] ?? l10n.unknownLocation),
-                                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                                        infoWindow: InfoWindow(
+                                          title:
+                                              prediction['description'] ??
+                                              l10n.unknownLocation,
+                                        ),
+                                        icon:
+                                            BitmapDescriptor.defaultMarkerWithHue(
+                                              BitmapDescriptor.hueAzure,
+                                            ),
                                       );
                                       _placePredictions = [];
                                       _searchController.clear();
@@ -3608,14 +3654,16 @@ class _MapScreenState extends State<MapScreen>
                                     _updateMapElements();
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
                                     child: Row(
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color:
-                                                colorScheme.primaryContainer,
+                                            color: colorScheme.primaryContainer,
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
@@ -3630,13 +3678,21 @@ class _MapScreenState extends State<MapScreen>
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            prediction['description'] ?? l10n.unknownLocation,
-                                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                            prediction['description'] ??
+                                                l10n.unknownLocation,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: colorScheme.onSurfaceVariant,
+                                          size: 16,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -3676,7 +3732,10 @@ class _MapScreenState extends State<MapScreen>
                       onTap: _resetBearing,
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
                         child: AnimatedRotation(
                           turns: _currentBearing / 360,
                           duration: const Duration(milliseconds: 250),
@@ -3721,7 +3780,9 @@ class _MapScreenState extends State<MapScreen>
             backgroundColor: Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: const Icon(Icons.my_location, size: 24),
           ),
         ),
@@ -3874,9 +3935,7 @@ class _MapScreenState extends State<MapScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        brandButtonBlue(
-                          Theme.of(dialogContext).brightness,
-                        ),
+                        brandButtonBlue(Theme.of(dialogContext).brightness),
                         brandGradientEndBlue(
                           Theme.of(dialogContext).brightness,
                         ),
@@ -3959,7 +4018,9 @@ class _MapScreenState extends State<MapScreen>
                           if (_currentPosition == null) {
                             if (mounted) LoadingOverlay.hide(context);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.currentLocationError)),
+                              SnackBar(
+                                content: Text(l10n.currentLocationError),
+                              ),
                             );
                             return;
                           }
@@ -3997,7 +4058,11 @@ class _MapScreenState extends State<MapScreen>
                             MaterialPageRoute(
                               builder: (context) => LocationSelectionScreen(
                                 initialLocations: orderedLocations,
-                                endLocation: homeEndLocation ?? defaultEndLocation,
+                                endLocation:
+                                    homeEndLocation ?? defaultEndLocation,
+                                fallbackEndLocation: homeEndLocation != null
+                                    ? defaultEndLocation
+                                    : null,
                               ),
                             ),
                           );
@@ -4038,8 +4103,9 @@ class _MapScreenState extends State<MapScreen>
                         await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const ManageLocationsScreen(isForSelection: true),
+                            builder: (context) => const ManageLocationsScreen(
+                              isForSelection: true,
+                            ),
                           ),
                         );
                     if (selectedLocations != null &&
@@ -4087,7 +4153,11 @@ class _MapScreenState extends State<MapScreen>
                           MaterialPageRoute(
                             builder: (context) => LocationSelectionScreen(
                               initialLocations: optimizedLocations,
-                              endLocation: homeEndLocation ?? defaultEndLocation,
+                              endLocation:
+                                  homeEndLocation ?? defaultEndLocation,
+                              fallbackEndLocation: homeEndLocation != null
+                                  ? defaultEndLocation
+                                  : null,
                             ),
                           ),
                         );
@@ -4148,154 +4218,156 @@ class _MapScreenState extends State<MapScreen>
             builder: (context, setState) {
               return AlertDialog(
                 title: Text(l10n.addLocationDialogTitle),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.googleMapsNameLabel,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(geoName),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: l10n.customLocationNameLabel,
+                content: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.googleMapsNameLabel,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.locationNameEmptyError;
-                          }
-                          final invalidChars = RegExp(r'[<>]');
-                          if (invalidChars.hasMatch(value)) {
-                            return l10n.locationNameInvalidCharsError;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: descriptionController,
-                        decoration: InputDecoration(
-                          labelText: l10n.descriptionLabel,
+                        Text(geoName),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: l10n.customLocationNameLabel,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return l10n.locationNameEmptyError;
+                            }
+                            final invalidChars = RegExp(r'[<>]');
+                            if (invalidChars.hasMatch(value)) {
+                              return l10n.locationNameInvalidCharsError;
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null) return null;
-                          final invalidChars = RegExp(r'[<>]');
-                          if (invalidChars.hasMatch(value)) {
-                            return l10n.descriptionInvalidCharsError;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: notesController,
-                        decoration: InputDecoration(labelText: l10n.notesLabel),
-                        validator: (value) {
-                          if (value == null) return null;
-                          final invalidChars = RegExp(r'[<>]');
-                          if (invalidChars.hasMatch(value)) {
-                            return l10n.notesInvalidCharsError;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: needsController,
-                        decoration: InputDecoration(
-                          labelText: l10n.needsLabel,
-                          hintText: l10n.needsHint,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: descriptionController,
+                          decoration: InputDecoration(
+                            labelText: l10n.descriptionLabel,
+                          ),
+                          validator: (value) {
+                            if (value == null) return null;
+                            final invalidChars = RegExp(r'[<>]');
+                            if (invalidChars.hasMatch(value)) {
+                              return l10n.descriptionInvalidCharsError;
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      DurationSelector(
-                        onChanged: (value) => selectedDuration = value,
-                      ),
-                      const SizedBox(height: 16),
-                      MultiGroupSelector(
-                        selectedGroupIds: selectedGroupIds,
-                        allGroups: dialogGroups,
-                        onChanged: (ids) {
-                          setState(() {
-                            selectedGroupIds = ids;
-                          });
-                        },
-                        onAddNewGroup: () async {
-                          final newGroup = await _showAddNewGroupDialog(
-                            context,
-                          );
-                          if (newGroup != null) {
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: notesController,
+                          decoration: InputDecoration(
+                            labelText: l10n.notesLabel,
+                          ),
+                          validator: (value) {
+                            if (value == null) return null;
+                            final invalidChars = RegExp(r'[<>]');
+                            if (invalidChars.hasMatch(value)) {
+                              return l10n.notesInvalidCharsError;
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: needsController,
+                          decoration: InputDecoration(
+                            labelText: l10n.needsLabel,
+                            hintText: l10n.needsHint,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        DurationSelector(
+                          onChanged: (value) => selectedDuration = value,
+                        ),
+                        const SizedBox(height: 16),
+                        MultiGroupSelector(
+                          selectedGroupIds: selectedGroupIds,
+                          allGroups: dialogGroups,
+                          onChanged: (ids) {
                             setState(() {
-                              if (!_allGroups.any(
-                                (g) => g.firestoreId == newGroup.firestoreId,
-                              )) {
-                                _allGroups.add(newGroup);
-                              }
-                              if (!dialogGroups.any(
-                                (g) => g.firestoreId == newGroup.firestoreId,
-                              )) {
-                                dialogGroups.add(newGroup);
-                              }
+                              selectedGroupIds = ids;
                             });
-                          }
-                          return newGroup;
-                        },
-                      ),
-                    ],
+                          },
+                          onAddNewGroup: () async {
+                            final newGroup = await _showAddNewGroupDialog(
+                              context,
+                            );
+                            if (newGroup != null) {
+                              setState(() {
+                                if (!_allGroups.any(
+                                  (g) => g.firestoreId == newGroup.firestoreId,
+                                )) {
+                                  _allGroups.add(newGroup);
+                                }
+                                if (!dialogGroups.any(
+                                  (g) => g.firestoreId == newGroup.firestoreId,
+                                )) {
+                                  dialogGroups.add(newGroup);
+                                }
+                              });
+                            }
+                            return newGroup;
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(l10n.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user == null) return;
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(l10n.cancel),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) return;
 
-                      final needsList = needsController.text
-                          .split(',')
-                          .map((e) => e.trim())
-                          .where((e) => e.isNotEmpty)
-                          .map((name) => {'name': name, 'checked': false})
-                          .toList();
+                        final needsList = needsController.text
+                            .split(',')
+                            .map((e) => e.trim())
+                            .where((e) => e.isNotEmpty)
+                            .map((name) => {'name': name, 'checked': false})
+                            .toList();
 
-                      final newLocation = TravelLocation(
-                        name: nameController.text.trim(),
-                        geoName: geoName,
-                        description: descriptionController.text.trim(),
-                        latitude: pos.latitude,
-                        longitude: pos.longitude,
-                        notes: notesController.text.trim(),
-                        needsList: needsList,
-                        estimatedDuration: selectedDuration,
-                        groupIds: selectedGroupIds,
-                        userId: user.uid,
-                        createdAt: DateTime.now(),
-                      );
+                        final newLocation = TravelLocation(
+                          name: nameController.text.trim(),
+                          geoName: geoName,
+                          description: descriptionController.text.trim(),
+                          latitude: pos.latitude,
+                          longitude: pos.longitude,
+                          notes: notesController.text.trim(),
+                          needsList: needsList,
+                          estimatedDuration: selectedDuration,
+                          groupIds: selectedGroupIds,
+                          userId: user.uid,
+                          createdAt: DateTime.now(),
+                        );
 
-                      await _firestoreService.addLocation(newLocation);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: Text(l10n.add),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    },
-  ).whenComplete(() => setState(() => _isAnyModalOpen = false));
+                        await _firestoreService.addLocation(newLocation);
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: Text(l10n.add),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    ).whenComplete(() => setState(() => _isAnyModalOpen = false));
   }
 
   @override
@@ -4392,9 +4464,7 @@ class _MapTypePreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.grey[300]!, width: 1),
       ),
-      child: CustomPaint(
-        painter: _MapTypePreviewPainter(type: type),
-      ),
+      child: CustomPaint(painter: _MapTypePreviewPainter(type: type)),
     );
   }
 }
@@ -4411,28 +4481,106 @@ class _MapTypePreviewPainter extends CustomPainter {
     switch (type) {
       case MapType.normal:
         canvas.drawColor(const Color(0xFFE8E3D8), BlendMode.src);
-        _drawRoad(canvas, Offset(0, h * 0.4), Offset(w, h * 0.35), 2.2, Colors.white);
-        _drawRoad(canvas, Offset(w * 0.25, 0), Offset(w * 0.3, h), 1.6, Colors.white);
-        _drawRoad(canvas, Offset(0, h * 0.75), Offset(w, h * 0.7), 1.4, const Color(0xFFFFD98A));
-        _drawPark(canvas, Rect.fromLTWH(w * 0.62, h * 0.1, w * 0.28, h * 0.2), const Color(0xFFA8D5A2));
-        _drawPark(canvas, Rect.fromLTWH(w * 0.12, h * 0.72, w * 0.2, h * 0.22), const Color(0xFF9FD49E));
+        _drawRoad(
+          canvas,
+          Offset(0, h * 0.4),
+          Offset(w, h * 0.35),
+          2.2,
+          Colors.white,
+        );
+        _drawRoad(
+          canvas,
+          Offset(w * 0.25, 0),
+          Offset(w * 0.3, h),
+          1.6,
+          Colors.white,
+        );
+        _drawRoad(
+          canvas,
+          Offset(0, h * 0.75),
+          Offset(w, h * 0.7),
+          1.4,
+          const Color(0xFFFFD98A),
+        );
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(w * 0.62, h * 0.1, w * 0.28, h * 0.2),
+          const Color(0xFFA8D5A2),
+        );
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(w * 0.12, h * 0.72, w * 0.2, h * 0.22),
+          const Color(0xFF9FD49E),
+        );
       case MapType.satellite:
         canvas.drawColor(const Color(0xFF3E5A38), BlendMode.src);
-        _drawPark(canvas, Rect.fromLTWH(0, h * 0.45, w, h * 0.55), const Color(0xFF2F4A2E));
-        _drawPark(canvas, Rect.fromLTWH(0, 0, w * 0.5, h * 0.3), const Color(0xFF354F2F));
-        _drawWater(canvas, Rect.fromLTWH(w * 0.6, h * 0.65, w * 0.4, h * 0.35), const Color(0xFF2E4A63));
-        _drawRoad(canvas, Offset(0, h * 0.5), Offset(w, h * 0.45), 2, const Color(0xFF8A8A80));
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(0, h * 0.45, w, h * 0.55),
+          const Color(0xFF2F4A2E),
+        );
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(0, 0, w * 0.5, h * 0.3),
+          const Color(0xFF354F2F),
+        );
+        _drawWater(
+          canvas,
+          Rect.fromLTWH(w * 0.6, h * 0.65, w * 0.4, h * 0.35),
+          const Color(0xFF2E4A63),
+        );
+        _drawRoad(
+          canvas,
+          Offset(0, h * 0.5),
+          Offset(w, h * 0.45),
+          2,
+          const Color(0xFF8A8A80),
+        );
       case MapType.terrain:
         canvas.drawColor(const Color(0xFFEDE6D4), BlendMode.src);
-        _drawPark(canvas, Rect.fromLTWH(0, 0, w, h * 0.3), const Color(0xFFBCD9A8));
-        _drawPark(canvas, Rect.fromLTWH(w * 0.5, h * 0.2, w * 0.5, h * 0.35), const Color(0xFFB5D4A0));
-        _drawContour(canvas, Offset(w * 0.5, h * 0.85), 18, const Color(0xFFCBB894));
-        _drawContour(canvas, Offset(w * 0.55, h * 0.85), 13, const Color(0xFFC2AE8A));
-        _drawRoad(canvas, Offset(0, h * 0.6), Offset(w, h * 0.55), 1.6, Colors.white);
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(0, 0, w, h * 0.3),
+          const Color(0xFFBCD9A8),
+        );
+        _drawPark(
+          canvas,
+          Rect.fromLTWH(w * 0.5, h * 0.2, w * 0.5, h * 0.35),
+          const Color(0xFFB5D4A0),
+        );
+        _drawContour(
+          canvas,
+          Offset(w * 0.5, h * 0.85),
+          18,
+          const Color(0xFFCBB894),
+        );
+        _drawContour(
+          canvas,
+          Offset(w * 0.55, h * 0.85),
+          13,
+          const Color(0xFFC2AE8A),
+        );
+        _drawRoad(
+          canvas,
+          Offset(0, h * 0.6),
+          Offset(w, h * 0.55),
+          1.6,
+          Colors.white,
+        );
       case MapType.hybrid:
         canvas.drawColor(const Color(0xFF3E5A38), BlendMode.src);
-        _drawWater(canvas, Rect.fromLTWH(w * 0.6, h * 0.6, w * 0.4, h * 0.4), const Color(0xFF2E4A63));
-        _drawRoad(canvas, Offset(0, h * 0.5), Offset(w, h * 0.45), 2.2, Colors.white);
+        _drawWater(
+          canvas,
+          Rect.fromLTWH(w * 0.6, h * 0.6, w * 0.4, h * 0.4),
+          const Color(0xFF2E4A63),
+        );
+        _drawRoad(
+          canvas,
+          Offset(0, h * 0.5),
+          Offset(w, h * 0.45),
+          2.2,
+          Colors.white,
+        );
         _drawLabel(canvas, Offset(w * 0.18, h * 0.15), 'AŞ');
         _drawLabel(canvas, Offset(w * 0.42, h * 0.32), 'Lnk');
       case MapType.none:
@@ -4474,7 +4622,11 @@ class _MapTypePreviewPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 7,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();

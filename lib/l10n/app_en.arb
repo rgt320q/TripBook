@@ -166,6 +166,8 @@
   "selectHomeLocation": "Select Home Location",
   "endLocation": "End Location",
   "homeLocationAuto": "Home Location (Auto)",
+  "useHomeAsEndTitle": "Use Home as Route End",
+  "useHomeAsEndDescription": "Adds your home location as the final stop of the route.",
   "currentLocation": "Current Location",
   "notificationSoundLabel": "Timeout Notification Sound",
   "soundDefault": "Default",

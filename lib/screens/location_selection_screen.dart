@@ -8,11 +8,13 @@ import 'package:tripbook/utils/brand_colors.dart';
 class LocationSelectionScreen extends StatefulWidget {
   final List<TravelLocation>? initialLocations;
   final TravelLocation? endLocation;
+  final TravelLocation? fallbackEndLocation;
 
   const LocationSelectionScreen({
     super.key,
     this.initialLocations,
     this.endLocation,
+    this.fallbackEndLocation,
   });
 
   @override
@@ -22,18 +24,50 @@ class LocationSelectionScreen extends StatefulWidget {
 
 class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
   List<TravelLocation> _selectedLocations = [];
-  TravelLocation? _currentEndLocation; // New state variable
+  TravelLocation? _currentEndLocation;
+  late bool _useHomeAsEnd;
+  late bool _hasHomeEndOption;
 
   @override
   void initState() {
     super.initState();
+    final isHomeEnd = widget.endLocation?.firestoreId == 'home_end_location';
+    _hasHomeEndOption = isHomeEnd && widget.fallbackEndLocation != null;
+    _useHomeAsEnd = isHomeEnd;
     if (widget.initialLocations != null) {
       _selectedLocations = List.from(widget.initialLocations!);
     }
     if (widget.endLocation != null) {
       _selectedLocations.add(widget.endLocation!);
-      _currentEndLocation = widget.endLocation; // Initialize new state variable
+      _currentEndLocation = widget.endLocation;
     }
+  }
+
+  void _toggleUseHomeAsEnd(bool value) {
+    final homeEnd = widget.endLocation;
+    if (homeEnd == null) return;
+    setState(() {
+      _useHomeAsEnd = value;
+      if (value) {
+        final oldIndex = _selectedLocations.indexWhere(
+          (loc) => loc.firestoreId == homeEnd.firestoreId,
+        );
+        if (oldIndex != -1) {
+          _selectedLocations[oldIndex] = homeEnd;
+        } else {
+          _selectedLocations.add(homeEnd);
+        }
+        _currentEndLocation = homeEnd;
+      } else {
+        final oldIndex = _selectedLocations.indexWhere(
+          (loc) => loc.firestoreId == homeEnd.firestoreId,
+        );
+        if (oldIndex != -1) {
+          _selectedLocations.removeAt(oldIndex);
+        }
+        _currentEndLocation = null;
+      }
+    });
   }
 
   @override
@@ -60,11 +94,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -124,21 +154,28 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : colorScheme.onPrimaryContainer,
+                          color: isDark
+                              ? Colors.white
+                              : colorScheme.onPrimaryContainer,
                         ),
                       ),
                       Text(
                         l10n.numLocationsDragToOrder(_selectedLocations.length),
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? Colors.blue[200] : colorScheme.onPrimaryContainer,
+                          color: isDark
+                              ? Colors.blue[200]
+                              : colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue[600],
                     borderRadius: BorderRadius.circular(20),
@@ -155,7 +192,83 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               ],
             ),
           ),
-          
+
+          if (_hasHomeEndOption) ...[
+            // Home location toggle card
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _useHomeAsEnd
+                      ? Theme.of(context).primaryColor
+                      : colorScheme.outlineVariant,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          brandButtonBlue(Theme.of(context).brightness),
+                          brandGradientEndBlue(Theme.of(context).brightness),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.home_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.useHomeAsEndTitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          l10n.useHomeAsEndDescription,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(value: _useHomeAsEnd, onChanged: _toggleUseHomeAsEnd),
+                ],
+              ),
+            ),
+          ],
+
           // Locations list
           Expanded(
             child: Container(
@@ -164,13 +277,18 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 buildDefaultDragHandles: false,
                 padding: const EdgeInsets.only(bottom: 16),
                 children: <Widget>[
-                  for (int index = 0; index < _selectedLocations.length; index++)
+                  for (
+                    int index = 0;
+                    index < _selectedLocations.length;
+                    index++
+                  )
                     // Check if this is the end location
                     if (_selectedLocations[index].firestoreId ==
                         _currentEndLocation?.firestoreId)
                       Container(
                         key: Key(
-                          _selectedLocations[index].firestoreId ?? index.toString(),
+                          _selectedLocations[index].firestoreId ??
+                              index.toString(),
                         ),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
@@ -184,114 +302,141 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                               offset: const Offset(0, 2),
                             ),
                           ],
-                          border: Border.all(color: Colors.purple[200]!, width: 2),
+                          border: Border.all(
+                            color: Colors.purple[200]!,
+                            width: 2,
+                          ),
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          title: Text(
-                            _selectedLocations[index].name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                            contentPadding: const EdgeInsets.all(16),
+                            title: Text(
+                              _selectedLocations[index].name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          subtitle: Container(
-                            margin: const EdgeInsets.only(top: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.purple[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.purple[200]!),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.flag, color: Colors.purple[600], size: 16),
-                                const SizedBox(width: 6),
-                                Text(
-                                  l10n.endLocationLabel,
-                                  style: TextStyle(
+                            subtitle: Container(
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.purple[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.purple[200]!),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.flag,
                                     color: Colors.purple[600],
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                                    size: 16,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.purple[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.location_pin,
-                              color: Colors.purple[600],
-                              size: 24,
-                            ),
-                          ),
-                          trailing: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  brandButtonBlue(Theme.of(context).brightness),
-                                  brandGradientEndBlue(Theme.of(context).brightness),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextButton.icon(
-                              icon: const Icon(Icons.edit, color: Colors.white, size: 16),
-                              label: Text(
-                                l10n.change,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MapScreen(
-                                      isChangingEndPoint: true,
-                                      initialLocation: _selectedLocations[index],
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    l10n.endLocationLabel,
+                                    style: TextStyle(
+                                      color: Colors.purple[600],
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
                                     ),
                                   ),
-                                ).then((newEndPoint) {
-                                  if (newEndPoint != null) {
-                                    setState(() {
-                                      final oldEndIndex = _selectedLocations.indexWhere(
-                                        (loc) =>
-                                            loc.firestoreId ==
-                                            _currentEndLocation?.firestoreId,
-                                      );
-                                      if (oldEndIndex != -1) {
-                                        _selectedLocations[oldEndIndex] = newEndPoint;
-                                        _currentEndLocation = newEndPoint;
-                                      }
-                                    });
-                                  }
-                                });
-                              },
+                                ],
+                              ),
+                            ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.purple[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.location_pin,
+                                color: Colors.purple[600],
+                                size: 24,
+                              ),
+                            ),
+                            trailing: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    brandButtonBlue(
+                                      Theme.of(context).brightness,
+                                    ),
+                                    brandGradientEndBlue(
+                                      Theme.of(context).brightness,
+                                    ),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: TextButton.icon(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  l10n.change,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MapScreen(
+                                        isChangingEndPoint: true,
+                                        initialLocation:
+                                            _selectedLocations[index],
+                                      ),
+                                    ),
+                                  ).then((newEndPoint) {
+                                    if (newEndPoint != null) {
+                                      setState(() {
+                                        final oldEndIndex = _selectedLocations
+                                            .indexWhere(
+                                              (loc) =>
+                                                  loc.firestoreId ==
+                                                  _currentEndLocation
+                                                      ?.firestoreId,
+                                            );
+                                        if (oldEndIndex != -1) {
+                                          _selectedLocations[oldEndIndex] =
+                                              newEndPoint;
+                                          _currentEndLocation = newEndPoint;
+                                        }
+                                      });
+                                    }
+                                  });
+                                },
+                              ),
                             ),
                           ),
                         ),
-                      ))
+                      )
                     else
                       Container(
                         key: Key(
-                          _selectedLocations[index].firestoreId ?? index.toString(),
+                          _selectedLocations[index].firestoreId ??
+                              index.toString(),
                         ),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
@@ -308,60 +453,60 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           border: Border.all(color: colorScheme.outlineVariant),
                         ),
                         child: Material(
-                            color: Colors.transparent,
-                            child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          title: Text(
-                            _selectedLocations[index].name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            _selectedLocations[index].geoName,
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                              fontSize: 13,
-                            ),
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ReorderableDragStartListener(
-                              index: index,
-                              child: Icon(
-                                Icons.drag_handle,
-                                color: colorScheme.onPrimaryContainer,
-                                size: 24,
+                          color: Colors.transparent,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            title: Text(
+                              _selectedLocations[index].name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
-                          ),
-                          trailing: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Colors.red[600],
-                                size: 20,
+                            subtitle: Text(
+                              _selectedLocations[index].geoName,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 13,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _selectedLocations.removeAt(index);
-                                });
-                              },
+                            ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ReorderableDragStartListener(
+                                index: index,
+                                child: Icon(
+                                  Icons.drag_handle,
+                                  color: colorScheme.onPrimaryContainer,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                            trailing: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red[600],
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedLocations.removeAt(index);
+                                  });
+                                },
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                 ],
                 onReorder: (int oldIndex, int newIndex) {
                   setState(() {
@@ -377,14 +522,16 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                     if (oldIndex < newIndex) {
                       newIndex -= 1;
                     }
-                    final TravelLocation item = _selectedLocations.removeAt(oldIndex);
+                    final TravelLocation item = _selectedLocations.removeAt(
+                      oldIndex,
+                    );
                     _selectedLocations.insert(newIndex, item);
                   });
                 },
               ),
             ),
           ),
-          
+
           // Fixed bottom confirmation button
           Container(
             padding: const EdgeInsets.all(16),
@@ -420,7 +567,11 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                   ],
                 ),
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   label: Text(
                     l10n.confirmRouteWithCount(_selectedLocations.length),
                     style: const TextStyle(

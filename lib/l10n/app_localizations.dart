@@ -842,6 +842,18 @@ abstract class AppLocalizations {
   /// **'Home Location (Auto)'**
   String get homeLocationAuto;
 
+  /// No description provided for @useHomeAsEndTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Home as Route End'**
+  String get useHomeAsEndTitle;
+
+  /// No description provided for @useHomeAsEndDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds your home location as the final stop of the route.'**
+  String get useHomeAsEndDescription;
+
   /// No description provided for @currentLocation.
   ///
   /// In en, this message translates to:

@@ -169,6 +169,8 @@
   "selectHomeLocation": "Ev Konumunu Seç",
   "endLocation": "Bitiş Konumu",
   "homeLocationAuto": "Ev Konumu (Otomatik)",
+  "useHomeAsEndTitle": "Ev Konumunu Rota Bitişi Olarak Kullan",
+  "useHomeAsEndDescription": "Ev konumunuzu rotanın son durağı olarak ekler.",
   "currentLocation": "Mevcut Konum",
   "notificationSoundLabel": "Zaman Aşımı Bildirim Sesi",
   "soundDefault": "Varsayılan",
