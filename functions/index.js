@@ -3,6 +3,7 @@ const {defineSecret} = require("firebase-functions/params");
 const {initializeApp} = require("firebase-admin/app");
 const {getAuth} = require("firebase-admin/auth");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
+const {getStorage} = require("firebase-admin/storage");
 const axios = require("axios");
 
 // Initialize Admin SDK
@@ -344,5 +345,143 @@ exports.addComment = onRequest(requestOptions, async (req, res) => {
       console.error("addComment error:", error.message);
       sendError(res, 500, "Internal Error");
     }
+  }
+});
+
+/**
+ * Deletes every trace of a user so the account can be fully removed in-app
+ * (Google Play account-deletion requirement).
+ *
+ * Deleted, in order:
+ *   - users/{uid} document and its subcollections (locations, groups, routes,
+ *     reached_logs)
+ *   - user_tokens/{uid}
+ *   - community routes the user shared (with comments/ratings subcollections)
+ *   - the user's own comments on other users' routes (and commentCount fixups)
+ *   - the user's own ratings on other users' routes (and average fixups)
+ *   - profile images from Storage (best effort; the app now keeps avatars local)
+ *
+ * Runs with the admin SDK so it bypasses client rules (clients cannot delete
+ * other users' comments/ratings directly). Deletes are idempotent, so a retry
+ * after a partial failure is safe.
+ */
+exports.deleteUserData = onRequest(requestOptions, async (req, res) => {
+  const decodedToken = await validateAuth(req);
+  if (!decodedToken) {
+    sendError(res, 401, "Unauthorized");
+    return;
+  }
+  if (!checkRateLimit(decodedToken.uid)) {
+    sendError(res, 429, "Too Many Requests");
+    return;
+  }
+
+  const uid = decodedToken.uid;
+  const userRef = db.collection("users").doc(uid);
+
+  try {
+    // 1. Personal data subcollections + user document.
+    const subcollections = ["locations", "groups", "routes", "reached_logs"];
+    for (const sub of subcollections) {
+      await deleteSubcollection(userRef.collection(sub));
+    }
+    await userRef.delete().catch(() => {});
+    await db.collection("user_tokens").doc(uid).delete().catch(() => {});
+
+    // 2. Community routes the user shared (with all their content).
+    const sharedRoutes = await db
+        .collection("community_routes")
+        .where("sharedBy", "==", uid)
+        .get();
+    for (const doc of sharedRoutes.docs) {
+      const routeRef = doc.ref;
+      await deleteSubcollection(routeRef.collection("comments"));
+      await deleteSubcollection(routeRef.collection("ratings"));
+      await routeRef.delete();
+    }
+
+    // 3. The user's comments on OTHER users' routes + commentCount fixups.
+    // Note: a route doc can be deleted without its subcollections (Firestore
+    // does not cascade), so route updates are best-effort — an orphaned
+    // comment's parent route may no longer exist.
+    const commentsSnap = await db
+        .collectionGroup("comments")
+        .where("userId", "==", uid)
+        .get();
+    const routeCommentCounts = new Map();
+    commentsSnap.forEach((doc) => {
+      const routeId = doc.ref.path.split("/")[1];
+      routeCommentCounts.set(routeId, (routeCommentCounts.get(routeId) || 0) + 1);
+    });
+    for (const doc of commentsSnap.docs) {
+      await doc.ref.delete();
+    }
+    for (const [routeId, count] of routeCommentCounts.entries()) {
+      await db.collection("community_routes").doc(routeId).update({
+        commentCount: FieldValue.increment(-count),
+      }).catch(() => {});
+    }
+
+    // 4. The user's ratings on OTHER users' routes + average fixups.
+    const ratingsSnap = await db
+        .collectionGroup("ratings")
+        .where("userId", "==", uid)
+        .get();
+    const routeRatings = new Map();
+    ratingsSnap.forEach((doc) => {
+      const routeId = doc.ref.path.split("/")[1];
+      if (!routeRatings.has(routeId)) routeRatings.set(routeId, []);
+      routeRatings.get(routeId).push(doc);
+    });
+    for (const [routeId, docs] of routeRatings.entries()) {
+      const routeRef = db.collection("community_routes").doc(routeId);
+      try {
+        // Skip recomputation entirely if the parent route no longer exists.
+        if (!(await routeRef.get()).exists) {
+          const batch = db.batch();
+          docs.forEach((doc) => batch.delete(doc.ref));
+          await batch.commit();
+          continue;
+        }
+
+        const batch = db.batch();
+        docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+
+        // Recompute the remaining average/count from scratch.
+        const remaining = await routeRef.collection("ratings").get();
+        let sum = 0;
+        let count = 0;
+        remaining.forEach((doc) => {
+          const value = doc.data().rating;
+          if (typeof value === "number" && Number.isFinite(value)) {
+            sum += value;
+            count += 1;
+          }
+        });
+        await routeRef.update({
+          averageRating: count > 0 ? sum / count : 0,
+          ratingCount: count,
+        });
+      } catch (error) {
+        console.error("deleteUserData rating cleanup error:", error.message);
+      }
+    }
+
+    // 5. Profile images in Storage (best effort — legacy uploads; the app now
+    //    keeps avatars in the app documents directory).
+    try {
+      const bucket = getStorage().bucket();
+      await bucket.file(`profile_images/${uid}.jpg`).delete().catch(() => {});
+      const [files] = await bucket.getFiles({prefix: `profile_images/${uid}_`});
+      await Promise.all(files.map((file) => file.delete().catch(() => {})));
+    } catch (error) {
+      console.error("deleteUserData storage cleanup error:", error.message);
+    }
+
+    res.status(200).send({success: true});
+  } catch (error) {
+    console.error("deleteUserData error:", error.message);
+    sendError(res, 500, "Internal Error");
   }
 });

@@ -481,6 +481,16 @@
   "deleteRouteAndLocations": "Delete Route and Locations",
   "passwordComplexityError": "Password must contain at least one letter and one number.",
   "passwordWhitespaceError": "Password cannot contain spaces.",
+  "confirmPassword": "Confirm Password",
+  "fieldRequired": "This field is required",
+  "fullNameMinLengthError": "Full name must be at least 2 characters",
+  "nicknameMinLengthError": "Nickname must be at least 3 characters",
+  "nicknameInvalidCharsError": "Nickname can only contain letters, numbers, dots and underscores",
+  "requiredFieldsNote": "Fields marked with * are required",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "accountInfo": "Account Information",
+  "optionalInfo": "Optional Information",
   "invalidCommentError": "Comment contains invalid characters.",
   "apiKeyWarning": "Google Maps could not be loaded. The API key for the web is missing or invalid. Please check the .env file and your Google Cloud project configuration.",
   "notificationsBlockedMessage": "Notifications are blocked by your browser. Click the tune icon next to the address bar and allow notifications to receive travel alerts.",
@@ -564,6 +574,13 @@
   "passwordChangedSuccess": "Password changed successfully",
   "passwordChangeError": "Error changing password",
   "wrongCurrentPassword": "Current password is wrong",
+  "deleteAccount": "Delete Account",
+  "deleteAccountConfirmationTitle": "Delete Account",
+  "deleteAccountConfirmationContent": "This will permanently delete your account and all your data (locations, groups, routes, reached places, profile, and community content). This action cannot be undone.",
+  "deleteAccountReauthTitle": "Confirm Password",
+  "deleteAccountReauthContent": "Enter your password to confirm that you want to permanently delete your account.",
+  "deleteAccountInProgress": "Deleting your account...",
+  "deleteAccountError": "Could not delete your account. Please try again.",
   "selectBirthDate": "Select Birth Date",
   "avatarUpdated": "Avatar updated successfully",
   "personalInfo": "Personal Information",
@@ -632,5 +649,36 @@
     }
   },
   "startLabel": "Start",
-  "ok": "OK"
+  "fullNameLabel": "Full name",
+  "displayNamePreference": "Public display name",
+  "useNickname": "Nickname",
+  "useFullName": "Full name",
+  "privacySectionTitle": "Privacy & visibility",
+  "phone": "Phone",
+  "profilePhoto": "Profile photo",
+  "ok": "OK",
+  "verifyEmailTitle": "Verify Your Email",
+  "verifyEmailMessage": "A verification link was sent to {email}. Check your inbox, tap the link, then press the button below.",
+  "@verifyEmailMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "verificationEmailSent": "Verification email sent.",
+  "resendVerificationEmail": "Resend verification email",
+  "resendCountdown": "Resend available in {seconds}s",
+  "@resendCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "iHaveVerified": "I've verified, continue",
+  "notVerifiedYet": "Your email isn't verified yet. Tap the link in the email and try again.",
+  "emailVerifiedSuccess": "Email verified, welcome!",
+  "verificationResendError": "Couldn't send the verification email. Please try again.",
+  "verificationCheckError": "Couldn't check your verification. Check your internet connection and try again."
 }

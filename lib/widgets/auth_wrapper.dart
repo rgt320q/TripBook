@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:tripbook/l10n/app_localizations.dart';
 import 'package:tripbook/screens/auth_screen.dart';
+import 'package:tripbook/screens/email_verification_screen.dart';
 import 'package:tripbook/screens/map_screen.dart';
 import 'package:tripbook/services/auth_service.dart';
 import 'package:tripbook/services/connectivity_service.dart';
@@ -23,7 +24,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    _authStream = AuthService().authStateChanges;
+    // idTokenChanges also emits when the ID token is refreshed (e.g. right
+    // after the user verifies their email), so the gate below flips to the
+    // main app as soon as the verification is confirmed.
+    _authStream = AuthService().idTokenChanges;
     
     // Initialize connectivity service at the start
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,7 +77,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // If the user is logged in, show the main MapScreen.
+        // Block unverified accounts from the app: after sign-up (or a sign-in
+        // with a still-unverified email) the user must confirm their email
+        // before reaching the main app.
+        final user = snapshot.data;
+        if (user != null && !user.emailVerified) {
+          return EmailVerificationScreen(email: user.email ?? '');
+        }
+
+        // If the user is logged in and verified, show the main MapScreen.
         // The MapScreen will be responsible for loading its own data.
         if (snapshot.hasData) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -16,6 +16,7 @@ import 'package:tripbook/services/connectivity_service.dart';
 import 'package:tripbook/utils/avatar_utils.dart';
 import 'package:tripbook/utils/brand_colors.dart';
 import 'package:tripbook/services/auth_service.dart';
+import 'package:tripbook/widgets/loading_overlay.dart';
 
 
 class ProfileScreen extends StatefulWidget {
@@ -30,17 +31,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
-  final _usernameController = TextEditingController(); // Deprecated, backward compatibility için
-  final _fullNameController = TextEditingController(); // Yeni tek alan
-  final _firstNameController = TextEditingController(); // Migration için tutuyoruz
-  final _lastNameController = TextEditingController(); // Migration için tutuyoruz
+  final _fullNameController = TextEditingController();
   final _nicknameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _deleteAccountPasswordController = TextEditingController();
 
   String? _selectedLanguage;
   GeoPoint? _homeLocation;
@@ -51,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   String? _selectedAvatarPath; // Seçili avatar
-  
+
   // Görünürlük ayarları
   bool _showFullNameInPublic = true;
   bool _showNicknameInPublic = true;
@@ -70,9 +68,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _selectedThemeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     _userProfileFuture = _loadUserProfile().then((profile) async {
       if (profile != null && mounted) {
-        _usernameController.text = profile.name ?? '';
         _fullNameController.text = profile.fullName ?? '';
-        // Migration: Eğer fullName yoksa firstName+lastName'den oluştur
+        // Migration: Eski firstName+lastName alanlarından fullName oluştur.
         if (profile.fullName?.isEmpty ?? true) {
           final firstName = profile.firstName ?? '';
           final lastName = profile.lastName ?? '';
@@ -80,17 +77,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _fullNameController.text = '$firstName $lastName'.trim();
           }
         }
-        _firstNameController.text = profile.firstName ?? '';
-        _lastNameController.text = profile.lastName ?? '';
         _nicknameController.text = profile.nickname ?? '';
-        _emailController.text = FirebaseAuth.instance.currentUser?.email ?? '';
         _phoneController.text = profile.phone ?? '';
         _bioController.text = profile.bio ?? '';
         _selectedLanguage = profile.languageCode ?? 'tr';
         _birthDate = profile.birthDate?.toDate();
         _gender = profile.gender;
         _selectedAvatarPath = profile.selectedAvatarPath ?? AvatarUtils.getDefaultAvatar();
-        
+
         // Görünürlük ayarlarını yükle
         _showFullNameInPublic = profile.showFullNameInPublic;
         _showNicknameInPublic = profile.showNicknameInPublic;
@@ -100,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _showPhoneInPublic = profile.showPhoneInPublic;
         _showBirthDateInPublic = profile.showBirthDateInPublic;
         _showGenderInPublic = profile.showGenderInPublic;
-        
+
         setState(() {
           _homeLocation = profile.homeLocation;
         });
@@ -125,16 +119,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _usernameController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _fullNameController.dispose();
     _nicknameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _bioController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _deleteAccountPasswordController.dispose();
     super.dispose();
   }
 
@@ -146,12 +138,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final user = FirebaseAuth.instance.currentUser;
           if (user == null) return;
 
+          final fullName = _fullNameController.text.trim();
+
           final userProfile = UserProfile(
             uid: user.uid,
-            name: _usernameController.text.trim(), // Backward compatibility için
-            fullName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
-            firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
-            lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
+            name: fullName.isNotEmpty ? fullName : null, // Backward compatibility için
+            fullName: fullName.isNotEmpty ? fullName : null,
             nickname: _nicknameController.text.trim().isNotEmpty ? _nicknameController.text.trim() : null,
             phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
             bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
@@ -234,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _changePassword() async {
     final l10n = AppLocalizations.of(context)!;
     final formKey = GlobalKey<FormState>();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -342,21 +334,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _performPasswordChange() async {
     final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null) return;
-    
+
     try {
       // Re-authenticate user
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: _currentPasswordController.text,
       );
-      
+
       await user.reauthenticateWithCredential(credential);
-      
+
       // Update password
       await user.updatePassword(_newPasswordController.text);
-      
+
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
@@ -374,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (e.toString().contains('wrong-password')) {
           errorMessage = l10n.wrongCurrentPassword;
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -382,6 +374,200 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red[600]),
+            const SizedBox(width: 8),
+            Flexible(child: Text(l10n.deleteAccountConfirmationTitle)),
+          ],
+        ),
+        content: Text(l10n.deleteAccountConfirmationContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await _showDeleteAccountReauthDialog();
+    }
+  }
+
+  Future<void> _showDeleteAccountReauthDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    _deleteAccountPasswordController.clear();
+    bool obscure = true;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.lock, color: Colors.red[600]),
+              const SizedBox(width: 8),
+              Flexible(child: Text(l10n.deleteAccountReauthTitle)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.deleteAccountReauthContent),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _deleteAccountPasswordController,
+                obscureText: obscure,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.currentPassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => obscure = !obscure),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isEmpty) return;
+                  Navigator.of(dialogContext).pop();
+                  _performDeleteAccount();
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_deleteAccountPasswordController.text.trim().isEmpty) {
+                  return;
+                }
+                Navigator.of(dialogContext).pop();
+                _performDeleteAccount();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    LoadingOverlay.show(context, message: l10n.deleteAccountInProgress);
+
+    final String? error;
+    try {
+      error = await AuthService().deleteAccount(
+        password: _deleteAccountPasswordController.text,
+      );
+    } catch (e) {
+      if (mounted) {
+        LoadingOverlay.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.deleteAccountError),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    LoadingOverlay.hide(context);
+
+    if (error != null) {
+      String message = l10n.deleteAccountError;
+      if (error.contains('wrong-password') ||
+          error == 'invalid-credential') {
+        message = l10n.wrongCurrentPassword;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // On success the authStateChanges listener in initState pops this screen
+    // back to the root, where AuthWrapper shows the auth screen.
+  }
+
+  Future<void> _confirmLogout() async {
+    final l10n = AppLocalizations.of(context)!;
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: Colors.red[600]),
+            const SizedBox(width: 8),
+            Text(l10n.logoutConfirmationTitle),
+          ],
+        ),
+        content: Text(l10n.logoutConfirmationContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.yes),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await AuthService().signOut();
     }
   }
 
@@ -394,7 +580,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       lastDate: DateTime.now(),
       helpText: l10n.selectBirthDate,
     );
-    
+
     if (picked != null) {
       setState(() {
         _birthDate = picked;
@@ -416,7 +602,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _selectedAvatarPath = result;
       });
-      
+
       // Seçimi kaydet
       await _saveAvatarSelection(result);
     }
@@ -434,7 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final updatedProfile = currentProfile.copyWith(
           selectedAvatarPath: avatarPath,
         );
-        
+
         await _firestoreService.updateUserProfile(updatedProfile);
       }
 
@@ -526,555 +712,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildForm(AppLocalizations l10n, UserProfile profile) {
     final user = FirebaseAuth.instance.currentUser;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
+    final headerName = _nicknameController.text.trim().isNotEmpty
+        ? _nicknameController.text.trim()
+        : (_fullNameController.text.trim().isNotEmpty
+            ? _fullNameController.text.trim()
+            : l10n.profileUsernameLabel);
 
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Profile Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue[700]!,
-                  isDark ? Colors.blue[900]! : Colors.blue[50]!,
-                ],
-              ),
-            ),
-            child: Column(
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: _selectedAvatarPath != null
-                            ? SvgPicture.asset(
-                                _selectedAvatarPath!,
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                                placeholderBuilder: (context) => Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.blue[600],
-                                ),
-                              )
-                            : Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.blue[600],
-                              ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _selectAvatar,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.blue[600],
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _showProfileImageInPublic = !_showProfileImageInPublic;
-                          });
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: _showProfileImageInPublic ? Colors.green[600] : Colors.grey[600],
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Icon(
-                            _showProfileImageInPublic ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _usernameController.text.isNotEmpty 
-                    ? _usernameController.text 
-                    : l10n.profileUsernameLabel,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                if (user?.email != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      user!.email!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          
-          // Form Content
+          _buildProfileHeader(l10n, user, headerName),
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Personal Information Section
+                  // Kişisel Bilgiler
                   _buildSectionCard(
                     title: l10n.personalInfo,
                     icon: Icons.person_outline,
                     child: Column(
                       children: [
-                        // Ad Soyad ile göz simgesi
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _fullNameController,
-                                style: const TextStyle(fontSize: 16),
-                                decoration: InputDecoration(
-                                  labelText: 'Ad Soyad',
-                                  prefixIcon: const Icon(Icons.person),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: colorScheme.surfaceContainerHighest,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: _displayNameInPublic == 'fullName' ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[300]! : colorScheme.outlineVariant,
-                                ),
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  _displayNameInPublic == 'fullName' ? Icons.visibility : Icons.visibility_off,
-                                  color: _displayNameInPublic == 'fullName' ? Colors.blue[600] : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _displayNameInPublic = 'fullName';
-                                  });
-                                },
-                                tooltip: _displayNameInPublic == 'fullName' 
-                                  ? 'Ad Soyad paylaşımlarda görünür' 
-                                  : 'Ad Soyad paylaşımlarda görünmez',
-                              ),
-                            ),
-                          ],
+                        _buildTextField(
+                          controller: _fullNameController,
+                          label: l10n.fullNameLabel,
+                          icon: Icons.badge_outlined,
                         ),
-                        const SizedBox(height: 8),
-                        
-                        // Bağlantı çizgisi
-                        SizedBox(
-                          height: 40,
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _nicknameController,
+                          label: l10n.nicknameLabel,
+                          icon: Icons.alternate_email,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDisplayNamePreference(l10n),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _phoneController,
+                          label: l10n.phone,
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDateField(l10n),
+                        const SizedBox(height: 16),
+                        _buildGenderField(l10n),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Hakkında
+                  _buildSectionCard(
+                    title: l10n.aboutMe,
+                    icon: Icons.description_outlined,
+                    child: TextFormField(
+                      controller: _bioController,
+                      maxLines: 4,
+                      maxLength: 200,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: InputDecoration(
+                        labelText: l10n.introduceYourself,
+                        hintText: l10n.writeBioHint,
+                        prefixIcon: const Icon(Icons.description),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Gizlilik ve Görünürlük
+                  _buildSectionCard(
+                    title: l10n.privacySectionTitle,
+                    icon: Icons.visibility_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
                           child: Row(
                             children: [
-                              // Sol boşluk (input field genişliği + spacing)
-                              Expanded(child: Container()),
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 8),
-                              // Göz simgeleri arası bağlantı
-                              SizedBox(
-                                width: 48, // IconButton genişliği
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      height: 8,
-                                      width: 2,
-                                      decoration: BoxDecoration(
-                                        color: _displayNameInPublic == 'fullName' ? Colors.blue[300] : Colors.orange[300],
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: SizedBox(
-                                        width: 2,
-                                        child: CustomPaint(
-                                          painter: DashedLinePainter(
-                                            color: _displayNameInPublic == 'fullName' ? Colors.blue[300]! : Colors.orange[300]!,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      height: 8,
-                                      width: 2,
-                                      decoration: BoxDecoration(
-                                        color: _displayNameInPublic == 'nickname' ? Colors.orange[300] : Colors.blue[300],
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                  ],
+                              Expanded(
+                                child: Text(
+                                  l10n.privacyNotice,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        
-                        // Takma İsim ile göz simgesi
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _nicknameController,
-                                style: const TextStyle(fontSize: 16),
-                                decoration: InputDecoration(
-                                  labelText: l10n.nicknameLabel,
-                                  prefixIcon: const Icon(Icons.alternate_email),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: colorScheme.surfaceContainerHighest,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: _displayNameInPublic == 'nickname' ? colorScheme.tertiaryContainer : colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[300]! : colorScheme.outlineVariant,
-                                ),
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  _displayNameInPublic == 'nickname' ? Icons.visibility : Icons.visibility_off,
-                                  color: _displayNameInPublic == 'nickname' ? Colors.orange[600] : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _displayNameInPublic = 'nickname';
-                                  });
-                                },
-                                tooltip: _displayNameInPublic == 'nickname' 
-                                  ? 'Takma İsim paylaşımlarda görünür' 
-                                  : 'Takma İsim paylaşımlarda görünmez',
-                              ),
-                            ),
-                          ],
+                        _buildPrivacySwitch(
+                          value: _showProfileImageInPublic,
+                          icon: Icons.account_circle_outlined,
+                          label: l10n.profilePhoto,
+                          onChanged: (v) =>
+                              setState(() => _showProfileImageInPublic = v),
                         ),
-                        const SizedBox(height: 16),
-                        
-                        // Username (Eski sistem için backward compatibility)
-                        TextFormField(
-                          controller: _usernameController,
-                          style: const TextStyle(fontSize: 16),
-                          decoration: InputDecoration(
-                            labelText: '${l10n.profileUsernameLabel} (Eski)',
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: colorScheme.surfaceContainerHighest,
-                            helperText: 'Eski sistem için - yeni kullanıcılar yukarıdaki alanları kullanın',
-                          ),
+                        _buildPrivacySwitch(
+                          value: _showPhoneInPublic,
+                          icon: Icons.phone_outlined,
+                          label: l10n.phone,
+                          onChanged: (v) => setState(() => _showPhoneInPublic = v),
                         ),
-                        const SizedBox(height: 16),
-                        
-                        // Phone
-                        _buildInputWithPrivacy(
-                          controller: _phoneController,
-                          labelText: l10n.profileEmailLabel, // Reusing email label as phone/contact
-                          icon: Icons.phone,
-                          isPublic: _showPhoneInPublic,
-                          onPrivacyChanged: (value) {
-                            setState(() {
-                              _showPhoneInPublic = value;
-                            });
-                          },
-                          keyboardType: TextInputType.phone,
+                        _buildPrivacySwitch(
+                          value: _showBirthDateInPublic,
+                          icon: Icons.cake_outlined,
+                          label: l10n.birthDate,
+                          onChanged: (v) =>
+                              setState(() => _showBirthDateInPublic = v),
                         ),
-                        const SizedBox(height: 16),
-                        
-                        // Birth Date
-                        Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: _selectBirthDate,
-                                child: InputDecorator(
-                                  decoration: InputDecoration(
-                                    labelText: l10n.birthDate,
-                                    prefixIcon: const Icon(Icons.cake),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    filled: true,
-                                    fillColor: colorScheme.surfaceContainerHighest,
-                                  ),
-                                  child: Text(
-                                    _birthDate != null 
-                                      ? '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}'
-                                      : l10n.select,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: _birthDate != null ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: _showBirthDateInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _showBirthDateInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
-                                ),
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  _showBirthDateInPublic ? Icons.visibility : Icons.visibility_off,
-                                  color: _showBirthDateInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showBirthDateInPublic = !_showBirthDateInPublic;
-                                  });
-                                },
-                                tooltip: _showBirthDateInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
-                              ),
-                            ),
-                          ],
+                        _buildPrivacySwitch(
+                          value: _showGenderInPublic,
+                          icon: Icons.people_outline,
+                          label: l10n.gender,
+                          onChanged: (v) => setState(() => _showGenderInPublic = v),
                         ),
-                        const SizedBox(height: 16),
-                        
-                        // Gender
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: ['Erkek', 'Kadın', 'Diğer'].contains(_gender) ? _gender : null,
-                                decoration: InputDecoration(
-                                  labelText: l10n.gender,
-                                  prefixIcon: const Icon(Icons.people),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: colorScheme.surfaceContainerHighest,
-                                ),
-                                items: [
-                                  DropdownMenuItem(value: 'Erkek', child: Text(l10n.male)),
-                                  DropdownMenuItem(value: 'Kadın', child: Text(l10n.female)),
-                                  DropdownMenuItem(value: 'Diğer', child: Text(l10n.other)),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _gender = value;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: _showGenderInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _showGenderInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
-                                ),
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  _showGenderInPublic ? Icons.visibility : Icons.visibility_off,
-                                  color: _showGenderInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showGenderInPublic = !_showGenderInPublic;
-                                  });
-                                },
-                                tooltip: _showGenderInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
-                              ),
-                            ),
-                          ],
+                        _buildPrivacySwitch(
+                          value: _showBioInPublic,
+                          icon: Icons.description_outlined,
+                          label: l10n.aboutMe,
+                          onChanged: (v) => setState(() => _showBioInPublic = v),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
-                  // Bio Section
-                  _buildSectionCard(
-                    title: l10n.aboutMe,
-                    icon: Icons.description_outlined,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _bioController,
-                            maxLines: 4,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              labelText: l10n.introduceYourself,
-                              hintText: l10n.writeBioHint,
-                              prefixIcon: const Icon(Icons.description),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: colorScheme.surfaceContainerHighest,
-                              alignLabelWithHint: true,
-                            ),
-                            maxLength: 200,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          decoration: BoxDecoration(
-                            color: _showBioInPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _showBioInPublic ? Colors.green[300]! : colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              _showBioInPublic ? Icons.visibility : Icons.visibility_off,
-                              color: _showBioInPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _showBioInPublic = !_showBioInPublic;
-                              });
-                            },
-                            tooltip: _showBioInPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Settings Section
+
+                  // Ayarlar
                   _buildSectionCard(
                     title: l10n.settings,
                     icon: Icons.settings_outlined,
                     child: Column(
                       children: [
-                        // Home Location
-                        InkWell(
-                          onTap: _pickHomeLocation,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: colorScheme.outlineVariant),
-                              borderRadius: BorderRadius.circular(12),
-                              color: colorScheme.surfaceContainerHighest,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.location_on, color: Colors.blue[600], size: 24),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _homeLocation != null
-                                            ? l10n.homeLocation
-                                            : l10n.notSet,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      if (_homeLocation != null) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '${_homeLocation!.latitude.toStringAsFixed(4)}, ${_homeLocation!.longitude.toStringAsFixed(4)}',
-                                          style: TextStyle(
-                                            color: colorScheme.onSurfaceVariant,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
-                              ],
-                            ),
-                          ),
-                        ),
+                        _buildHomeLocationTile(l10n),
                         const SizedBox(height: 16),
-                        
-                        // Language
                         DropdownButtonFormField<String>(
                           initialValue: _selectedLanguage,
                           decoration: InputDecoration(
@@ -1097,8 +888,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
-                        // Theme
                         DropdownButtonFormField<ThemeMode>(
                           initialValue: _selectedThemeMode,
                           decoration: InputDecoration(
@@ -1133,133 +922,408 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
-                  // Security Section
+
+                  // Güvenlik
                   _buildSectionCard(
                     title: l10n.security,
                     icon: Icons.security_outlined,
-                    child: Column(
-                      children: [
-                        // Change Password Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _changePassword,
-                            icon: const Icon(Icons.lock_outline),
-                            label: Text(l10n.changePassword),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _changePassword,
+                        icon: const Icon(Icons.lock_outline),
+                        label: Text(l10n.changePassword),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Action Buttons
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _saveProfile,
-                          icon: const Icon(Icons.save, size: 20),
-                          label: Text(
-                            l10n.save,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: brandButtonBlue(
-                              Theme.of(context).brightness,
-                            ),
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final bool? confirm = await showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                title: Row(
-                                  children: [
-                                    Icon(Icons.logout, color: Colors.red[600]),
-                                    const SizedBox(width: 8),
-                                    Text(l10n.logoutConfirmationTitle),
-                                  ],
-                                ),
-                                content: Text(l10n.logoutConfirmationContent),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: Text(l10n.cancel),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red[600],
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: Text(l10n.yes),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (confirm == true) {
-                              await AuthService().signOut();
-                            }
-                          },
-                          icon: Icon(Icons.logout, color: Colors.red[600], size: 20),
-                          label: Text(
-                            l10n.logout,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red[600],
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.red[600]!, width: 2),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
+
+                  const SizedBox(height: 24),
+
+                  _buildActionButtons(l10n),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProfileHeader(AppLocalizations l10n, User? user, String name) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 32, 20, 28),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            brandButtonBlue(Theme.of(context).brightness),
+            isDark ? Colors.blue[900]! : Colors.blue[50]!,
+          ],
+        ),
+      ),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: Border.all(color: Colors.white70, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: _selectedAvatarPath != null
+                      ? SvgPicture.asset(
+                          _selectedAvatarPath!,
+                          width: 112,
+                          height: 112,
+                          fit: BoxFit.cover,
+                          placeholderBuilder: (context) => Icon(
+                            Icons.person,
+                            size: 56,
+                            color: Colors.blue[600],
+                          ),
+                        )
+                      : Icon(Icons.person, size: 56, color: Colors.blue[600]),
+                ),
+              ),
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: GestureDetector(
+                  onTap: _selectAvatar,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: brandButtonBlue(Theme.of(context).brightness),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          if (user?.email != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                user!.email!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(fontSize: 16),
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
+      ),
+    );
+  }
+
+  Widget _buildDisplayNamePreference(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.displayNamePreference,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                value: 'nickname',
+                label: Text(l10n.useNickname),
+                icon: const Icon(Icons.alternate_email, size: 18),
+              ),
+              ButtonSegment(
+                value: 'fullName',
+                label: Text(l10n.useFullName),
+                icon: const Icon(Icons.badge_outlined, size: 18),
+              ),
+            ],
+            selected: {_displayNameInPublic == 'fullName' ? 'fullName' : 'nickname'},
+            onSelectionChanged: (selection) {
+              setState(() {
+                _displayNameInPublic = selection.first;
+                if (_displayNameInPublic == 'fullName') {
+                  _showFullNameInPublic = true;
+                } else {
+                  _showNicknameInPublic = true;
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateField(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: _selectBirthDate,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: l10n.birthDate,
+          prefixIcon: const Icon(Icons.cake_outlined),
+          suffixIcon: const Icon(Icons.calendar_today, size: 18),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest,
+        ),
+        child: Text(
+          _birthDate != null
+              ? '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}'
+              : l10n.select,
+          style: TextStyle(
+            fontSize: 16,
+            color: _birthDate != null
+                ? colorScheme.onSurface
+                : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderField(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DropdownButtonFormField<String>(
+      value: ['Erkek', 'Kadın', 'Diğer'].contains(_gender) ? _gender : null,
+      decoration: InputDecoration(
+        labelText: l10n.gender,
+        prefixIcon: const Icon(Icons.people),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
+      ),
+      items: [
+        DropdownMenuItem(value: 'Erkek', child: Text(l10n.male)),
+        DropdownMenuItem(value: 'Kadın', child: Text(l10n.female)),
+        DropdownMenuItem(value: 'Diğer', child: Text(l10n.other)),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _gender = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildPrivacySwitch({
+    required bool value,
+    required IconData icon,
+    required String label,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      secondary: Icon(icon, color: colorScheme.primary),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 15),
+      ),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildHomeLocationTile(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: _pickHomeLocation,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceContainerHighest,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.location_on, color: Colors.blue[600], size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _homeLocation != null
+                        ? l10n.homeLocation
+                        : l10n.notSet,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (_homeLocation != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_homeLocation!.latitude.toStringAsFixed(4)}, '
+                      '${_homeLocation!.longitude.toStringAsFixed(4)}',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: colorScheme.onSurfaceVariant,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(AppLocalizations l10n) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: _saveProfile,
+            icon: const Icon(Icons.save, size: 20),
+            label: Text(
+              l10n.save,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: brandButtonBlue(Theme.of(context).brightness),
+              foregroundColor: Colors.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: _confirmLogout,
+            icon: Icon(Icons.logout, color: Colors.red[600], size: 20),
+            label: Text(
+              l10n.logout,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[600],
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.red[600]!, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: _confirmDeleteAccount,
+            icon: Icon(Icons.delete_outline, size: 18, color: Colors.red[400]),
+            label: Text(
+              l10n.deleteAccount,
+              style: TextStyle(fontSize: 15, color: Colors.red[400]),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1313,94 +1377,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          child,
+          Material(
+            color: Colors.transparent,
+            child: child,
+          ),
         ],
       ),
     );
   }
-  
-  Widget _buildInputWithPrivacy({
-    required TextEditingController controller,
-    required String labelText,
-    required IconData icon,
-    required bool isPublic,
-    required Function(bool) onPrivacyChanged,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            controller: controller,
-            style: const TextStyle(fontSize: 16),
-            keyboardType: keyboardType,
-            decoration: InputDecoration(
-              labelText: labelText,
-              prefixIcon: Icon(icon),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest,
-            ),
-            validator: validator,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: isPublic ? Colors.green[50] : colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isPublic ? Colors.green[300]! : colorScheme.outlineVariant,
-            ),
-          ),
-          child: IconButton(
-            icon: Icon(
-              isPublic ? Icons.visibility : Icons.visibility_off,
-              color: isPublic ? Colors.green[600] : colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
-            onPressed: () => onPrivacyChanged(!isPublic),
-            tooltip: isPublic ? l10n.visibleToPublic : l10n.visibleToOnlyYou,
-          ),
-        ),
-      ],
-    );
-  }
 }
-
-// Kesikli çizgi çizen custom painter sınıfı
-class DashedLinePainter extends CustomPainter {
-  final Color color;
-  
-  DashedLinePainter({required this.color});
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-    
-    const dashHeight = 4.0;
-    const dashSpace = 3.0;
-    double startY = 0.0;
-    
-    while (startY < size.height) {
-      canvas.drawLine(
-        Offset(size.width / 2, startY),
-        Offset(size.width / 2, startY + dashHeight),
-        paint,
-      );
-      startY += dashHeight + dashSpace;
-    }
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-  

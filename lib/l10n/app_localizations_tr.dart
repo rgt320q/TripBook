@@ -868,6 +868,37 @@ class AppLocalizationsTr extends AppLocalizations {
   String get passwordWhitespaceError => 'Şifre boşluk içeremez.';
 
   @override
+  String get confirmPassword => 'Şifreyi Onayla';
+
+  @override
+  String get fieldRequired => 'Bu alan gerekli';
+
+  @override
+  String get fullNameMinLengthError => 'Ad soyad en az 2 karakter olmalıdır';
+
+  @override
+  String get nicknameMinLengthError => 'Takma isim en az 3 karakter olmalıdır';
+
+  @override
+  String get nicknameInvalidCharsError =>
+      'Takma isim yalnızca harf, rakam, nokta ve alt çizgi içerebilir';
+
+  @override
+  String get requiredFieldsNote => 'Yıldızlı (*) alanlar zorunludur';
+
+  @override
+  String get showPassword => 'Şifreyi göster';
+
+  @override
+  String get hidePassword => 'Şifreyi gizle';
+
+  @override
+  String get accountInfo => 'Hesap Bilgileri';
+
+  @override
+  String get optionalInfo => 'İsteğe Bağlı Bilgiler';
+
+  @override
   String get invalidCommentError => 'Yorum geçersiz karakterler içeriyor.';
 
   @override
@@ -1097,6 +1128,30 @@ class AppLocalizationsTr extends AppLocalizations {
   String get wrongCurrentPassword => 'Mevcut şifre yanlış';
 
   @override
+  String get deleteAccount => 'Hesabı Sil';
+
+  @override
+  String get deleteAccountConfirmationTitle => 'Hesabı Sil';
+
+  @override
+  String get deleteAccountConfirmationContent =>
+      'Bu işlem hesabınızı ve tüm verilerinizi (konumlar, gruplar, rotalar, ulaşılan yerler, profil ve topluluk içerikleri) kalıcı olarak siler. Bu işlem geri alınamaz.';
+
+  @override
+  String get deleteAccountReauthTitle => 'Şifreyi Doğrula';
+
+  @override
+  String get deleteAccountReauthContent =>
+      'Hesabınızı kalıcı olarak silmek istediğinizi onaylamak için şifrenizi girin.';
+
+  @override
+  String get deleteAccountInProgress => 'Hesabınız siliniyor...';
+
+  @override
+  String get deleteAccountError =>
+      'Hesabınız silinemedi. Lütfen tekrar deneyin.';
+
+  @override
   String get selectBirthDate => 'Doğum Tarihi Seçin';
 
   @override
@@ -1137,9 +1192,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get select => 'Seçin';
-
-  @override
-  String get fieldRequired => 'Bu alan gerekli';
 
   @override
   String get passwordTooShort => 'Şifre en az 6 karakter olmalı';
@@ -1249,5 +1301,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String get startLabel => 'Başlangıç';
 
   @override
+  String get fullNameLabel => 'Ad Soyad';
+
+  @override
+  String get displayNamePreference => 'Toplulukta görünen ad';
+
+  @override
+  String get useNickname => 'Takma isim';
+
+  @override
+  String get useFullName => 'Ad soyad';
+
+  @override
+  String get privacySectionTitle => 'Gizlilik ve Görünürlük';
+
+  @override
+  String get phone => 'Telefon';
+
+  @override
+  String get profilePhoto => 'Profil fotoğrafı';
+
+  @override
   String get ok => 'Tamam';
+
+  @override
+  String get verifyEmailTitle => 'E-postanı Doğrula';
+
+  @override
+  String verifyEmailMessage(String email) {
+    return '$email adresine bir doğrulama bağlantısı gönderildi. Gelen kutunu kontrol et, bağlantıya tıkla ve ardından aşağıdaki butona bas.';
+  }
+
+  @override
+  String get verificationEmailSent => 'Doğrulama e-postası gönderildi.';
+
+  @override
+  String get resendVerificationEmail => 'Doğrulama e-postasını yeniden gönder';
+
+  @override
+  String resendCountdown(int seconds) {
+    return 'Yeniden gönderilebilir ($seconds sn)';
+  }
+
+  @override
+  String get iHaveVerified => 'Doğruladım, devam et';
+
+  @override
+  String get notVerifiedYet =>
+      'E-postan henüz doğrulanmadı. Bağlantıya tıkladıktan sonra tekrar dene.';
+
+  @override
+  String get emailVerifiedSuccess => 'E-postan doğrulandı, hoş geldin!';
+
+  @override
+  String get verificationResendError =>
+      'Doğrulama e-postası gönderilemedi. Lütfen tekrar dene.';
+
+  @override
+  String get verificationCheckError =>
+      'Doğrulama kontrol edilemedi. İnternet bağlantını kontrol edip tekrar dene.';
 }

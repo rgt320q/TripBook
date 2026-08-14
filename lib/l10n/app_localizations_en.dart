@@ -867,6 +867,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordWhitespaceError => 'Password cannot contain spaces.';
 
   @override
+  String get confirmPassword => 'Confirm Password';
+
+  @override
+  String get fieldRequired => 'This field is required';
+
+  @override
+  String get fullNameMinLengthError =>
+      'Full name must be at least 2 characters';
+
+  @override
+  String get nicknameMinLengthError => 'Nickname must be at least 3 characters';
+
+  @override
+  String get nicknameInvalidCharsError =>
+      'Nickname can only contain letters, numbers, dots and underscores';
+
+  @override
+  String get requiredFieldsNote => 'Fields marked with * are required';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get accountInfo => 'Account Information';
+
+  @override
+  String get optionalInfo => 'Optional Information';
+
+  @override
   String get invalidCommentError => 'Comment contains invalid characters.';
 
   @override
@@ -1094,6 +1126,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wrongCurrentPassword => 'Current password is wrong';
 
   @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountConfirmationTitle => 'Delete Account';
+
+  @override
+  String get deleteAccountConfirmationContent =>
+      'This will permanently delete your account and all your data (locations, groups, routes, reached places, profile, and community content). This action cannot be undone.';
+
+  @override
+  String get deleteAccountReauthTitle => 'Confirm Password';
+
+  @override
+  String get deleteAccountReauthContent =>
+      'Enter your password to confirm that you want to permanently delete your account.';
+
+  @override
+  String get deleteAccountInProgress => 'Deleting your account...';
+
+  @override
+  String get deleteAccountError =>
+      'Could not delete your account. Please try again.';
+
+  @override
   String get selectBirthDate => 'Select Birth Date';
 
   @override
@@ -1134,9 +1190,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get select => 'Select';
-
-  @override
-  String get fieldRequired => 'This field is required';
 
   @override
   String get passwordTooShort => 'Password must be at least 6 characters';
@@ -1246,5 +1299,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startLabel => 'Start';
 
   @override
+  String get fullNameLabel => 'Full name';
+
+  @override
+  String get displayNamePreference => 'Public display name';
+
+  @override
+  String get useNickname => 'Nickname';
+
+  @override
+  String get useFullName => 'Full name';
+
+  @override
+  String get privacySectionTitle => 'Privacy & visibility';
+
+  @override
+  String get phone => 'Phone';
+
+  @override
+  String get profilePhoto => 'Profile photo';
+
+  @override
   String get ok => 'OK';
+
+  @override
+  String get verifyEmailTitle => 'Verify Your Email';
+
+  @override
+  String verifyEmailMessage(String email) {
+    return 'A verification link was sent to $email. Check your inbox, tap the link, then press the button below.';
+  }
+
+  @override
+  String get verificationEmailSent => 'Verification email sent.';
+
+  @override
+  String get resendVerificationEmail => 'Resend verification email';
+
+  @override
+  String resendCountdown(int seconds) {
+    return 'Resend available in ${seconds}s';
+  }
+
+  @override
+  String get iHaveVerified => 'I\'ve verified, continue';
+
+  @override
+  String get notVerifiedYet =>
+      'Your email isn\'t verified yet. Tap the link in the email and try again.';
+
+  @override
+  String get emailVerifiedSuccess => 'Email verified, welcome!';
+
+  @override
+  String get verificationResendError =>
+      'Couldn\'t send the verification email. Please try again.';
+
+  @override
+  String get verificationCheckError =>
+      'Couldn\'t check your verification. Check your internet connection and try again.';
 }

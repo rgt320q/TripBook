@@ -190,6 +190,16 @@ CREATE TABLE locations (
     }
     db.close();
   }
+
+  /// Deletes every row in the local database. Used when the user's account is
+  /// deleted so cached data does not leak into a future sign-in on this device.
+  Future<void> clearAll() async {
+    final db = await instance.database;
+    if (db == null) {
+      return;
+    }
+    await db.delete('locations');
+  }
 }
 
 // Add copyWith to TravelLocation to make state management easier

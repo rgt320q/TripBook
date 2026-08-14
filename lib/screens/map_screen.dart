@@ -286,7 +286,10 @@ class _MapScreenState extends State<MapScreen>
       );
 
       if (mounted && profile != null) {
-        final langCode = profile.languageCode ?? 'tr';
+        // Prefer the profile language; fall back to the browser/system locale
+        // instead of forcing Turkish on accounts without a saved language.
+        final langCode = profile.languageCode ??
+            Localizations.localeOf(context).languageCode;
         Provider.of<LocaleProvider>(
           context,
           listen: false,

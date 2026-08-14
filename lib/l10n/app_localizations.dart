@@ -1646,6 +1646,66 @@ abstract class AppLocalizations {
   /// **'Password cannot contain spaces.'**
   String get passwordWhitespaceError;
 
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPassword;
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get fieldRequired;
+
+  /// No description provided for @fullNameMinLengthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name must be at least 2 characters'**
+  String get fullNameMinLengthError;
+
+  /// No description provided for @nicknameMinLengthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname must be at least 3 characters'**
+  String get nicknameMinLengthError;
+
+  /// No description provided for @nicknameInvalidCharsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname can only contain letters, numbers, dots and underscores'**
+  String get nicknameInvalidCharsError;
+
+  /// No description provided for @requiredFieldsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Fields marked with * are required'**
+  String get requiredFieldsNote;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @accountInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Information'**
+  String get accountInfo;
+
+  /// No description provided for @optionalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional Information'**
+  String get optionalInfo;
+
   /// No description provided for @invalidCommentError.
   ///
   /// In en, this message translates to:
@@ -2060,6 +2120,48 @@ abstract class AppLocalizations {
   /// **'Current password is wrong'**
   String get wrongCurrentPassword;
 
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountConfirmationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccountConfirmationTitle;
+
+  /// No description provided for @deleteAccountConfirmationContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all your data (locations, groups, routes, reached places, profile, and community content). This action cannot be undone.'**
+  String get deleteAccountConfirmationContent;
+
+  /// No description provided for @deleteAccountReauthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get deleteAccountReauthTitle;
+
+  /// No description provided for @deleteAccountReauthContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to confirm that you want to permanently delete your account.'**
+  String get deleteAccountReauthContent;
+
+  /// No description provided for @deleteAccountInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your account...'**
+  String get deleteAccountInProgress;
+
+  /// No description provided for @deleteAccountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete your account. Please try again.'**
+  String get deleteAccountError;
+
   /// No description provided for @selectBirthDate.
   ///
   /// In en, this message translates to:
@@ -2143,12 +2245,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select'**
   String get select;
-
-  /// No description provided for @fieldRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'This field is required'**
-  String get fieldRequired;
 
   /// No description provided for @passwordTooShort.
   ///
@@ -2342,11 +2438,113 @@ abstract class AppLocalizations {
   /// **'Start'**
   String get startLabel;
 
+  /// No description provided for @fullNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get fullNameLabel;
+
+  /// No description provided for @displayNamePreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Public display name'**
+  String get displayNamePreference;
+
+  /// No description provided for @useNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname'**
+  String get useNickname;
+
+  /// No description provided for @useFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get useFullName;
+
+  /// No description provided for @privacySectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & visibility'**
+  String get privacySectionTitle;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @profilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo'**
+  String get profilePhoto;
+
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
   /// **'OK'**
   String get ok;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Email'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A verification link was sent to {email}. Check your inbox, tap the link, then press the button below.'**
+  String verifyEmailMessage(String email);
+
+  /// No description provided for @verificationEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email sent.'**
+  String get verificationEmailSent;
+
+  /// No description provided for @resendVerificationEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend verification email'**
+  String get resendVerificationEmail;
+
+  /// No description provided for @resendCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend available in {seconds}s'**
+  String resendCountdown(int seconds);
+
+  /// No description provided for @iHaveVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve verified, continue'**
+  String get iHaveVerified;
+
+  /// No description provided for @notVerifiedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email isn\'t verified yet. Tap the link in the email and try again.'**
+  String get notVerifiedYet;
+
+  /// No description provided for @emailVerifiedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified, welcome!'**
+  String get emailVerifiedSuccess;
+
+  /// No description provided for @verificationResendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the verification email. Please try again.'**
+  String get verificationResendError;
+
+  /// No description provided for @verificationCheckError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check your verification. Check your internet connection and try again.'**
+  String get verificationCheckError;
 }
 
 class _AppLocalizationsDelegate

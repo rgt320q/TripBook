@@ -484,6 +484,16 @@
   "deleteRouteAndLocations": "Rotayı ve Konumları Sil",
   "passwordComplexityError": "Şifre en az bir harf ve bir rakam içermelidir.",
   "passwordWhitespaceError": "Şifre boşluk içeremez.",
+  "confirmPassword": "Şifreyi Onayla",
+  "fieldRequired": "Bu alan zorunludur",
+  "fullNameMinLengthError": "Ad soyad en az 2 karakter olmalıdır",
+  "nicknameMinLengthError": "Takma isim en az 3 karakter olmalıdır",
+  "nicknameInvalidCharsError": "Takma isim yalnızca harf, rakam, nokta ve alt çizgi içerebilir",
+  "requiredFieldsNote": "Yıldızlı (*) alanlar zorunludur",
+  "showPassword": "Şifreyi göster",
+  "hidePassword": "Şifreyi gizle",
+  "accountInfo": "Hesap Bilgileri",
+  "optionalInfo": "İsteğe Bağlı Bilgiler",
   "invalidCommentError": "Yorum geçersiz karakterler içeriyor.",
   "invalidGroupNameError": "Grup adı geçersiz karakterler içeriyor.",
   "locationNameEmptyError": "Konum adı boş olamaz.",
@@ -565,6 +575,13 @@
   "passwordChangedSuccess": "Şifre başarıyla değiştirildi",
   "passwordChangeError": "Şifre değiştirme hatası",
   "wrongCurrentPassword": "Mevcut şifre yanlış",
+  "deleteAccount": "Hesabı Sil",
+  "deleteAccountConfirmationTitle": "Hesabı Sil",
+  "deleteAccountConfirmationContent": "Bu işlem hesabınızı ve tüm verilerinizi (konumlar, gruplar, rotalar, ulaşılan yerler, profil ve topluluk içerikleri) kalıcı olarak siler. Bu işlem geri alınamaz.",
+  "deleteAccountReauthTitle": "Şifreyi Doğrula",
+  "deleteAccountReauthContent": "Hesabınızı kalıcı olarak silmek istediğinizi onaylamak için şifrenizi girin.",
+  "deleteAccountInProgress": "Hesabınız siliniyor...",
+  "deleteAccountError": "Hesabınız silinemedi. Lütfen tekrar deneyin.",
   "selectBirthDate": "Doğum Tarihi Seçin",
   "avatarUpdated": "Avatar başarıyla güncellendi",
   "personalInfo": "Kişisel Bilgiler",
@@ -633,5 +650,36 @@
     }
   },
   "startLabel": "Başlangıç",
-  "ok": "Tamam"
+  "fullNameLabel": "Ad Soyad",
+  "displayNamePreference": "Toplulukta görünen ad",
+  "useNickname": "Takma isim",
+  "useFullName": "Ad soyad",
+  "privacySectionTitle": "Gizlilik ve Görünürlük",
+  "phone": "Telefon",
+  "profilePhoto": "Profil fotoğrafı",
+  "ok": "Tamam",
+  "verifyEmailTitle": "E-postanı Doğrula",
+  "verifyEmailMessage": "{email} adresine bir doğrulama bağlantısı gönderildi. Gelen kutunu kontrol et, bağlantıya tıkla ve ardından aşağıdaki butona bas.",
+  "@verifyEmailMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "verificationEmailSent": "Doğrulama e-postası gönderildi.",
+  "resendVerificationEmail": "Doğrulama e-postasını yeniden gönder",
+  "resendCountdown": "Yeniden gönderilebilir ({seconds} sn)",
+  "@resendCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "iHaveVerified": "Doğruladım, devam et",
+  "notVerifiedYet": "E-postan henüz doğrulanmadı. Bağlantıya tıkladıktan sonra tekrar dene.",
+  "emailVerifiedSuccess": "E-postan doğrulandı, hoş geldin!",
+  "verificationResendError": "Doğrulama e-postası gönderilemedi. Lütfen tekrar dene.",
+  "verificationCheckError": "Doğrulama kontrol edilemedi. İnternet bağlantını kontrol edip tekrar dene."
 }

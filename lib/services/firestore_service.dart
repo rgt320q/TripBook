@@ -763,4 +763,23 @@ class FirestoreService {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
+
+  /// Deletes ALL of the signed-in user's data (personal data, FCM token,
+  /// shared community routes, comments/ratings, profile images). The server
+  /// side runs with the admin SDK so it can clean up content that client rules
+  /// would block. Throws on failure; deletes are idempotent so retrying is safe.
+  Future<void> deleteUserData() async {
+    if (_currentUser == null) throw Exception('User not logged in');
+
+    final idToken = await _idToken();
+    if (idToken == null) throw Exception('User not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$_functionsBase/deleteUserData'),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete user data: ${response.statusCode}');
+    }
+  }
 }
