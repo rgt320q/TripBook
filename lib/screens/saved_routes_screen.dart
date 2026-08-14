@@ -543,7 +543,9 @@ class _SavedRoutesScreenState extends State<SavedRoutesScreen> {
                                       );
                                     } else {
                                       try {
-                                        final position = await Geolocator.getCurrentPosition();
+                                        final position = await Geolocator.getCurrentPosition(
+                                          timeLimit: const Duration(seconds: 8),
+                                        );
                                         final geoName =
                                             await DirectionsService().getPlaceName(
                                               LatLng(position.latitude, position.longitude),

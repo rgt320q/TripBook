@@ -27,7 +27,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // idTokenChanges also emits when the ID token is refreshed (e.g. right
     // after the user verifies their email), so the gate below flips to the
     // main app as soon as the verification is confirmed.
-    _authStream = AuthService().idTokenChanges;
+    //
+    // Guard against a stuck loading screen: if the auth stream stays silent
+    // (no network, slow GMS on the emulator, etc.) the first emitted value is
+    // the currently cached auth state instead of a never-ending spinner.
+    _authStream = AuthService().idTokenChanges.timeout(
+      const Duration(seconds: 12),
+      onTimeout: (sink) {
+        sink.add(FirebaseAuth.instance.currentUser);
+      },
+    );
     
     // Initialize connectivity service at the start
     WidgetsBinding.instance.addPostFrameCallback((_) {

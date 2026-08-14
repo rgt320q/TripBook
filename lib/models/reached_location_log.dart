@@ -5,6 +5,7 @@ class ReachedLocationLog {
   final String locationName;
   final String geoName;
   final String infoUrl;
+  final String? note;
   final Timestamp timestamp;
   final bool isRead;
   final String userId;
@@ -14,6 +15,7 @@ class ReachedLocationLog {
     required this.locationName,
     required this.geoName,
     required this.infoUrl,
+    this.note,
     required this.timestamp,
     this.isRead = false,
     required this.userId,
@@ -29,6 +31,7 @@ class ReachedLocationLog {
           data['infoUrl'] ??
           data['wikipediaUrl'] ??
           '', // Fallback for old data
+      note: data['note'] as String?,
       timestamp: data['timestamp'] ?? Timestamp.now(),
       isRead: data['isRead'] ?? false,
       userId: data['userId'] ?? '',
@@ -40,6 +43,7 @@ class ReachedLocationLog {
       'locationName': locationName,
       'geoName': geoName,
       'infoUrl': infoUrl,
+      if (note != null) 'note': note,
       'timestamp': timestamp,
       'isRead': isRead,
       'userId': userId,

@@ -506,6 +506,66 @@ abstract class AppLocalizations {
   /// **'Could not get current location. Please check location services.'**
   String get currentLocationError;
 
+  /// No description provided for @locationPermissionRationaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permission Needed'**
+  String get locationPermissionRationaleTitle;
+
+  /// No description provided for @locationPermissionRationaleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'TripBook uses your location to show your position on the map, build routes from where you are, and keep you on course. Location access is only used while you are using the app.'**
+  String get locationPermissionRationaleBody;
+
+  /// No description provided for @allow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get allow;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Now'**
+  String get notNow;
+
+  /// No description provided for @locationPermissionDeniedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is needed to show your position on the map. You can try again.'**
+  String get locationPermissionDeniedMessage;
+
+  /// No description provided for @locationPermissionDeniedForeverMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is turned off. You can enable it from app settings.'**
+  String get locationPermissionDeniedForeverMessage;
+
+  /// No description provided for @locationServicesDisabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are turned off. Please enable them to use your current location.'**
+  String get locationServicesDisabledMessage;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @enableLocationServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get enableLocationServices;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
   /// No description provided for @saveRouteDialogTitle.
   ///
   /// In en, this message translates to:
@@ -631,6 +691,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Consolidate'**
   String get consolidate;
+
+  /// No description provided for @collapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapse;
 
   /// No description provided for @expand.
   ///
@@ -901,6 +967,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'TripBook Route Tracking'**
   String get backgroundLocationNotificationTitle;
+
+  /// No description provided for @backgroundLocationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'TripBook needs \"Always\" location access to keep tracking your route when the screen is locked. You can grant this in Settings.'**
+  String get backgroundLocationPermissionRequired;
 
   /// No description provided for @routeCompleted.
   ///

@@ -258,22 +258,6 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          if (widget.isForSelection)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.check, color: Colors.white),
-                  onPressed: () {
-                    Navigator.of(context).pop(_selectedLocations);
-                  },
-                ),
-              ),
-            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Container(
@@ -644,6 +628,71 @@ class _ManageLocationsScreenState extends State<ManageLocationsScreen> {
           );
         },
       ),
+      bottomNavigationBar: widget.isForSelection
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Container(
+                  width: double.infinity,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green[600]!, Colors.green[800]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.3),
+                        spreadRadius: 1,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    label: Text(
+                      l10n.confirmRouteWithCount(_selectedLocations.length),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _selectedLocations.isNotEmpty
+                        ? () {
+                            Navigator.of(context).pop(_selectedLocations);
+                          }
+                        : null,
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

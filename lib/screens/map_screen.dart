@@ -125,6 +125,10 @@ class _MapScreenState extends State<MapScreen>
   final Set<String> _visitedWaypoints = {};
   final Set<String> _triggeredWikipediaNotifications = {};
   final Map<String, Timer> _waypointTimers = {};
+  // True once the route overlay (waypoint markers + polylines) has been fully
+  // rendered, enabling the cheaper navigation-only map update path.
+  bool _routeOverlayRendered = false;
+  final Set<String> _routeOverlayVisitedSnapshot = {};
   Timer? _mapUpdateDebounce;
 
   // Icon cache for performance
@@ -649,23 +653,115 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
-  Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  /// Best-practice location access flow:
+  /// 1. Location services (GPS) must be enabled → guide to device Settings.
+  /// 2. Permission state must be usable → explain why (rationale), request, or
+  ///    guide to app Settings for the permanently-denied case.
+  /// Returns true when location can be used, false otherwise (always with
+  /// on-screen feedback — never a silent return).
+  Future<bool> _ensureLocationAccess() async {
+    final l10n = AppLocalizations.of(context)!;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+    // 1. Location services enabled?
+    final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.locationServicesDisabledMessage),
+            action: SnackBarAction(
+              label: l10n.enableLocationServices,
+              onPressed: () {
+                if (!kIsWeb) Geolocator.openLocationSettings();
+              },
+            ),
+          ),
+        );
+      }
+      return false;
     }
 
-    if (permission == LocationPermission.deniedForever) return;
+    // 2. Permission state
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      // Explain why we need it before showing the OS prompt (best practice).
+      final bool? allow = await _showLocationPermissionRationale();
+      if (allow != true || !mounted) return false;
+
+      permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.locationPermissionDeniedMessage),
+              action: SnackBarAction(
+                label: l10n.tryAgain,
+                onPressed: () => _determinePosition(),
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.locationPermissionDeniedForeverMessage),
+            action: SnackBarAction(
+              label: l10n.openSettings,
+              onPressed: () {
+                if (!kIsWeb) Geolocator.openAppSettings();
+              },
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Short rationale dialog shown before the OS permission prompt, so the user
+  /// always understands why location access is being requested.
+  Future<bool?> _showLocationPermissionRationale() async {
+    if (!mounted) return null;
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.locationPermissionRationaleTitle),
+          content: Text(l10n.locationPermissionRationaleBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.notNow),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.allow),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _determinePosition() async {
+    if (!await _ensureLocationAccess()) return;
 
     try {
-      _currentPosition = await Geolocator.getCurrentPosition();
+      // Cap the fix so a dead GPS (common on emulators) can't hang the call
+      // forever; the catch below surfaces a friendly retry instead.
+      _currentPosition = await Geolocator.getCurrentPosition(
+        timeLimit: const Duration(seconds: 8),
+      );
       if (_mapController != null && widget.initialLocation == null) {
         await _goToCurrentLocation(isInitial: true);
       }
@@ -684,7 +780,7 @@ class _MapScreenState extends State<MapScreen>
             content: Text(l10n.currentLocationError),
             backgroundColor: Theme.of(context).colorScheme.error,
             action: SnackBarAction(
-              label: l10n.save, // Retry yerine save kullanıyoruz
+              label: l10n.tryAgain,
               onPressed: () => _determinePosition(),
             ),
           ),
@@ -711,20 +807,45 @@ class _MapScreenState extends State<MapScreen>
       _positionStreamSubscription =
           Geolocator.getPositionStream(
             locationSettings: locationSettings,
-          ).listen((Position position) {
-            if (mounted) {
-              setState(() {
-                _currentPosition = position;
-              });
-              // Debounced map update to reduce performance impact
-              _updateMapElements();
-            }
-          });
+          ).listen(
+            (Position position) {
+              if (mounted) {
+                setState(() {
+                  _currentPosition = position;
+                });
+                // Debounced map update to reduce performance impact
+                _updateMapElements();
+              }
+            },
+            onError: _handleLocationStreamError,
+          );
     }
   }
 
-  Future<void> _goToCurrentLocation({bool isInitial = false}) async {
-    if (_currentPosition == null || _mapController == null) return;
+  void _handleLocationStreamError(Object error, StackTrace stackTrace) {
+    if (kDebugMode) {
+      print('Location stream error: $error');
+    }
+    // The stream is dead (e.g. permission revoked); stop tracking cleanly
+    // instead of surfacing an unhandled async error.
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+  }
+
+  Future<void> _goToCurrentLocation({
+    bool isInitial = false,
+    bool requestIfMissing = true,
+  }) async {
+    // If we don't have a position yet, run the full permission/position flow
+    // instead of silently doing nothing.
+    if (_currentPosition == null) {
+      if (requestIfMissing) {
+        await _determinePosition();
+      }
+      return;
+    }
+
+    if (_mapController == null) return;
 
     final cameraUpdate = CameraUpdate.newCameraPosition(
       CameraPosition(
@@ -749,6 +870,8 @@ class _MapScreenState extends State<MapScreen>
       _visitedWaypoints.clear();
       _routeStartTime = null;
       _isRouteCompleted = false;
+      _routeOverlayRendered = false;
+      _routeOverlayVisitedSnapshot.clear();
       _activeRouteTotalStopDuration = null;
       _activeRouteTotalTripDuration = null;
       _activeRouteNeeds = null;
@@ -768,7 +891,36 @@ class _MapScreenState extends State<MapScreen>
     _triggeredWikipediaNotifications.clear();
   }
 
-  void _startRouteTracking() {
+  /// Background/locked-screen tracking only works when the OS grants
+  /// "Always" location access (Android: ACCESS_BACKGROUND_LOCATION, iOS:
+  /// "Allow Always"). When the user only granted "While Using", ask to
+  /// upgrade before the tracking stream (and its foreground service) starts.
+  Future<void> _ensureBackgroundLocationPermission() async {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.always) {
+      return;
+    }
+
+    final upgraded = await Geolocator.requestPermission();
+    if (upgraded == LocationPermission.always) return;
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.backgroundLocationPermissionRequired),
+        action: SnackBarAction(
+          label: l10n.settings,
+          onPressed: () => Geolocator.openAppSettings(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startRouteTracking() async {
+    await _ensureBackgroundLocationPermission();
     _positionStreamSubscription?.cancel();
     setState(() {
       _routeStartTime = DateTime.now();
@@ -809,12 +961,28 @@ class _MapScreenState extends State<MapScreen>
               setState(() {
                 _currentPosition = position;
                 _userPathHistory.add(newPoint);
+                _capPathHistory();
               });
               _updateMapElements();
               _checkAllWaypointsProximity(position);
             }
           },
+          onError: _handleLocationStreamError,
         );
+  }
+
+  /// Bounds the in-memory path so long trips don't accumulate an unbounded
+  /// list (memory + repeated decimation cost on every position update).
+  void _capPathHistory({int maxPoints = 1000}) {
+    if (_userPathHistory.length <= maxPoints) return;
+    final reduced = <LatLng>[];
+    for (var i = 0; i < _userPathHistory.length; i += 2) {
+      reduced.add(_userPathHistory[i]);
+    }
+    reduced.add(_userPathHistory.last);
+    _userPathHistory
+      ..clear()
+      ..addAll(reduced);
   }
 
   void _handleRouteCompletion() {
@@ -825,6 +993,12 @@ class _MapScreenState extends State<MapScreen>
       _isRouteCompleted = true;
     });
     _positionStreamSubscription?.cancel();
+
+    // Route is done; no waypoint duration timer should fire afterwards.
+    for (final timer in _waypointTimers.values) {
+      timer.cancel();
+    }
+    _waypointTimers.clear();
 
     final elapsedDuration = DateTime.now().difference(_routeStartTime!);
 
@@ -851,8 +1025,21 @@ class _MapScreenState extends State<MapScreen>
     }
 
     final userId = FirebaseAuth.instance.currentUser!.uid;
+    const double reachDistanceMeters = 50;
 
     for (final location in _activeRouteLocations!) {
+      final locationId = location.firestoreId;
+      if (locationId == null) continue;
+
+      // Already reached waypoints are skipped for reach detection, but their
+      // "stayed too long" timer is still ended by any position update (it only
+      // fires while the user stays put long enough for the estimate to elapse).
+      if (_visitedWaypoints.contains(locationId)) {
+        final timer = _waypointTimers.remove(locationId);
+        timer?.cancel();
+        continue;
+      }
+
       final distance = Geolocator.distanceBetween(
         userPosition.latitude,
         userPosition.longitude,
@@ -860,89 +1047,84 @@ class _MapScreenState extends State<MapScreen>
         location.longitude,
       );
 
-      final locationId = location.firestoreId!;
+      if (distance >= reachDistanceMeters) continue;
+
       final isEndpoint =
           locationId == 'end' || locationId == 'home_end_location';
-
-      if (distance < 50 && !_visitedWaypoints.contains(locationId)) {
-        if (isEndpoint) {
-          final allOtherWaypointsVisited = _activeRouteLocations!
-              .where(
-                (loc) =>
-                    loc.firestoreId != 'end' &&
-                    loc.firestoreId != 'home_end_location',
-              )
-              .every((loc) => _visitedWaypoints.contains(loc.firestoreId));
-          if (!allOtherWaypointsVisited) {
-            continue;
-          }
+      if (isEndpoint) {
+        final allOtherWaypointsVisited = _activeRouteLocations!
+            .where(
+              (loc) =>
+                  loc.firestoreId != 'end' &&
+                  loc.firestoreId != 'home_end_location',
+            )
+            .every((loc) => _visitedWaypoints.contains(loc.firestoreId));
+        if (!allOtherWaypointsVisited) {
+          continue;
         }
+      }
 
-        if (mounted) {
-          setState(() {
-            _visitedWaypoints.add(locationId);
-          });
-          _checkStageTransition(
-            location,
-            _activeRouteLocations!.indexOf(location),
+      if (mounted) {
+        setState(() {
+          _visitedWaypoints.add(locationId);
+        });
+        _checkStageTransition(
+          location,
+          _activeRouteLocations!.indexOf(location),
+        );
+      }
+
+      if (!_triggeredWikipediaNotifications.contains(locationId)) {
+        _triggeredWikipediaNotifications.add(locationId);
+
+        final infoUrl =
+            'https://www.google.com/search?q=${Uri.encodeComponent(location.geoName)}';
+        final title = l10n.nearbyLocationNotificationTitle(location.name);
+        final summary = l10n.nearbyLocationNotificationBody;
+
+        final newLog = ReachedLocationLog(
+          locationName: location.name,
+          geoName: location.geoName,
+          infoUrl: infoUrl,
+          note: location.notes,
+          timestamp: Timestamp.now(),
+          userId: userId,
+        );
+
+        _firestoreService.addReachedLocationLog(newLog).then((logId) {
+          final payload = logId != null
+              ? 'open_logs_screen:$logId'
+              : 'open_logs_screen';
+          _notificationService.showNotification(
+            title,
+            summary,
+            payload: payload,
           );
-        }
+        });
+      }
 
-        final allWaypointIds = _activeRouteLocations!
-            .map((loc) => loc.firestoreId!)
-            .toSet();
-        if (_visitedWaypoints.containsAll(allWaypointIds)) {
-          _handleRouteCompletion();
-          return;
-        }
+      final allWaypointIds = _activeRouteLocations!
+          .map((loc) => loc.firestoreId)
+          .whereType<String>()
+          .toSet();
+      if (_visitedWaypoints.containsAll(allWaypointIds)) {
+        _handleRouteCompletion();
+        return;
+      }
 
-        if (!_triggeredWikipediaNotifications.contains(locationId)) {
-          _triggeredWikipediaNotifications.add(locationId);
-
-          final infoUrl =
-              'https://www.google.com/search?q=${Uri.encodeComponent(location.geoName)}';
-          final title = l10n.nearbyLocationNotificationTitle(location.name);
-          final summary = l10n.nearbyLocationNotificationBody;
-
-          final newLog = ReachedLocationLog(
-            locationName: location.name,
-            geoName: location.geoName,
-            infoUrl: infoUrl,
-            timestamp: Timestamp.now(),
-            userId: userId,
-          );
-
-          _firestoreService.addReachedLocationLog(newLog).then((logId) {
-            final payload = logId != null
-                ? 'open_logs_screen:$logId'
-                : 'open_logs_screen';
+      if (!_waypointTimers.containsKey(locationId) &&
+          (location.estimatedDuration ?? 0) > 0) {
+        final timer = Timer(
+          Duration(minutes: location.estimatedDuration!),
+          () {
             _notificationService.showNotification(
-              title,
-              summary,
-              payload: payload,
+              l10n.timeExpiredNotificationTitle,
+              l10n.timeExpiredNotificationBody(location.name),
             );
-          });
-        }
-
-        if (!_waypointTimers.containsKey(locationId) &&
-            (location.estimatedDuration ?? 0) > 0) {
-          final timer = Timer(
-            Duration(minutes: location.estimatedDuration!),
-            () {
-              _notificationService.showNotification(
-                l10n.timeExpiredNotificationTitle,
-                l10n.timeExpiredNotificationBody(location.name),
-              );
-              _waypointTimers.remove(locationId);
-            },
-          );
-          _waypointTimers[locationId] = timer;
-        }
-      } else {
-        if (_waypointTimers.containsKey(locationId)) {
-          _waypointTimers[locationId]!.cancel();
-          _waypointTimers.remove(locationId);
-        }
+            _waypointTimers.remove(locationId);
+          },
+        );
+        _waypointTimers[locationId] = timer;
       }
     }
   }
@@ -1062,6 +1244,18 @@ class _MapScreenState extends State<MapScreen>
   Future<void> _updateMapElementsInternal() async {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
+
+    // During active navigation the waypoint markers and route polylines are
+    // static; only the live position marker and the travelled path change.
+    // Skip the full rebuild (and the native marker churn it causes) until a
+    // waypoint is actually visited.
+    if (_activeRouteLocations != null &&
+        _routeOverlayRendered &&
+        _currentLocationIcon != null &&
+        setEquals(_routeOverlayVisitedSnapshot, _visitedWaypoints)) {
+      _updateNavigationOverlay();
+      return;
+    }
 
     final groupsMap = {for (var group in _allGroups) group.firestoreId!: group};
     final Set<Marker> newMarkers = {};
@@ -1227,6 +1421,68 @@ class _MapScreenState extends State<MapScreen>
         _polylines.clear();
         _polylines.addAll(newPolylines);
       });
+      if (_activeRouteLocations != null) {
+        _routeOverlayRendered = true;
+        _routeOverlayVisitedSnapshot
+          ..clear()
+          ..addAll(_visitedWaypoints);
+      } else {
+        _routeOverlayRendered = false;
+        _routeOverlayVisitedSnapshot.clear();
+      }
+    }
+  }
+
+  /// Lightweight navigation-time map update: only the current position marker
+  /// and the travelled path polyline change; everything else is left untouched.
+  void _updateNavigationOverlay() {
+    final l10n = AppLocalizations.of(context)!;
+
+    final Set<Marker> newMarkers = Set.of(_markers)
+      ..removeWhere(
+        (m) => m.markerId == const MarkerId('currentLocation'),
+      );
+    if (_currentPosition != null) {
+      newMarkers.add(
+        Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: LatLng(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+          ),
+          infoWindow: InfoWindow(title: l10n.myLocationTooltip),
+          icon: _currentLocationIcon!,
+          // ignore: deprecated_member_use
+          zIndex: 2,
+          anchor: const Offset(0.5, 0.5),
+        ),
+      );
+    }
+
+    final Set<Polyline> newPolylines = Set.of(_polylines)
+      ..removeWhere((p) => p.polylineId == const PolylineId('userPath'));
+    if (_userPathHistory.length > 1) {
+      newPolylines.add(
+        Polyline(
+          polylineId: const PolylineId('userPath'),
+          color: Colors.purpleAccent,
+          width: 5,
+          // Decimate the path so long trips don't rebuild a huge polyline
+          // (or blow up the native map) on every position update.
+          points: _decimatePoints(_userPathHistory),
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() {
+        _markers
+          ..clear()
+          ..addAll(newMarkers);
+        _polylines
+          ..clear()
+          ..addAll(newPolylines);
+      });
     }
   }
 
@@ -1272,6 +1528,8 @@ class _MapScreenState extends State<MapScreen>
       _triggeredWikipediaNotifications.clear();
       _isNeedsListConsolidated = false; // Reset for new route
       _lastNotifiedStageIndex = -1; // Reset staged navigation
+      _routeOverlayRendered = false; // Force a full overlay rebuild
+      _routeOverlayVisitedSnapshot.clear();
 
       final userLocation = TravelLocation(
         name: l10n.currentLocation,
@@ -1393,7 +1651,7 @@ class _MapScreenState extends State<MapScreen>
         }
 
         _showRouteSummary(directionsInfo, activeRouteLocations);
-        _startRouteTracking();
+        await _startRouteTracking();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(
@@ -3115,7 +3373,7 @@ class _MapScreenState extends State<MapScreen>
                   zoom: widget.initialLocation != null ? 15 : 5,
                 ),
                 markers: endPointMarkers,
-                zoomControlsEnabled: false,
+                zoomControlsEnabled: true,
                 myLocationButtonEnabled: false,
                 myLocationEnabled: true,
                 scrollGesturesEnabled: !_isAnyModalOpen,
@@ -3562,8 +3820,8 @@ class _MapScreenState extends State<MapScreen>
               markers: _markers,
               polylines: _polylines,
               mapType: _currentMapType,
-              compassEnabled: false,
-              zoomControlsEnabled: false,
+              compassEnabled: true,
+              zoomControlsEnabled: true,
               myLocationButtonEnabled: false,
               myLocationEnabled: false,
               scrollGesturesEnabled: !_isAnyModalOpen,
@@ -4112,7 +4370,6 @@ class _MapScreenState extends State<MapScreen>
                   title: l10n.fromGroup,
                   description: l10n.fromGroupDescription,
                   onTap: () async {
-                    Navigator.of(dialogContext).pop();
                     final result = await Navigator.push<Map<String, String>>(
                       context,
                       MaterialPageRoute(
@@ -4168,6 +4425,7 @@ class _MapScreenState extends State<MapScreen>
                           );
 
                           if (mounted) LoadingOverlay.hide(context);
+                          Navigator.of(dialogContext).pop();
 
                           final result = await Navigator.push<dynamic>(
                             context,
@@ -4214,7 +4472,6 @@ class _MapScreenState extends State<MapScreen>
                   title: l10n.manualSelection,
                   description: l10n.manualSelectionDescription,
                   onTap: () async {
-                    Navigator.of(dialogContext).pop();
                     final List<TravelLocation>? selectedLocations =
                         await Navigator.push(
                           context,
@@ -4263,6 +4520,7 @@ class _MapScreenState extends State<MapScreen>
                         );
 
                         if (mounted) LoadingOverlay.hide(context);
+                        Navigator.of(dialogContext).pop();
 
                         final result = await Navigator.push<dynamic>(
                           context,

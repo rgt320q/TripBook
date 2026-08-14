@@ -228,6 +228,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not get current location. Please check location services.';
 
   @override
+  String get locationPermissionRationaleTitle => 'Location Permission Needed';
+
+  @override
+  String get locationPermissionRationaleBody =>
+      'TripBook uses your location to show your position on the map, build routes from where you are, and keep you on course. Location access is only used while you are using the app.';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get notNow => 'Not Now';
+
+  @override
+  String get locationPermissionDeniedMessage =>
+      'Location permission is needed to show your position on the map. You can try again.';
+
+  @override
+  String get locationPermissionDeniedForeverMessage =>
+      'Location permission is turned off. You can enable it from app settings.';
+
+  @override
+  String get locationServicesDisabledMessage =>
+      'Location services are turned off. Please enable them to use your current location.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get enableLocationServices => 'Enable';
+
+  @override
+  String get tryAgain => 'Try Again';
+
+  @override
   String get saveRouteDialogTitle => 'Save Route';
 
   @override
@@ -293,6 +327,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get consolidate => 'Consolidate';
+
+  @override
+  String get collapse => 'Collapse';
 
   @override
   String get expand => 'Expand';
@@ -433,6 +470,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backgroundLocationNotificationTitle => 'TripBook Route Tracking';
+
+  @override
+  String get backgroundLocationPermissionRequired =>
+      'TripBook needs \"Always\" location access to keep tracking your route when the screen is locked. You can grant this in Settings.';
 
   @override
   String get routeCompleted => 'Route completed!';

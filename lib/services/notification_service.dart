@@ -45,6 +45,9 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  // Monotonic notification id so two notifications fired in the same
+  // millisecond can never collide (and overwrite each other).
+  int _nextNotificationId = 0;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -190,7 +193,8 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      id: DateTime.now().millisecondsSinceEpoch.toUnsigned(31),
+      // Keep within int32 range expected by the platform channel.
+      id: _nextNotificationId = (_nextNotificationId + 1) & 0x7fffffff,
       title: title,
       body: body,
       notificationDetails: platformChannelSpecifics,

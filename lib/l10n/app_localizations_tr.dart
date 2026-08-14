@@ -229,6 +229,40 @@ class AppLocalizationsTr extends AppLocalizations {
       'Mevcut konumunuz alınamadı. Lütfen konum servislerini kontrol edin.';
 
   @override
+  String get locationPermissionRationaleTitle => 'Konum İzni Gerekli';
+
+  @override
+  String get locationPermissionRationaleBody =>
+      'TripBook, konumunuzu haritada göstermek, bulunduğunuz yerden rota oluşturmak ve rotada kalmanızı sağlamak için konumunuzu kullanır. Konum erişimi yalnızca uygulamayı kullanırken kullanılır.';
+
+  @override
+  String get allow => 'İzin Ver';
+
+  @override
+  String get notNow => 'Şimdi Değil';
+
+  @override
+  String get locationPermissionDeniedMessage =>
+      'Haritada konumunuzu gösterebilmek için konum izni gerekir. Tekrar deneyebilirsiniz.';
+
+  @override
+  String get locationPermissionDeniedForeverMessage =>
+      'Konum izni kapalı. Uygulama ayarlarından açabilirsiniz.';
+
+  @override
+  String get locationServicesDisabledMessage =>
+      'Konum servisleri kapalı. Mevcut konumunuzu kullanmak için lütfen açın.';
+
+  @override
+  String get openSettings => 'Ayarları Aç';
+
+  @override
+  String get enableLocationServices => 'Aç';
+
+  @override
+  String get tryAgain => 'Tekrar Dene';
+
+  @override
   String get saveRouteDialogTitle => 'Rotayı Kaydet';
 
   @override
@@ -294,6 +328,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get consolidate => 'Konsolide Et';
+
+  @override
+  String get collapse => 'Daralt';
 
   @override
   String get expand => 'Genişlet';
@@ -434,6 +471,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get backgroundLocationNotificationTitle => 'TripBook Rota Takibi';
+
+  @override
+  String get backgroundLocationPermissionRequired =>
+      'TripBook\'un ekran kilitliyken de rotanızı takip edebilmesi için \"Her zaman\" konum izni gerekir. Bunu Ayarlar\'dan verebilirsiniz.';
 
   @override
   String get routeCompleted => 'Rota tamamlandı!';
